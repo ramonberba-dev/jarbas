@@ -200,6 +200,8 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .li.pd small{font-family:var(--f-mono);font-size:10.5px;letter-spacing:0;color:var(--sand)}
 
 /* app do gerente */
+.topdir{display:flex;align-items:center;gap:10px}
+.sair{border:1px solid var(--gold);background:#00000040;color:var(--gold);font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:6px 9px;border-radius:3px;cursor:pointer;white-space:nowrap}
 .login{min-height:100%;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));position:relative;z-index:1}
 .login .box{width:100%;max-width:380px;display:grid;gap:14px;text-align:center}
 .login .logo{font-size:64px}
@@ -246,7 +248,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
   </section>
 
   <div id="telaApp" hidden>
-    <header class="top"><span class="logo">JARBAS</span><small id="topo"></small></header>
+    <header class="top"><span class="logo">JARBAS</span><span class="topdir"><small id="topo"></small><button class="sair" id="bSairTopo" type="button">Sair ⏻</button></span></header>
     <div class="wrap">
       <!-- INÍCIO -->
       <section class="view on" id="tela-inicio">
@@ -806,7 +808,8 @@ const PIL={};ROTINA.forEach(p=>PIL[p.id]=p);
 /* ---------- login ---------- */
 $('#fLogin').addEventListener('submit',async e=>{e.preventDefault();S.pin=$('#pin').value.trim();$('#bEntrar').disabled=true;$('#erroLogin').textContent='';
   try{await carregar();guarda.set('jarbas_pin',S.pin)}catch(err){$('#erroLogin').textContent=err.message;S.pin=null}finally{$('#bEntrar').disabled=false}});
-$('#bSair').onclick=()=>{guarda.set('jarbas_pin',null);location.reload()};
+function sair(){guarda.set('jarbas_pin',null);location.hash='';location.reload()}
+$('#bSair').onclick=sair;$('#bSairTopo').onclick=sair;
 if(/iphone|ipad/i.test(navigator.userAgent)&&!navigator.standalone)$('#dicaIos').hidden=false;
 let pedidoInstalar=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();pedidoInstalar=e;$('#bInstalar').hidden=false});
 $('#bInstalar').onclick=()=>{pedidoInstalar?.prompt();$('#bInstalar').hidden=true};
