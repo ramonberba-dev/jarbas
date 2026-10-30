@@ -77,6 +77,9 @@ h2.t{font-family:var(--f-num);font-weight:500;font-size:30px;letter-spacing:.06e
   background:linear-gradient(180deg,#2a0507f2,#1a0305f2);border-radius:3px 12px 3px 12px;box-shadow:0 0 0 1.5px var(--groove),inset 0 1px 0 #ffb0a040,0 4px 8px -2px #000b}
 .cap b{color:#fff}
 #pdots{margin-top:12px}
+@keyframes fluor{0%{filter:brightness(.12)}6%{filter:brightness(1.25)}10%{filter:brightness(.18)}17%{filter:brightness(.95)}21%{filter:brightness(.25)}
+  30%{filter:brightness(1.1)}34%{filter:brightness(.45)}46%{filter:brightness(1)}50%{filter:brightness(.7)}62%,100%{filter:brightness(1)}}
+.car.mini .core.liga{animation:fluor .95s steps(1,end) both}
 .car.mini .sock{width:min(50%,196px)}
 .car.mini .core b{font-size:clamp(30px,9vw,40px)}
 .car.mini .cap{margin-top:18px}
@@ -901,8 +904,12 @@ let pk='resumo',vk='mes',ek='R';
     return `<div class="sl"><div class="sock"><div class="core" style="--v:${Math.min(p,100).toFixed(1)}"><div><small>${n.toUpperCase()}</small><b>${Math.round(p)}%</b><small>META PROPORCIONAL</small></div></div></div><div class="cap">${n} · ${mil(r.venda)} de <b>${mil(r.meta_periodo)}</b> até ${esc(V.ate)}<br>${r.venda>=r.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(r.meta_periodo-r.venda))}</b> · mês ${p1(r.meta_mes?r.venda/r.meta_mes*100:0)}</div></div>`}).join('');
   dots.innerHTML=itens.map((x,i)=>`<button type="button" class="${i?'':'on'}" aria-pressed="${!i}">${x[0].replace('Regional ','')}</button>`).join('');
   const bs=[...dots.querySelectorAll('button')];
-  car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);bs.forEach((d,k)=>{d.classList.toggle('on',k===i);d.setAttribute('aria-pressed',k===i)})}));
-  bs.forEach((d,k)=>d.addEventListener('click',()=>{car.scrollTo({left:k*car.clientWidth,behavior:'smooth'});bs.forEach((x,j)=>{x.classList.toggle('on',j===k);x.setAttribute('aria-pressed',j===k)})}));
+  let atual=0,alvo=null; // alvo: no toque, só o reator escolhido pisca (não os do meio do caminho)
+  const piscar=k=>{const c=car.querySelectorAll('.core')[k];if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;c.classList.remove('liga');void c.offsetWidth;c.classList.add('liga')};
+  car.addEventListener('animationend',e=>e.target.classList.remove('liga'));
+  car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);bs.forEach((d,k)=>{d.classList.toggle('on',k===i);d.setAttribute('aria-pressed',k===i)});
+    if(alvo!=null){if(i===alvo)alvo=null;return}if(i!==atual){atual=i;piscar(i)}}));
+  bs.forEach((d,k)=>d.addEventListener('click',()=>{if(k!==atual){alvo=k;atual=k;piscar(k)}car.scrollTo({left:k*car.clientWidth,behavior:'smooth'});bs.forEach((x,j)=>{x.classList.toggle('on',j===k);x.setAttribute('aria-pressed',j===k)})}));
 })();
 // escopo do painel: sua regional, as outras duas ou a rede inteira (só quando a lista completa vem nos dados)
 const NOMES_REG={R:'Ramon',T:'Tuanne',M:'Mandu'},TODAS=V.todas||null;
