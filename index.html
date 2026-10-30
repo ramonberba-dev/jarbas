@@ -320,6 +320,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
           <div class="mic-txt"><b id="micStatus">Toque para gravar</b><small id="micDica">Fale as particularidades da visita. A fala vira texto na hora.</small></div>
         </div>
         <label class="f">Transcrição da visita<textarea class="inp" id="cTrans" rows="5" placeholder="O que você falar aparece aqui. Você também pode digitar."></textarea></label>
+        <div class="acts" style="margin-top:8px"><button class="btn ghost sm" type="button" id="bApagarTxt">Apagar texto</button></div>
         <div class="sec">0. Antes da visita · raio-X da loja</div>
         <div class="panel" id="cPre"></div>
         <div class="sec">Checklist da loja</div>
@@ -1558,6 +1559,10 @@ $('#cSecoes').addEventListener('click',e=>{const x=e.target.closest('[data-rmf]'
 $('#bLimpar').onclick=()=>{if(!$('#bLimpar').dataset.c){$('#bLimpar').dataset.c=1;$('#bLimpar').textContent='Toque de novo para apagar';setTimeout(()=>{delete $('#bLimpar').dataset.c;$('#bLimpar').textContent='Nova visita'},4000);return}
   delete $('#bLimpar').dataset.c;$('#bLimpar').textContent='Nova visita';novaV();rCheck();toast('Visita nova')};
 
+$('#bApagarTxt').onclick=()=>{const b=$('#bApagarTxt');
+  if(!b.dataset.c){b.dataset.c=1;b.textContent='Toque de novo para apagar';setTimeout(()=>{delete b.dataset.c;b.textContent='Apagar texto'},4000);return}
+  delete b.dataset.c;b.textContent='Apagar texto';if(gravando&&rec){rec.__manter=false;rec.stop()}
+  base='';V2.trans='';$('#cTrans').value='';salvaV();toast('Texto apagado')};
 // microfone: reconhecimento de voz do próprio celular (Chrome/Android e Safari/iPhone)
 const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,gravando=false,base='';
 function micUI(on){gravando=on;$('#bMic').classList.toggle('on',on);$('#bMic').setAttribute('aria-pressed',on);$('#micStatus').textContent=on?'Gravando… toque para parar':'Toque para gravar'}
