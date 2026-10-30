@@ -110,6 +110,8 @@ h2.t{font-family:var(--f-num);font-weight:500;font-size:30px;letter-spacing:.06e
 .panel h3{margin:0 0 8px;font-family:var(--f-disp);font-size:15px;letter-spacing:.04em;color:var(--gold)}
 .sec{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--sand);margin:18px 2px 0}
 /* tabela de lojas */
+.row.eu{outline:2px solid var(--gold);outline-offset:1px}
+.rankdia{margin-top:12px}
 .rows{display:grid;gap:6px}
 .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:8px 10px;background:#00000033;border:1px solid #ffffff14;border-left:3px solid var(--c,var(--gold))}
 .row .nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -274,6 +276,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div id="selLojaBox" class="panel" hidden><label class="f">Ver a loja<select class="inp" id="selLoja"></select></label></div>
         <div class="car" id="car" aria-label="Reator: deslize para trocar entre meta proporcional e dia"></div>
         <div class="dots" id="dots"><button class="on" aria-label="Meta proporcional"></button><button aria-label="Dia"></button><span>deslize ›</span></div>
+        <div id="rankDia"></div>
         <div class="tiles" id="tiles"></div>
         <div class="list"><button class="li pd" data-go="painel"><span>Painel diário<small id="pdSub"></small></span><em class="tag">ABRIR ›</em></button></div>
         <div id="inicioLoja">
@@ -966,6 +969,10 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
   ir(location.hash.slice(1)||'inicio');
 }
 
+function rankDia(itens,titulo,destaque){
+  const r=itens.filter(x=>x.m).sort((a,b)=>b.v/b.m-a.v/a.m),bat=r.filter(x=>x.v>=x.m).length;
+  return r.length?`<div class="panel rankdia"><h3>${titulo} · ${bat} de ${r.length} na meta</h3><div class="rows">`+r.map((x,i)=>{const p=x.v/x.m*100;
+    return `<div class="row${x.cod===destaque?' eu':''}" style="--c:${cor(p)}"><span class="nm">${i+1}º ${esc(x.nome)}</span><span class="pc">${p1(p)}</span><span class="det"><span>${brl(x.v)} de ${brl(x.m)}</span>${x.a!=null?`<span>${x.a} atend.</span>`:''}</span></div>`}).join('')+`</div></div>`:''}
 function rReator(V,L,R){
   const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:'Regional Ramon';
   const pProp=pct(a.venda,a.meta_periodo), pDia=pct(a.ontem,a.meta_ontem);
@@ -980,6 +987,9 @@ function rReator(V,L,R){
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i))}));
     dots.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})))}
+  // ranking das lojas da regional no dia: parcial de hoje (se já chegou) ou o último dia fechado
+  $('#rankDia').innerHTML=P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome,v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
+    :rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),`Ranking do dia fechado ${esc(V.ate)}`,S.cod);
   const rk=[...L].sort((x,y)=>pct(y.venda,y.meta_periodo)-pct(x.venda,x.meta_periodo));
   const tile=(k,v,s)=>`<div class="plate"><small>${k}</small><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
   if(l)$('#tiles').innerHTML=tile('P.A.',num(l.pa),'meta 1,60')+tile('Ticket',Math.round(l.atend?l.venda/l.atend:0),'R$ por atend.')+tile('Ranking',(rk.indexOf(l)+1)+'º','de '+L.length+' no ritmo');
