@@ -76,6 +76,9 @@ h2.t{font-family:var(--f-num);font-weight:500;font-size:30px;letter-spacing:.06e
 .cap{position:relative;z-index:2;text-align:center;font-family:var(--f-mono);font-size:11px;line-height:1.6;color:var(--sand);margin:22px 8px 0;padding:8px 12px;
   background:linear-gradient(180deg,#2a0507f2,#1a0305f2);border-radius:3px 12px 3px 12px;box-shadow:0 0 0 1.5px var(--groove),inset 0 1px 0 #ffb0a040,0 4px 8px -2px #000b}
 .cap b{color:#fff}
+.car.mini .sock{width:min(50%,196px)}
+.car.mini .core b{font-size:clamp(30px,9vw,40px)}
+.car.mini .cap{margin-top:18px}
 .dots{display:flex;justify-content:center;align-items:center;gap:7px;padding-top:8px}
 .dots button{width:8px;height:8px;padding:0;border-radius:50%;border:0;background:#f3d6a055;cursor:pointer}
 .dots button.on{width:20px;border-radius:4px;background:var(--gold)}
@@ -287,6 +290,8 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <section class="view" id="tela-painel">
         <h2 class="t">Painel diário</h2>
         <div class="sub" id="vsub"></div>
+        <div class="car mini" id="pcar" aria-label="Reatores da rede e das regionais: deslize para trocar"></div>
+        <div class="dots" id="pdots"></div>
         <div class="seg" id="pseg"><button class="on" data-k="resumo">Resumo</button><button data-k="lojas">Lojas</button><button data-k="mapa">Mapa da mina</button><button data-k="rede">Rede</button></div>
         <div id="pbox"></div>
       </section>
@@ -885,6 +890,19 @@ function cardsDia(r,rot){const falta=Math.max(r.meta_mes-r.venda,0);
   <div class="pc"><small>Acumulado do mês</small><b>${mil(r.venda)}</b><span>ritmo <em class="tag ${pct(r.venda,r.meta_periodo)>=100?'ok':'r'}">${p1(pct(r.venda,r.meta_periodo))}</em> · ${p1(pct(r.venda,r.meta_mes))} da meta do mês (${mil(r.meta_mes)})</span></div>
   <div class="pc hoje"><small>Hoje · ${rot}</small><b>${brl(r.meta_hoje)}</b><span>meta do dia · para fechar o mês: ${brl(falta/diasRest)}/dia em média (${diasRest} dia${diasRest>1?'s':''})</span></div></div>`}
 let pk='resumo',vk='mes',ek='R';
+// reatores do painel: rede e cada regional, % da meta proporcional (venda do mês ÷ meta acumulada até ontem)
+(function(){
+  const nomes={R:'Regional Ramon',T:'Regional Tuanne',M:'Regional Mandu'};
+  const soma=Object.values(V.regs).reduce((a,r)=>{for(const k in r)a[k]=(a[k]||0)+r[k];return a},{});
+  const itens=[['Rede',soma]].concat(['R','T','M'].filter(k=>V.regs[k]).map(k=>[nomes[k],V.regs[k]]));
+  const car=$('#pcar'),dots=$('#pdots');if(!car)return;
+  car.innerHTML=itens.map(([n,r])=>{const p=r.meta_periodo?r.venda/r.meta_periodo*100:0;
+    return `<div class="sl"><div class="sock"><div class="core" style="--v:${Math.min(p,100).toFixed(1)}"><div><small>${n.toUpperCase()}</small><b>${Math.round(p)}%</b><small>META PROPORCIONAL</small></div></div></div><div class="cap">${n} · ${mil(r.venda)} de <b>${mil(r.meta_periodo)}</b> até ${esc(V.ate)}<br>${r.venda>=r.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(r.meta_periodo-r.venda))}</b> · mês ${p1(r.meta_mes?r.venda/r.meta_mes*100:0)}</div></div>`}).join('');
+  dots.innerHTML=itens.map((x,i)=>`<button class="${i?'':'on'}" aria-label="${x[0]}"></button>`).join('')+'<span>deslize ›</span>';
+  const bs=[...dots.querySelectorAll('button')];
+  car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);bs.forEach((d,k)=>d.classList.toggle('on',k===i))}));
+  bs.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})));
+})();
 // escopo do painel: sua regional, as outras duas ou a rede inteira (só quando a lista completa vem nos dados)
 const NOMES_REG={R:'Ramon',T:'Tuanne',M:'Mandu'},TODAS=V.todas||null;
 const somaRegs=rs=>rs.reduce((a,r)=>{for(const k in r)a[k]=(a[k]||0)+r[k];return a},{});
