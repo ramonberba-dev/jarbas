@@ -1564,11 +1564,18 @@ function micUI(on){gravando=on;$('#bMic').classList.toggle('on',on);$('#bMic').s
 $('#bMic').onclick=()=>{
   if(!Rec){$('#micDica').textContent='Este navegador não transcreve voz. Use o Chrome no Android ou o Safari no iPhone, ou use o microfone do teclado para ditar no campo abaixo.';return}
   if(gravando){if(rec){rec.__manter=false;rec.stop()}return}
-  rec=new Rec();rec.lang='pt-BR';rec.continuous=true;rec.interimResults=true;base=V2.trans?V2.trans.replace(/\s*$/,' '):'';
-  rec.onresult=ev=>{let fin='',tmp='';for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;ev.results[i].isFinal?fin+=t+' ':tmp+=t}
-    if(fin){base+=fin;V2.trans=base;salvaV()}$('#cTrans').value=base+tmp};
-  rec.onerror=ev=>{if(ev.error==='not-allowed')$('#micDica').textContent='Permita o uso do microfone para o app nas configurações do navegador.'};
-  rec.onend=()=>{if(gravando&&rec.__manter){try{rec.start();return}catch{}}micUI(false);V2.trans=$('#cTrans').value;salvaV()};
+  rec=new Rec();rec.lang='pt-BR';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
+  base=V2.trans?V2.trans.replace(/\s*$/,' '):'';let sessao='';
+  $('#micDica').textContent='Fale normalmente. Toque de novo para parar.';
+  // Chrome no Android devolve a frase inteira acumulada em cada pedaço: se o trecho novo começa com o que já temos,
+  // ele substitui (é a mesma frase crescendo); se não, é uma frase nova e soma. Assim não repete palavras.
+  const juntar=lista=>{let acc='';for(const t0 of lista){const t=t0.trim();if(!t)continue;const a=acc.trim().toLowerCase(),n=t.toLowerCase();
+      if(!a||n.startsWith(a))acc=t;else if(!a.endsWith(n)&&!a.includes(n))acc=acc.trim()+' '+t}return acc};
+  rec.onresult=ev=>{const fin=[],tmp=[];for(let i=0;i<ev.results.length;i++)(ev.results[i].isFinal?fin:tmp).push(ev.results[i][0].transcript);
+    const f=juntar(fin),t=juntar(tmp.length?[f,...tmp]:[f]);sessao=f;$('#cTrans').value=(base+t).trim()};
+  rec.onerror=ev=>{if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){rec.__manter=false;$('#micDica').textContent='Permita o uso do microfone para o app nas configurações do navegador.'}};
+  rec.onend=()=>{if(sessao){base=(base+sessao).replace(/\s*$/,' ');sessao=''}V2.trans=base.trim();salvaV();$('#cTrans').value=V2.trans;
+    if(gravando&&rec.__manter){try{rec.start();return}catch{}}micUI(false)};
   rec.__manter=true;try{rec.start();micUI(true)}catch{toast('Não consegui ligar o microfone.')}
 };
 
