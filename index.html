@@ -230,6 +230,16 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .grade b{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var(--sand);font-weight:500}
 .ver img{width:100%;max-width:320px;border-radius:3px;margin-top:6px;display:block}
 .dem{border-left-color:var(--red)!important}
+.mic-box{display:flex;align-items:center;gap:16px}
+.mic{flex:none;width:84px;height:84px;border-radius:50%;border:3px solid var(--gold);background:radial-gradient(circle,#3a0a10,#1a0305);color:var(--sand);cursor:pointer;display:grid;place-items:center;
+  box-shadow:0 0 0 3px var(--groove),inset 0 2px 6px #0009;transition:background .2s,color .2s,box-shadow .2s}
+.mic.on{background:radial-gradient(circle,#ffffff 0 30%,#ffd1d6 55%,var(--red) 100%);color:var(--red);border-color:#fff;
+  box-shadow:0 0 0 3px var(--groove),0 0 26px 6px #ff4d5ecc,0 0 60px 10px #ffffff55}
+@media (prefers-reduced-motion:no-preference){.mic.on{animation:micpulse 1.2s ease-in-out infinite}@keyframes micpulse{50%{box-shadow:0 0 0 3px var(--groove),0 0 40px 12px #ff4d5eee,0 0 80px 18px #ffffff77}}}
+.mic-txt{display:grid;gap:3px}.mic-txt b{font-family:var(--f-num);font-size:24px;letter-spacing:.04em;color:var(--gold)}.mic-txt small{font-size:12.5px;color:var(--sand)}
+.secao .ck .op button{font-size:12px}
+.email{border-left:3px solid var(--gold);background:#00000040;padding:10px;display:grid;gap:6px;margin-top:8px}
+.email h4{margin:0;font-family:var(--f-disp);color:var(--gold);font-size:14px}
 </style>
 
 <div class="app" id="app">
@@ -290,6 +300,30 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div class="panel" id="pilItens" style="padding:0"></div>
         <div class="acts"><button class="btn" type="button" id="bEnviar">Enviar</button></div>
         <p class="note" id="pilAviso"></p>
+      </section>
+
+      <!-- CHECKLIST DA SUPERVISÃO (visita) -->
+      <section class="view" id="tela-check">
+        <h2 class="t">Checklist da supervisão</h2>
+        <div class="sub">Marque o que viu, grave a conversa e gere o relatório com os e-mails para os setores.</div>
+        <div class="panel">
+          <div class="grid2">
+            <label class="f">Loja<select class="inp" id="cLoja"></select></label>
+            <label class="f">Data<input class="inp" type="date" id="cData"></label>
+          </div>
+          <label class="f" style="margin-top:8px">Gerente presente<input class="inp" id="cGerente" maxlength="80"></label>
+        </div>
+        <div class="panel mic-box">
+          <button type="button" class="mic" id="bMic" aria-pressed="false" aria-label="Gravar áudio da visita">
+            <svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+          </button>
+          <div class="mic-txt"><b id="micStatus">Toque para gravar</b><small id="micDica">Fale as particularidades da visita. A fala vira texto na hora.</small></div>
+        </div>
+        <label class="f">Transcrição da visita<textarea class="inp" id="cTrans" rows="5" placeholder="O que você falar aparece aqui. Você também pode digitar."></textarea></label>
+        <div class="sec">Checklist da loja</div>
+        <div id="cSecoes"></div>
+        <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button><button class="btn ghost" type="button" id="bLimpar">Nova visita</button></div>
+        <div id="cRel"></div>
       </section>
 
       <!-- REVISÃO (supervisão) -->
@@ -877,9 +911,9 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
 
   }
   $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${S.perfil.master?'SUPERVISÃO · REGIONAL RAMON':esc(S.perfil.nome.toUpperCase())}`;
-  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']])
+  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']])
     .map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');
-  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?4:2},1fr)`;
+  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?5:2},1fr)`;
   $('#selLojaBox').hidden=!S.perfil.master;
   if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML='<option value="">Regional Ramon (todas)</option>'+L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
     $('#selLoja').onchange=async e=>{S.cod=e.target.value;try{await carregar()}catch(err){toast(err.message)}}}
@@ -1023,12 +1057,575 @@ $('#fDem').addEventListener('submit',async e=>{e.preventDefault();
     toast('Demanda criada');$('#dTitulo').value='';$('#dDetalhe').value='';dSel.clear();await carregarFila();rDemandas()}catch(err){toast(err.message)}});
 $('#listaDemM').addEventListener('click',async e=>{const b=e.target.closest('[data-enc]');if(!b)return;try{await api('encerrarDemanda',{id:b.dataset.enc});await carregarFila();rDemandas();toast('Demanda encerrada')}catch(err){toast(err.message)}});
 
+/* ---------- checklist da supervisão: microfone, relatório (Gemini) e e-mails ---------- */
+const CHECK=[
+ {
+  "id": "pre",
+  "t": "0. Antes da visita (preparação)",
+  "setor": "loja",
+  "itens": [
+   {
+    "id": "pre1",
+    "t": "Faturamento x meta proporcional (ritmo) em dia",
+    "ref": "Vem do painel",
+    "setor": "loja"
+   },
+   {
+    "id": "pre2",
+    "t": "Crescimento sobre o ano passado",
+    "ref": "Vem do painel",
+    "setor": "loja"
+   },
+   {
+    "id": "pre3",
+    "t": "P.A. no alvo da regional",
+    "ref": "Meta 1,60",
+    "setor": "loja"
+   },
+   {
+    "id": "pre4",
+    "t": "Ticket médio dentro do histórico da loja",
+    "setor": "loja"
+   },
+   {
+    "id": "pre5",
+    "t": "Bolsas e acessórios na meta",
+    "ref": "Vem do painel",
+    "setor": "loja"
+   },
+   {
+    "id": "pre6",
+    "t": "Cartão: aprovados no ritmo da meta",
+    "ref": "Mínimo 1 por dia",
+    "setor": "loja"
+   },
+   {
+    "id": "pre7",
+    "t": "Estoque parado e grades furadas sob controle",
+    "ref": "Vem da Central de Giro",
+    "setor": "loja"
+   },
+   {
+    "id": "pre8",
+    "t": "Bateu a meta nos últimos 3 meses",
+    "setor": "loja"
+   },
+   {
+    "id": "pre9",
+    "t": "Plano de ação da última visita executado",
+    "setor": "loja"
+   }
+  ]
+ },
+ {
+  "id": "imp",
+  "t": "1. Primeira impressão da loja",
+  "setor": "loja",
+  "itens": [
+   {
+    "id": "imp1",
+    "t": "Fachada e letreiro em perfeito estado",
+    "setor": "manutencao"
+   },
+   {
+    "id": "imp2",
+    "t": "Vitrine forte, com novidades e produtos heróis",
+    "ref": "Numeração completa",
+    "setor": "vm"
+   },
+   {
+    "id": "imp3",
+    "t": "Comunicação da campanha atualizada (loja positivada)",
+    "setor": "vm"
+   },
+   {
+    "id": "imp4",
+    "t": "Preço visível nos produtos",
+    "setor": "loja"
+   },
+   {
+    "id": "imp5",
+    "t": "Limpeza impecável: salão, vidros e trilhos de LED",
+    "setor": "loja"
+   },
+   {
+    "id": "imp6",
+    "t": "Organização geral, sem caixas no salão",
+    "setor": "loja"
+   },
+   {
+    "id": "imp7",
+    "t": "Iluminação adequada",
+    "setor": "manutencao"
+   },
+   {
+    "id": "imp8",
+    "t": "Música ambiente e climatização corretas",
+    "setor": "manutencao"
+   },
+   {
+    "id": "imp9",
+    "t": "TV funcionando com o vídeo da campanha",
+    "setor": "ti"
+   },
+   {
+    "id": "imp10",
+    "t": "Mesa de entrada que vende",
+    "setor": "vm"
+   },
+   {
+    "id": "imp11",
+    "t": "Loja viva: gerente no salão, equipe ativa, caixa girando",
+    "setor": "loja"
+   }
+  ]
+ },
+ {
+  "id": "ven",
+  "t": "2. Atendimento e venda",
+  "setor": "loja",
+  "itens": [
+   {
+    "id": "ven1",
+    "t": "Cliente recebida em até 10 segundos",
+    "setor": "loja"
+   },
+   {
+    "id": "ven2",
+    "t": "Abordagem na vitrine e atendimento consultivo",
+    "setor": "loja"
+   },
+   {
+    "id": "ven3",
+    "t": "Vendedor conhece o produto e argumenta",
+    "ref": "Material, conforto, combinação de look",
+    "setor": "loja"
+   },
+   {
+    "id": "ven4",
+    "t": "MIX em todo atendimento",
+    "ref": "Calçado, bolsa e acessório",
+    "setor": "loja"
+   },
+   {
+    "id": "ven5",
+    "t": "Bolsa oferecida em todos os atendimentos",
+    "setor": "loja"
+   },
+   {
+    "id": "ven6",
+    "t": "Cross sell e upsell acontecendo",
+    "setor": "loja"
+   },
+   {
+    "id": "ven7",
+    "t": "Caixa oferece adicional (glossy, acessório)",
+    "setor": "loja"
+   },
+   {
+    "id": "ven8",
+    "t": "Caixa rápido, chama a cliente pelo nome",
+    "setor": "loja"
+   },
+   {
+    "id": "ven9",
+    "t": "Cliente levada até a porta",
+    "setor": "loja"
+   },
+   {
+    "id": "ven10",
+    "t": "Venda sem dependência de promoção",
+    "ref": "Liquidação fora da vitrine principal",
+    "setor": "loja"
+   }
+  ]
+ },
+ {
+  "id": "time",
+  "t": "3. Time comercial e gestão",
+  "setor": "loja",
+  "itens": [
+   {
+    "id": "time1",
+    "t": "Gerente domina os números e a diária de hoje",
+    "setor": "loja"
+   },
+   {
+    "id": "time2",
+    "t": "Gestão diária: P.A. por vendedora acompanhado no grupo",
+    "ref": "Mini metas",
+    "setor": "loja"
+   },
+   {
+    "id": "time3",
+    "t": "Gerente cobra metas e dá feedback (1:1 da semana)",
+    "setor": "loja"
+   },
+   {
+    "id": "time4",
+    "t": "Gerente presente no horário de pico",
+    "ref": "Subgerente abre, gerente fecha",
+    "setor": "loja"
+   },
+   {
+    "id": "time5",
+    "t": "Equipe engajada, com energia e senso de urgência",
+    "setor": "loja"
+   },
+   {
+    "id": "time6",
+    "t": "Uniformizados no padrão",
+    "setor": "rh"
+   },
+   {
+    "id": "time7",
+    "t": "Quadro atual igual ao ideal",
+    "ref": "Vagas em aberto?",
+    "setor": "rh"
+   },
+   {
+    "id": "time8",
+    "t": "Sem absenteísmo, faltas registradas",
+    "setor": "rh"
+   },
+   {
+    "id": "time9",
+    "t": "Corridas e premiações motivando",
+    "setor": "loja"
+   },
+   {
+    "id": "time10",
+    "t": "Auxiliar proativo e organizado (Omni)",
+    "setor": "loja"
+   },
+   {
+    "id": "time11",
+    "t": "Plano de ação ativo para loja abaixo de 100%",
+    "ref": "Quem cobra, quando e como",
+    "setor": "loja"
+   }
+  ]
+ },
+ {
+  "id": "crm",
+  "t": "4. Cartão Sonho, cadastro e CRM",
+  "setor": "loja",
+  "itens": [
+   {
+    "id": "crm1",
+    "t": "Consulta do cartão em 100% dos atendimentos",
+    "ref": "Boleta com CPF e nome antes do caixa",
+    "setor": "loja"
+   },
+   {
+    "id": "crm2",
+    "t": "Taxa de consulta acima de 10%",
+    "setor": "loja"
+   },
+   {
+    "id": "crm3",
+    "t": "Aprovou, ativa na hora",
+    "ref": "Ativação ≥ 90%",
+    "setor": "loja"
+   },
+   {
+    "id": "crm4",
+    "t": "Equipe domina os benefícios do cartão",
+    "setor": "credsystem"
+   },
+   {
+    "id": "crm5",
+    "t": "Credit Line instalado e funcionando",
+    "setor": "ti"
+   },
+   {
+    "id": "crm6",
+    "t": "Associação de cadastro na meta",
+    "ref": "Meta 90%",
+    "setor": "loja"
+   },
+   {
+    "id": "crm7",
+    "t": "Cadastro completo e CPF em todas as vendas",
+    "ref": "E-mail, celular, aniversário e CEP",
+    "setor": "loja"
+   },
+   {
+    "id": "crm8",
+    "t": "CRM Dito em dia, mensagens humanizadas",
+    "ref": "50 contatos por vendedor por dia útil",
+    "setor": "loja"
+   },
+   {
+    "id": "crm9",
+    "t": "Grupo VIP ativo e movimentado",
+    "setor": "loja"
+   }
+  ]
+ },
+ {
+  "id": "dig",
+  "t": "5. Digital e Omni",
+  "setor": "loja",
+  "itens": [
+   {
+    "id": "dig1",
+    "t": "Código de vendedor usado nas vendas digitais",
+    "setor": "loja"
+   },
+   {
+    "id": "dig2",
+    "t": "Instagram movimentado todo dia",
+    "ref": "3 stories + 1 feed",
+    "setor": "loja"
+   },
+   {
+    "id": "dig3",
+    "t": "Lives em loja acontecendo",
+    "setor": "loja"
+   },
+   {
+    "id": "dig4",
+    "t": "Pedidos do e-commerce atendidos rápido",
+    "setor": "loja"
+   },
+   {
+    "id": "dig5",
+    "t": "Omni sem pendências (devoluções em dia)",
+    "setor": "loja"
+   },
+   {
+    "id": "dig6",
+    "t": "Time entende o Omni como venda",
+    "setor": "loja"
+   }
+  ]
+ },
+ {
+  "id": "vm",
+  "t": "6. VM e exposição",
+  "setor": "vm",
+  "itens": [
+   {
+    "id": "vm1",
+    "t": "Best sellers e heróis em destaque",
+    "setor": "vm"
+   },
+   {
+    "id": "vm2",
+    "t": "Combinações prontas (look completo)",
+    "setor": "vm"
+   },
+   {
+    "id": "vm3",
+    "t": "Expositor de bolsas de fácil acesso",
+    "setor": "vm"
+   },
+   {
+    "id": "vm4",
+    "t": "Jornada clara e pontos frios aproveitados",
+    "setor": "vm"
+   },
+   {
+    "id": "vm5",
+    "t": "Preço e comunicação claros",
+    "setor": "vm"
+   }
+  ]
+ },
+ {
+  "id": "est",
+  "t": "7. Estoque e produto",
+  "setor": "loja",
+  "itens": [
+   {
+    "id": "est1",
+    "t": "Estoque limpo, organizado e sinalizado",
+    "setor": "loja"
+   },
+   {
+    "id": "est2",
+    "t": "Produtos fáceis de localizar",
+    "setor": "loja"
+   },
+   {
+    "id": "est3",
+    "t": "Ocupação do estoque sob controle",
+    "setor": "loja"
+   },
+   {
+    "id": "est4",
+    "t": "Ruptura de campeões sinalizada",
+    "setor": "compras"
+   },
+   {
+    "id": "est5",
+    "t": "Excesso de produtos lentos e coleção antiga com plano de saída",
+    "setor": "compras"
+   },
+   {
+    "id": "est6",
+    "t": "Reposição rápida no salão",
+    "setor": "loja"
+   },
+   {
+    "id": "est7",
+    "t": "Sem defeitos acumulados, B.O. em dia",
+    "setor": "loja"
+   },
+   {
+    "id": "est8",
+    "t": "Inventário confiável, sem notas pendentes",
+    "setor": "loja"
+   },
+   {
+    "id": "est9",
+    "t": "Remanejamentos feitos no dia, com romaneio e conferência",
+    "ref": "Pé trocado, mofo, sujeira; origem e destino na caixa",
+    "setor": "loja"
+   }
+  ]
+ },
+ {
+  "id": "manut",
+  "t": "8. Manutenção",
+  "setor": "manutencao",
+  "itens": [
+   {
+    "id": "manut1",
+    "t": "Ar-condicionado funcionando",
+    "setor": "manutencao"
+   },
+   {
+    "id": "manut2",
+    "t": "Lâmpadas e iluminação do salão e estoque",
+    "setor": "manutencao"
+   },
+   {
+    "id": "manut3",
+    "t": "Vidros, espelhos e acrílicos inteiros",
+    "setor": "manutencao"
+   },
+   {
+    "id": "manut4",
+    "t": "Teto, paredes e piso sem danos",
+    "setor": "manutencao"
+   },
+   {
+    "id": "manut5",
+    "t": "Provadores e portas em ordem",
+    "setor": "manutencao"
+   },
+   {
+    "id": "manut6",
+    "t": "Equipamentos: TEF, impressora e computador",
+    "setor": "ti"
+   },
+   {
+    "id": "manut7",
+    "t": "Celular e chip de WhatsApp da loja",
+    "setor": "ti"
+   }
+  ]
+ }
+], SETORES={
+ "_nota": "Rascunho levantado do Gmail somossonho em 30/10/2026 (funções deduzidas dos e-mails). Ramon aprova antes de o app enviar.",
+ "manutencao": {"nome": "Manutenção e Infraestrutura", "para": ["jessikasouza@somossonho.com.br", "manutencao@sonhodospes.com.br"], "cc": ["guilhermeoliveira@somossonho.com.br"]},
+ "compras": {"nome": "Planejamento / Produto (ruptura, excesso, mix)", "para": ["planejamento@somossonho.com.br", "liviafernandes@somossonho.com.br"], "cc": []},
+ "vm": {"nome": "Visual Merchandising", "para": ["carloschagas@somossonho.com.br", "maristelasegundo@somossonho.com.br"], "cc": []},
+ "rh": {"nome": "RH / DP", "para": ["dp@somossonho.com.br", "gabrielmourao@somossonho.com.br"], "cc": ["liviavaz@somossonho.com.br"]},
+ "ti": {"nome": "TI e Omni", "para": ["ti@somossonho.com.br", "suporteomni@somossonho.com.br"], "cc": ["paulapereira@somossonho.com.br"]},
+ "credsystem": {"nome": "Credsystem (cartão)", "para": ["priscilachaves@credsystem.com.br"], "cc": ["jhonatansilva@credsystem.com.br"]},
+ "loja": {"nome": "Loja visitada", "para": ["<e-mail da loja>"], "cc": []},
+ "sempre_cc": ["augustobandeira@somossonho.com.br"]
+}
+;
+const ST={ok:'OK',at:'Atenção',no:'Não',na:'N/A'};
+let V2=guarda.get('jarbas_visita');try{V2=V2?JSON.parse(V2):null}catch{V2=null}
+function novaV(){V2={cod:'',data:S.hoje,gerente:'',trans:'',resp:{},rel:null,envios:null};salvaV()}
+function salvaV(){guarda.set('jarbas_visita',JSON.stringify(V2))}
+function rCheck(){
+  if(!V2)novaV();const L=window.__V.lojas;
+  if(!$('#cLoja').options.length)$('#cLoja').innerHTML=L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
+  if(!V2.cod)V2.cod=S.cod||L[0].cod;
+  $('#cLoja').value=V2.cod;$('#cData').value=V2.data;$('#cGerente').value=V2.gerente;$('#cTrans').value=V2.trans;
+  $('#cSecoes').innerHTML=CHECK.map(s=>{const f=s.itens.filter(i=>V2.resp[i.id]?.v).length,aj=s.itens.filter(i=>['at','no'].includes(V2.resp[i.id]?.v)).length;
+    return `<details class="secao" ${f<s.itens.length?'':''}><summary><span>${esc(s.t)}</span><em class="tag ${aj?'r':f===s.itens.length?'ok':'n'}">${aj?aj+' ajustar':f+'/'+s.itens.length}</em></summary>`+
+    s.itens.map(i=>{const r=V2.resp[i.id]||{};return `<div class="ck ${['at','no'].includes(r.v)?'aj':''}" data-id="${i.id}"><span class="q">${esc(i.t)}${i.ref?`<small>${esc(i.ref)}</small>`:''}</span>
+      <span class="op">${Object.keys(ST).map(v=>`<button type="button" data-v="${v}" class="${r.v===v?'on':''}">${ST[v]}</button>`).join('')}</span>
+      <input class="inp obs" data-obs="${i.id}" placeholder="Observação" value="${esc(r.o||'')}"></div>`}).join('')+`</details>`}).join('');
+  rRel();
+}
+$('#cLoja').onchange=e=>{V2.cod=e.target.value;salvaV()};$('#cData').onchange=e=>{V2.data=e.target.value;salvaV()};
+$('#cGerente').oninput=e=>{V2.gerente=e.target.value;salvaV()};$('#cTrans').oninput=e=>{V2.trans=e.target.value;salvaV()};
+$('#cSecoes').addEventListener('click',e=>{const b=e.target.closest('.op button');if(!b)return;const ck=b.closest('.ck'),id=ck.dataset.id,r=V2.resp[id]||={};
+  r.v=r.v===b.dataset.v?'':b.dataset.v;ck.querySelectorAll('.op button').forEach(x=>x.classList.toggle('on',x.dataset.v===r.v));ck.classList.toggle('aj',['at','no'].includes(r.v));salvaV()});
+$('#cSecoes').addEventListener('input',e=>{const o=e.target.closest('[data-obs]');if(o){(V2.resp[o.dataset.obs]||={}).o=o.value;salvaV()}});
+$('#bLimpar').onclick=()=>{if(!$('#bLimpar').dataset.c){$('#bLimpar').dataset.c=1;$('#bLimpar').textContent='Toque de novo para apagar';setTimeout(()=>{delete $('#bLimpar').dataset.c;$('#bLimpar').textContent='Nova visita'},4000);return}
+  delete $('#bLimpar').dataset.c;$('#bLimpar').textContent='Nova visita';novaV();rCheck();toast('Visita nova')};
+
+// microfone: reconhecimento de voz do próprio celular (Chrome/Android e Safari/iPhone)
+const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,gravando=false,base='';
+function micUI(on){gravando=on;$('#bMic').classList.toggle('on',on);$('#bMic').setAttribute('aria-pressed',on);$('#micStatus').textContent=on?'Gravando… toque para parar':'Toque para gravar'}
+$('#bMic').onclick=()=>{
+  if(!Rec){$('#micDica').textContent='Este navegador não transcreve voz. Use o Chrome no Android ou o Safari no iPhone, ou use o microfone do teclado para ditar no campo abaixo.';return}
+  if(gravando){if(rec){rec.__manter=false;rec.stop()}return}
+  rec=new Rec();rec.lang='pt-BR';rec.continuous=true;rec.interimResults=true;base=V2.trans?V2.trans.replace(/\s*$/,' '):'';
+  rec.onresult=ev=>{let fin='',tmp='';for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;ev.results[i].isFinal?fin+=t+' ':tmp+=t}
+    if(fin){base+=fin;V2.trans=base;salvaV()}$('#cTrans').value=base+tmp};
+  rec.onerror=ev=>{if(ev.error==='not-allowed')$('#micDica').textContent='Permita o uso do microfone para o app nas configurações do navegador.'};
+  rec.onend=()=>{if(gravando&&rec.__manter){try{rec.start();return}catch{}}micUI(false);V2.trans=$('#cTrans').value;salvaV()};
+  rec.__manter=true;try{rec.start();micUI(true)}catch{toast('Não consegui ligar o microfone.')}
+};
+
+// relatório
+const nomeSetor=k=>SETORES[k]?.nome||k;
+$('#bRel').onclick=async()=>{
+  const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
+  const itens=[];CHECK.forEach(s=>s.itens.forEach(i=>{const r=V2.resp[i.id];if(r?.v)itens.push({secao:s.t,item:i.t,status:ST[r.v],obs:r.o||'',setor:i.setor})}));
+  if(!itens.length&&!V2.trans.trim()){toast('Marque itens do checklist ou grave a conversa antes.');return}
+  const b=$('#bRel');b.disabled=true;b.textContent='Gerando relatório…';
+  const ind=`ritmo ${p1(pct(l.venda,l.meta_periodo))}, meta do mês ${p1(pct(l.venda,l.meta_mes))}, P.A. ${num(l.pa)}, atendimentos ${l.atend}, bolsas ${l.bolsas??'?'}, associação ${l.assoc!=null?p1(l.assoc*100):'?'}`;
+  try{const s={};Object.keys(SETORES).filter(k=>!k.startsWith('_')&&k!=='sempre_cc').forEach(k=>s[k]=SETORES[k].nome);
+    const j=await api('relatorio',{loja:l.nome,data:V2.data,gerente:V2.gerente,indicadores:ind,itens,transcricao:V2.trans,setores:s});
+    V2.rel=j.relatorio;
+    V2.envios=(V2.rel.emails||[]).map(e=>{const cfg=SETORES[e.setor]||{};return {setor:e.setor,para:(cfg.para||[]).filter(x=>!x.startsWith('<')).join(', '),cc:(cfg.cc||[]).concat(SETORES.sempre_cc||[]).join(', '),assunto:`[${l.nome}] ${e.assunto||'Visita de supervisão'}`,corpo:e.corpo||'',ok:true}});
+    salvaV();rRel();$('#cRel').scrollIntoView({behavior:'smooth'});
+  }catch(err){toast(err.message)}finally{b.disabled=false;b.textContent='Gerar relatório'}};
+function rRel(){
+  const R=V2.rel;if(!R){$('#cRel').innerHTML='';return}
+  const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join('');
+  $('#cRel').innerHTML=`<div class="panel"><h3>Relatório da visita</h3><div class="md"><p>${esc(R.resumo||'')}</p>
+    ${R.pontos_fortes?.length?`<h4>Pontos fortes</h4>${li(R.pontos_fortes)}`:''}${R.pontos_atencao?.length?`<h4>Pontos de atenção</h4>${li(R.pontos_atencao)}`:''}
+    ${(R.topicos||[]).map(t=>`<h4>${esc(t.titulo)}</h4>${li(t.pontos)}`).join('')}
+    <h4>Plano de ação</h4>${(R.planos||[]).map(p=>`<li><b>${esc(p.acao)}</b> · ${esc(p.responsavel||'')} · ${esc(p.prazo||'')} · ${esc(p.prioridade||'')}</li>`).join('')}</div></div>
+    <div class="sec">E-mails para os setores · confira antes de enviar</div>`+
+    (V2.envios||[]).map((e,k)=>`<div class="email" data-k="${k}"><h4><label><input type="checkbox" data-f="ok" ${e.ok?'checked':''}> ${esc(nomeSetor(e.setor))}</label></h4>
+      <label class="f">Para<input class="inp" data-f="para" value="${esc(e.para)}" placeholder="e-mails separados por vírgula"></label>
+      <label class="f">Cópia<input class="inp" data-f="cc" value="${esc(e.cc)}"></label>
+      <label class="f">Assunto<input class="inp" data-f="assunto" value="${esc(e.assunto)}"></label>
+      <label class="f">Texto<textarea class="inp" rows="6" data-f="corpo">${esc(e.corpo)}</textarea></label></div>`).join('')+
+    `<div class="acts"><button class="btn" type="button" id="bEnviarEmails">Enviar e-mails marcados</button></div><p class="note">Os e-mails saem da conta ramonberba@somossonho.com.br. Só seguem endereços da empresa e da Credsystem.</p>`;
+  $('#bEnviarEmails').onclick=enviarEmails;
+}
+$('#cRel').addEventListener('input',e=>{const f=e.target.closest('[data-f]');if(!f)return;const k=+f.closest('.email').dataset.k;V2.envios[k][f.dataset.f]=f.type==='checkbox'?f.checked:f.value;salvaV()});
+$('#cRel').addEventListener('change',e=>{const f=e.target.closest('[data-f="ok"]');if(f){V2.envios[+f.closest('.email').dataset.k].ok=f.checked;salvaV()}});
+async function enviarEmails(){
+  const b=$('#bEnviarEmails'),sel=(V2.envios||[]).filter(e=>e.ok&&e.para.trim());
+  if(!sel.length){toast('Marque ao menos um e-mail com destinatário.');return}
+  if(!b.dataset.c){b.dataset.c=1;b.textContent=`Confirmar envio de ${sel.length} e-mail(s)`;return}
+  b.disabled=true;b.textContent='Enviando…';const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
+  const sp=s=>s.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
+  try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo})),registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel}});
+    toast(`${j.enviados} e-mail(s) enviados`+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
+  }catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;b.textContent='Enviar e-mails marcados'}}
+
 /* ---------- navegação ---------- */
-const VIEWS=['inicio','painel','pilar','revisao','demandas'];
-function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas'].includes(v)))v='inicio';
+const VIEWS=['inicio','painel','pilar','check','revisao','demandas'];
+function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['check','revisao','demandas'].includes(v)))v='inicio';
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
-  if(v==='revisao')rRevisao();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}}
+  if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}}
 $('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();ir(a.dataset.v)});
 try{history.scrollRestoration='manual'}catch{}
 if(S.pin)carregar().catch(()=>{S.pin=null;$('#telaLogin').hidden=false});
