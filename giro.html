@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5a0910">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jarbas">
+<meta name="robots" content="noindex,nofollow">
+<title>Jarbas · Giro</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<style>[hidden]{display:none!important}html,body{margin:0}</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@600;800&family=DM+Serif+Display&family=Outfit:wght@400;600;800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Playfair+Display:wght@600;800&family=Sora:wght@400;600;800&family=Unbounded:wght@500;800&display=swap">
+<style>
+/* Layout: cabeçalho com marca + seletor de regional; abas de trabalho; tabelas densas tipo planilha comercial.
+   As 10 identidades trocam tokens (cores, fontes, raio) e a posição da navegação. */
+:root{
+  --bg:#f6f4f8; --surface:#ffffff; --ink:#221a2b; --muted:#6c6177; --line:#e4dfe9;
+  --accent:#b0306a; --accent-ink:#ffffff; --accent-soft:#f6e3ec;
+  --good:#1f7a4d; --warn:#b26b00; --bad:#c0352b; --info:#2f5fa8;
+  --good-soft:#e2f2e9; --warn-soft:#fbefd9; --bad-soft:#fbe4e1; --info-soft:#e3ecf8;
+  --display:'Fraunces',Georgia,serif; --body:'Manrope',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17131b; --surface:#211b27; --ink:#efe9f3; --muted:#a79bb2; --line:#352c3d;
+  --accent:#e36aa0; --accent-ink:#1a0f15; --accent-soft:#3a2230;
+  --good:#5cc690; --warn:#e9a845; --bad:#f07a6f; --info:#7ea6e8;
+  --good-soft:#19352a; --warn-soft:#3b2d14; --bad-soft:#3d1f1c; --info-soft:#1c2a40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17131b; --surface:#211b27; --ink:#efe9f3; --muted:#a79bb2; --line:#352c3d;
+  --accent:#e36aa0; --accent-ink:#1a0f15; --accent-soft:#3a2230;
+  --good:#5cc690; --warn:#e9a845; --bad:#f07a6f; --info:#7ea6e8;
+  --good-soft:#19352a; --warn-soft:#3b2d14; --bad-soft:#3d1f1c; --info-soft:#1c2a40; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1380px;margin:0 auto}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,td.n,th.n{font-variant-numeric:tabular-nums}
+
+/* topo */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand svg{width:40px;height:40px;flex:none}
+.brand b{font-family:var(--display);font-size:21px;letter-spacing:-.01em;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.regs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:calc(var(--radius) + 4px);margin-left:auto;flex-wrap:wrap}
+.regs button{border:0;background:transparent;padding:7px 12px;border-radius:var(--radius);cursor:pointer;font-weight:700;font-size:13px;color:var(--muted)}
+.regs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav.tabs button{border:0;background:none;padding:10px 14px;cursor:pointer;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+.stamp{color:var(--muted);font-size:12px}
+
+main{padding-block:20px 60px;display:grid;gap:22px}
+h2{font-family:var(--display);font-size:22px;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+.lead{max-width:75ch;color:var(--ink);font-size:15px;margin:6px 0 0}
+.lead b{color:var(--accent)}
+section[hidden]{display:none}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.kpi span{display:block;color:var(--muted);font-size:12px;font-weight:600}
+.kpi b{display:block;font-family:var(--display);font-size:28px;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:12px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+th.sort{cursor:pointer}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right}
+tr:hover td{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+.prod b{display:block;font-weight:700}
+.prod small{color:var(--muted);font-family:var(--mono);font-size:11.5px}
+.route{white-space:nowrap;font-weight:700}
+.route i{font-style:normal;color:var(--accent);margin:0 4px}
+.grade{font-family:var(--mono);font-size:12px;white-space:nowrap}
+.grade span{display:inline-block;padding:1px 5px;border:1px solid var(--line);border-radius:4px;margin:0 2px 2px 0}
+.grade span.c{border-color:var(--accent);background:var(--accent-soft)}
+.why{color:var(--muted);font-size:12.5px;max-width:42ch}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.ok{background:var(--good-soft);color:var(--good)} .wa{background:var(--warn-soft);color:var(--warn)}
+.ba{background:var(--bad-soft);color:var(--bad)} .in{background:var(--info-soft);color:var(--info)}
+.ac{background:var(--accent-soft);color:var(--accent)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters select,.filters input{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:7px 10px;min-width:0}
+.filters input{flex:1 1 200px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;display:grid;gap:8px}
+.rtit{font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rcol{display:grid;gap:3px}.rcol .chip{justify-self:start;margin-bottom:2px}
+.rl{font-size:13px}.rl b{font-variant-numeric:tabular-nums}
+.ms{position:relative}
+.ms summary{list-style:none;cursor:pointer;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:7px 28px 7px 10px;white-space:nowrap}
+.ms summary::-webkit-details-marker{display:none}
+.ms summary::after{content:"▾";position:absolute;right:10px;color:var(--muted)}
+.msp{position:absolute;z-index:6;top:calc(100% + 4px);left:0;width:min(420px,calc(100vw - 32px));max-height:360px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px;box-shadow:0 8px 24px color-mix(in srgb,var(--ink) 14%,transparent)}
+.msi{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:5px 2px;cursor:pointer;font-size:13px}
+.msi input[type=checkbox]{flex:none;width:18px;height:18px;min-height:0;margin:0;accent-color:var(--accent)}
+.msi span:nth-child(2){min-width:0}
+.msh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;position:sticky;top:-10px;background:var(--surface);padding:4px 0;z-index:1}
+.msb{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:7px 12px;cursor:pointer;font-weight:700}
+.btn.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.done td{background:color-mix(in srgb,var(--accent-soft) 60%,transparent)}
+.bars{display:grid;gap:7px}
+.brow{display:grid;grid-template-columns:minmax(90px,150px) 1fr 70px;gap:10px;align-items:center;font-size:12.5px}
+.brow .t{height:14px;background:var(--bg);border-radius:3px;overflow:hidden;display:flex}
+.brow .t i{display:block;height:100%}
+.brow .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.note{font-size:12.5px;color:var(--muted);max-width:90ch}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--radius);font-weight:700;z-index:20}
+
+/* identidades */
+.ids{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}
+.id{border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;background:var(--surface);text-align:left;padding:0}
+.id[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
+.id .sw{padding:18px;display:flex;gap:12px;align-items:center;min-height:96px}
+.id .sw svg{width:52px;height:52px;flex:none}
+.id .sw b{font-size:20px;line-height:1.05;display:block}
+.id .sw small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.id .meta{padding:12px 14px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)}
+.id .meta b{color:var(--ink);display:block;font-size:13px;margin-bottom:2px}
+.id .pal{display:flex;height:8px}
+.id .pal i{flex:1}
+
+/* variação de navegação lateral */
+@media (min-width:1000px){
+  body.side .shell{display:grid;grid-template-columns:230px 1fr;gap:0}
+  body.side header.top{position:sticky;top:0;height:100vh;border-bottom:0;border-right:1px solid var(--line)}
+  body.side header.top .wrap{padding:0 16px}
+  body.side .bar{flex-direction:column;align-items:stretch}
+  body.side .regs{margin-left:0;flex-direction:column}
+  body.side nav.tabs{flex-direction:column}
+  body.side nav.tabs button{text-align:left;border-bottom:0;border-left:3px solid transparent;border-radius:0}
+  body.side nav.tabs button[aria-selected="true"]{border-left-color:var(--accent)}
+  body.side .content .wrap{max-width:none}
+}
+body.dense td{padding:6px 8px} body.dense .kpi b{font-size:24px}
+@media (prefers-reduced-motion:no-preference){.regs button,nav.tabs button,.id{transition:background .15s,color .15s,outline-color .15s}}
+@media (max-width:640px){.brand b{font-size:18px}.regs{margin-left:0;width:100%}.regs button{flex:1}}
+nav.tabs .ic,nav.tabs .cel,.mfil{display:none}
+@media (max-width:720px){nav.tabs .cel{display:inline}}
+/* celular: letras maiores, toques de 44px, abas fixas embaixo e tabelas viram cartões (rótulos vindos do cabeçalho via data-label) */
+@media (max-width:720px){
+  body{font-size:16px;line-height:1.5}
+  .bar{padding-block:10px;gap:10px}
+  .brand svg{width:34px;height:34px}
+  .brand small{font-size:12px}
+  .regs{padding:3px}
+  .regs button{font-size:15px;min-height:44px;padding:8px 6px}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);padding:4px max(6px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));gap:0;justify-content:space-between;box-shadow:0 -4px 16px color-mix(in srgb,var(--ink) 8%,transparent)}
+  nav.tabs button{flex:1 0 64px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px 6px;font-size:12px;font-weight:700;border-bottom:0;border-radius:12px;min-height:56px}
+  nav.tabs button .ic{display:block;width:24px;height:24px}
+  nav.tabs button .tx{white-space:nowrap}
+  nav.tabs button[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
+  nav.tabs button .lg{display:none}
+  main{padding-block:16px calc(96px + env(safe-area-inset-bottom,0px));gap:18px}
+  h2{font-size:25px}
+  h3{font-size:13.5px}
+  .lead{font-size:16px;line-height:1.55}
+  .note,.why{font-size:14px;max-width:none}
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi{padding:12px 14px}
+  .kpi span{font-size:13px}
+  .kpi b{font-size:26px}
+  .kpi small{font-size:13px}
+  .card{padding:14px;border-radius:14px}
+  .chip{font-size:13px;padding:3px 10px}
+  button,select,input,.btn,.ms summary{min-height:44px;font-size:16px}
+  .btn{padding:10px 14px;border-radius:12px}
+  header.top{position:static}
+  .filters{gap:10px}
+  .filters .mfil{display:block;flex:1 1 100%}
+  .filters:not(.aberto)>select,.filters:not(.aberto)>.ms{display:none}
+  table.tcard td.sel{border-bottom:0;padding-bottom:0;justify-content:flex-start;align-items:center;gap:10px}
+  table.tcard td.sel::before{max-width:none}
+  .filters>select,.filters>input,.filters>.ms{flex:1 1 100%;width:100%}
+  .filters>.btn{flex:1 1 calc(50% - 5px)}
+  .filters>.btn.p{flex-basis:100%}
+  .filters select,.filters input,.ms summary{padding:10px 12px;border-radius:12px;background:var(--surface)}
+  .msp{position:fixed;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:auto;max-height:60vh;z-index:9}
+  .msp{box-shadow:0 0 0 100vmax color-mix(in srgb,#000 40%,transparent);padding:0 12px 12px;top:calc(12px + env(safe-area-inset-top,0px));max-height:none}
+  .msh{top:0;padding:12px 0 8px;margin:0;border-bottom:1px solid var(--line)}
+  .msh b{font-size:17px}
+  .msh .btn{min-height:42px;padding:8px 18px}
+  .msb{margin:10px 0 4px}
+  .msb .btn{flex:1 1 auto;min-height:42px;padding:8px 10px;font-size:15px}
+  .msi{grid-template-columns:26px 1fr;font-size:16px;padding:10px 2px;border-bottom:1px solid var(--line);row-gap:4px}
+  .msi input[type=checkbox]{width:24px;height:24px;grid-row:span 2}
+  .msi .chip{grid-column:2;justify-self:start}
+  .brow{grid-template-columns:minmax(0,1fr) 38% 56px;font-size:14px;gap:8px}
+  .brow .t{height:16px}
+  .legend{font-size:13px}
+  .rl{font-size:15px}
+  /* tabelas em cartões */
+  table.tcard,table.tcard tbody{display:block;width:100%}
+  table.tcard thead{display:none}
+  table.tcard tr{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 14px 8px;margin-bottom:10px}
+  table.tcard tr.done{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  table.tcard tr:hover td,table.tcard tr.done td{background:none}
+  table.tcard td{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);text-align:right;font-size:15px}
+  table.tcard td:last-child{border-bottom:0}
+  table.tcard td::before{content:attr(data-label);color:var(--muted);font-size:13px;font-weight:600;text-align:left;flex:none;max-width:45%}
+  table.tcard td[data-label=""]::before{display:none}
+  table.tcard td.wide{display:block;text-align:left}
+  table.tcard td.wide::before{display:block;margin-bottom:4px;max-width:none}
+  table.tcard td.n{justify-content:space-between}
+  table.tcard td input[type=checkbox]{width:26px;height:26px;min-height:0;accent-color:var(--accent)}
+  table.tcard .prod b{font-size:16px}
+  table.tcard .prod small{font-size:13px}
+  table.tcard .route{white-space:normal}
+  table.tcard .grade{white-space:normal;font-size:14px}
+  table.tcard .grade span{padding:3px 7px;margin:0 4px 4px 0}
+  table.tcard td input[type=email]{width:100%;min-width:0!important}
+  table:not(.tcard){font-size:14px}
+  .toast{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+}
+</style><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Teko:wght@500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root:not(#_){--mono:"JetBrains Mono",Consolas,monospace;--good:#3ecf7a;--warn:#f2b33d;--bad:#ff8b95;--info:#8fc3ff;--good-soft:#123a24;--warn-soft:#3f2c0c;--bad-soft:#4a1219;--info-soft:#14283f;color-scheme:dark}
+html,body{background:
+  repeating-linear-gradient(90deg,#ffffff0d 0 1px,transparent 1px 3px),
+  repeating-linear-gradient(90deg,#0000001f 0 1px,transparent 1px 5px),
+  linear-gradient(170deg,#8e1520 0%,#5a0910 50%,#2a0507 100%) fixed;background-color:#2a0507}
+body::before{background:#5a0910}
+header.top{background:repeating-linear-gradient(90deg,#ffffff0b 0 1px,transparent 1px 3px),linear-gradient(180deg,#5a0910,#3a070b);border-bottom:2px solid #e3b04b}
+.brand b{font-size:30px;letter-spacing:.08em;color:#f4cf7a}
+.brand small{color:#d9b98a}
+.voltaJ{border:1px solid #e3b04b;background:#2a0507;color:#f4cf7a;border-radius:6px;padding:6px 10px;font:600 15px/1 "Teko",sans-serif;letter-spacing:.08em;cursor:pointer;text-decoration:none;flex:none}
+h2{font-size:30px;letter-spacing:.04em;text-transform:uppercase;color:#f4cf7a;font-weight:600}
+.kpi b{font-size:36px;color:#fff5e6}
+.card,.kpi,.rcard{background:linear-gradient(180deg,#45101599,#2a0507cc);border-color:#e3b04b44;box-shadow:inset 0 1px 0 #ffffff14}
+th{background:#3d0b10}
+.regs{background:#2a0507}
+nav.tabs button[aria-selected="true"]{color:#f4cf7a}
+.toast{background:#e3b04b;color:#2a0a0c}
+@media (max-width:720px){nav.tabs{background:linear-gradient(180deg,#5a0910,#2a0507);border-top:2px solid #e3b04b}.brand b{font-size:26px}h2{font-size:28px}.kpi b{font-size:32px}}
+#espera{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:#2a0507;color:#fff5e6;font:500 17px "Barlow",sans-serif}
+#espera b{display:block;font:600 34px "Teko",sans-serif;letter-spacing:.1em;color:#f4cf7a}
+</style>
+
+
+<div class="shell">
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <div class="brand" id="brand"></div>
+    <div class="regs" role="group" aria-label="Regional" id="regs"></div>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+</div></header>
+
+<div class="content"><main class="wrap" id="main">
+  <section id="v-geral"></section>
+  <section id="v-analise" hidden></section>
+  <section id="v-reman" hidden></section>
+  <section id="v-ruptura" hidden></section>
+  <section id="v-parado" hidden></section>
+  <section id="v-lojas" hidden></section>
+  <section id="v-ident" hidden></section>
+</main></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="text/plain" id="appjs">
+// PDF de remanejamento por loja, no visual Passo Certo (jsPDF). Usado pelo app (e-mail e "Baixar PDF").
+// dados = { loja, data, envia:[{grupo, pares, itens:[{ref, desc, cores:[{n,t}], qtd, foto, par}]}], recebe:[...] }
+// foto = jpeg em base64 (miniatura 240px) ou vazio. Retorna o PDF em base64.
+function pdfLoja(jsPDF, dados) {
+  const d = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  const W = 210, M = 14, BASE = 282;
+  const verde = [29, 107, 79], tinta = [22, 36, 29], mudo = [93, 110, 100], linha = [219, 229, 223], suave = [220, 239, 230], fundo = [243, 246, 244];
+  let y = 0;
+  const logo = (x, yy, s) => {
+    d.setFillColor(255, 255, 255); d.roundedRect(x, yy, s, s, s * 0.29, s * 0.29, 'F');
+    d.setFillColor(...verde); d.ellipse(x + s * 0.375, yy + s * 0.58, s * 0.105, s * 0.19, 'F');
+    d.ellipse(x + s * 0.645, yy + s * 0.4, s * 0.105, s * 0.19, 'F'); d.circle(x + s * 0.375, yy + s * 0.31, s * 0.045, 'F');
+  };
+  const cabecalho = () => {
+    d.setFillColor(...verde); d.rect(0, 0, W, 28, 'F'); logo(M, 7, 14);
+    d.setTextColor(255, 255, 255); d.setFont('times', 'normal'); d.setFontSize(19); d.text('Passo Certo', M + 19, 14);
+    d.setFont('helvetica', 'normal'); d.setFontSize(7.5); d.text('REMANEJAMENTO DE ESTOQUE  ·  SONHO DOS PÉS', M + 19, 20);
+    d.setFont('helvetica', 'bold'); d.setFontSize(12); d.text(dados.loja, W - M, 13, { align: 'right' });
+    d.setFont('helvetica', 'normal'); d.setFontSize(9); d.text(dados.data, W - M, 19, { align: 'right' });
+    y = 36;
+  };
+  const cabe = h => { if (y + h > BASE) { d.addPage(); cabecalho(); } };
+  const total = arr => arr.reduce((a, g) => a + g.pares, 0);
+  cabecalho();
+  // resumo
+  d.setFillColor(...fundo); d.roundedRect(M, y, W - 2 * M, 18, 3, 3, 'F');
+  const kp = [['Envia', total(dados.envia) + ' ' + (dados.envia.concat(dados.recebe).some(g => g.itens.some(i => i.par === false)) ? 'peças' : 'pares')], ['Recebe', total(dados.recebe) + ' ' + (dados.envia.concat(dados.recebe).some(g => g.itens.some(i => i.par === false)) ? 'peças' : 'pares')], ['Lojas envolvidas', String(new Set([...dados.envia, ...dados.recebe].map(g => g.grupo)).size)]];
+  kp.forEach(([r, v], i) => { const x = M + 6 + i * 60; d.setTextColor(...mudo); d.setFont('helvetica', 'normal'); d.setFontSize(8); d.text(r.toUpperCase(), x, y + 7); d.setTextColor(...tinta); d.setFont('helvetica', 'bold'); d.setFontSize(13); d.text(v, x, y + 14); });
+  y += 26;
+  const secao = (titulo, grupos, rot) => {
+    cabe(16); d.setTextColor(...tinta); d.setFont('times', 'normal'); d.setFontSize(15); d.text(titulo, M, y); y += 7;
+    if (!grupos.length) { d.setFont('helvetica', 'normal'); d.setFontSize(10); d.setTextColor(...mudo); d.text('Nada neste remanejamento.', M, y); y += 10; return; }
+    for (const g of grupos) {
+      cabe(34); d.setFillColor(...suave); d.roundedRect(M, y - 4.5, W - 2 * M, 8, 2, 2, 'F');
+      d.setTextColor(...verde); d.setFont('helvetica', 'bold'); d.setFontSize(10); d.text(`${rot} ${g.grupo}`, M + 3, y + 1);
+      d.text(`${g.pares} ${g.itens.some(i => i.par === false) ? 'peças' : 'pares'}`, W - M - 3, y + 1, { align: 'right' }); y += 8;
+      for (const it of g.itens) {
+        const desc = d.splitTextToSize(it.desc, 112), cores = it.cores.map(c => `${c.n}:  ${c.t.replace(/:/g, '×').replace(/ /g, '   ')}`);
+        const h = Math.max(24, 9 + desc.length * 4.2 + cores.length * 4.6);
+        cabe(h);
+        if (it.foto) { try { d.addImage('data:image/jpeg;base64,' + it.foto, 'JPEG', M, y, 20, 20, 'f' + it.ref); /* alias: a mesma foto entra uma vez só no arquivo */ } catch (e) { } }
+        else { d.setDrawColor(...linha); d.setLineDashPattern([1, 1], 0); d.roundedRect(M, y, 20, 20, 2, 2); d.setLineDashPattern([], 0); }
+        const x = M + 25; let yy = y + 4;
+        d.setTextColor(...mudo); d.setFont('helvetica', 'normal'); d.setFontSize(8); d.text('REF. ' + it.ref, x, yy); yy += 4.5;
+        d.setTextColor(...tinta); d.setFont('helvetica', 'bold'); d.setFontSize(10); d.text(desc, x, yy); yy += desc.length * 4.2 + 0.8;
+        d.setFont('helvetica', 'normal'); d.setFontSize(9.5); for (const c of cores) { d.text(c, x, yy); yy += 4.6; }
+        d.setTextColor(...verde); d.setFont('helvetica', 'bold'); d.setFontSize(16); d.text(String(it.qtd), W - M - 3, y + 11, { align: 'right' });
+        d.setTextColor(...mudo); d.setFont('helvetica', 'normal'); d.setFontSize(7.5); d.text(it.par === false ? 'peças' : 'pares', W - M - 3, y + 15, { align: 'right' });
+        y += h; d.setDrawColor(...linha); d.setLineWidth(0.2); d.line(M, y - 2, W - M, y - 2);
+      }
+      y += 4;
+    }
+    y += 3;
+  };
+  secao('O que a loja envia', dados.envia, 'Para');
+  secao('O que a loja vai receber', dados.recebe, 'De');
+  cabe(14); d.setTextColor(...mudo); d.setFont('helvetica', 'normal'); d.setFontSize(9);
+  d.text('Confiram a numeração na separação e avisem se algum par não estiver na loja.', M, y + 2);
+  const n = d.getNumberOfPages();
+  for (let i = 1; i <= n; i++) { d.setPage(i); d.setFontSize(7.5); d.setTextColor(...mudo); d.text(`Gerado pela Central Passo Certo  ·  página ${i} de ${n}`, W / 2, 291, { align: 'center' }); }
+  return d.output('datauristring').split(',')[1];
+}
+if (typeof module !== 'undefined') module.exports = { pdfLoja };
+
+// no app de celular (PWA) os dados vêm do servidor depois do PIN: window.PLAT = {DATA, regs, emails, salvaEmails, enviar, nome}
+const DATA = window.PLAT?.DATA || null;
+const REGS = {U:'Universal · 3 regionais', R:'Regional Ramon', T:'Regional Tuanne', M:'Regional Mandu'};
+if(window.PLAT?.regs) for(const k of Object.keys(REGS)) if(!PLAT.regs.includes(k)) delete REGS[k]; // supervisor vê só a sua regional
+const REGC = {R:'var(--accent)', T:'var(--info)', M:'var(--warn)'};
+
+/* ---------- 10 identidades (logo + paleta + tipografia + navegação) ---------- */
+const IDS = [
+ {k:'jarbas', nome:'GIRO', tag:'estoque · remanejamentos', fonte:"'Teko','Chakra Petch',sans-serif", corpo:"'Barlow','Segoe UI',system-ui,sans-serif", nav:'top', r:6,
+  l:{bg:'#2a0507',surface:'#3d0b10',ink:'#fff5e6',muted:'#d9b98a',line:'#ffffff24',accent:'#e3b04b','accent-soft':'#5c3a12'},
+  d:{bg:'#2a0507',surface:'#3d0b10',ink:'#fff5e6',muted:'#d9b98a',line:'#ffffff24',accent:'#e3b04b','accent-soft':'#5c3a12'},
+  logo:c=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="${c}"/><circle cx="24" cy="24" r="18" fill="#14171c"/><circle cx="24" cy="24" r="15" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="24" cy="24" r="12" fill="#eafcff"/><path d="M24 15l7 12H17z" fill="none" stroke="#14171c" stroke-width="2" stroke-linejoin="round"/></svg>`},
+ {k:'giro', nome:'Giro', tag:'central de produtos', fonte:"'Fraunces',Georgia,serif", corpo:"'Manrope',system-ui,sans-serif", nav:'top', r:10,
+  l:{bg:'#f6f4f8',surface:'#fff',ink:'#221a2b',muted:'#6c6177',line:'#e4dfe9',accent:'#b0306a','accent-soft':'#f6e3ec'},
+  d:{bg:'#17131b',surface:'#211b27',ink:'#efe9f3',muted:'#a79bb2',line:'#352c3d',accent:'#e36aa0','accent-soft':'#3a2230'},
+  logo:c=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="${c}"/><path d="M14 27c0-6 5-11 11-11 4 0 7 2 9 5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><path d="M34 15v6h-6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 31h17c2 0 3 1 3 2v1H13z" fill="#fff"/></svg>`},
+ {k:'passo', nome:'Passo Certo', tag:'remanejamento inteligente', fonte:"'DM Serif Display',Georgia,serif", corpo:"'Outfit',system-ui,sans-serif", nav:'side', r:14,
+  l:{bg:'#f3f6f4',surface:'#fff',ink:'#16241d',muted:'#5d6e64',line:'#dbe5df',accent:'#1d6b4f','accent-soft':'#dcefe6'},
+  d:{bg:'#101814',surface:'#18231d',ink:'#e6f0ea',muted:'#93a89c',line:'#2a3a31',accent:'#5fc49b','accent-soft':'#1d3a2e'},
+  logo:c=>`<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="${c}"/><ellipse cx="18" cy="28" rx="5" ry="9" fill="#fff"/><ellipse cx="31" cy="19" rx="5" ry="9" fill="#fff" opacity=".7"/><circle cx="18" cy="15" r="2" fill="#fff"/><circle cx="31" cy="6.5" r="0" /></svg>`},
+ {k:'grade', nome:'Grade Viva', tag:'34 · 35 · 36 · 37 · 38 · 39 · 40', fonte:"'Syne',system-ui,sans-serif", corpo:"'Manrope',system-ui,sans-serif", nav:'top', r:4,
+  l:{bg:'#f5f5f2',surface:'#fff',ink:'#1b1b18',muted:'#66665e',line:'#e2e2da',accent:'#d2461f','accent-soft':'#fae3da'},
+  d:{bg:'#141412',surface:'#1e1e1b',ink:'#eeeee8',muted:'#a3a39a',line:'#33332e',accent:'#ff7a4f','accent-soft':'#3d2219'},
+  logo:c=>`<svg viewBox="0 0 48 48">${[0,1,2,3,4,5,6].map(i=>`<rect x="${3+i*6}" y="${[30,22,10,6,14,24,32][i]}" width="5" height="${42-[30,22,10,6,14,24,32][i]}" rx="1" fill="${c}" opacity="${[.4,.7,1,1,1,.7,.4][i]}"/>`).join('')}</svg>`},
+ {k:'vitrine', nome:'Vitrine', tag:'estoque · giro · rede', fonte:"'Playfair Display',Georgia,serif", corpo:"'Sora',system-ui,sans-serif", nav:'top', r:2,
+  l:{bg:'#faf7f5',surface:'#fff',ink:'#1f1716',muted:'#715f5b',line:'#ece2de',accent:'#7a1f2b','accent-soft':'#f3e0e2'},
+  d:{bg:'#160f10',surface:'#211819',ink:'#f2e9e8',muted:'#ad9a97',line:'#3a2c2d',accent:'#e0737f','accent-soft':'#3b1d22'},
+  logo:c=>`<svg viewBox="0 0 48 48"><path d="M6 42V16a18 12 0 0 1 36 0v26z" fill="none" stroke="${c}" stroke-width="3"/><path d="M14 36c3-1 6-5 8-10l3 2c-2 4-2 7 0 8z" fill="${c}"/><path d="M6 42h36" stroke="${c}" stroke-width="3"/></svg>`},
+ {k:'salto', nome:'Salto', tag:'giro de calçados femininos', fonte:"'Unbounded',system-ui,sans-serif", corpo:"'Outfit',system-ui,sans-serif", nav:'side', r:16,
+  l:{bg:'#f7f3fb',surface:'#fff',ink:'#20152e',muted:'#6a5d7c',line:'#e6def0',accent:'#6a2bd1','accent-soft':'#ebe0fb'},
+  d:{bg:'#130e1a',surface:'#1d1627',ink:'#eee8f6',muted:'#a598b8',line:'#33294a',accent:'#a982f5','accent-soft':'#2c1f48'},
+  logo:c=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="${c}"/><path d="M11 30c6 0 10-3 14-9 2-3 6-4 9-2l2 2-3 2-2-1c-2 0-3 2-4 4l-2 4h12v3H11z" fill="#fff"/><path d="M33 23l2 13" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`},
+ {k:'rota', nome:'Rota', tag:'da loja parada para a que vende', fonte:"'Bricolage Grotesque',system-ui,sans-serif", corpo:"'Manrope',system-ui,sans-serif", nav:'top', r:12,
+  l:{bg:'#f2f5f9',surface:'#fff',ink:'#14202e',muted:'#5c6b7c',line:'#dbe3ec',accent:'#1f5fbf','accent-soft':'#dfe9f8'},
+  d:{bg:'#0f141b',surface:'#171e28',ink:'#e6edf5',muted:'#93a2b4',line:'#283444',accent:'#6aa2f5','accent-soft':'#1a2c46'},
+  logo:c=>`<svg viewBox="0 0 48 48"><circle cx="11" cy="35" r="6" fill="${c}"/><circle cx="37" cy="13" r="6" fill="none" stroke="${c}" stroke-width="3"/><path d="M15 31c4-6 6-14 16-16" fill="none" stroke="${c}" stroke-width="3" stroke-dasharray="3 3"/><path d="M27 10l5 4-5 4" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/></svg>`},
+ {k:'par', nome:'Par Perfeito', tag:'produto certo na loja certa', fonte:"'Fraunces',Georgia,serif", corpo:"'Sora',system-ui,sans-serif", nav:'top', r:20,
+  l:{bg:'#fbf6f2',surface:'#fff',ink:'#2a1b12',muted:'#7a6658',line:'#efe3d9',accent:'#c0562b','accent-soft':'#f8e3d8'},
+  d:{bg:'#18110d',surface:'#231915',ink:'#f4ebe4',muted:'#b19f92',line:'#3c2d24',accent:'#f08a5d','accent-soft':'#3f2519'},
+  logo:c=>`<svg viewBox="0 0 48 48"><circle cx="18" cy="24" r="13" fill="${c}"/><circle cx="30" cy="24" r="13" fill="none" stroke="${c}" stroke-width="3"/></svg>`},
+ {k:'curva', nome:'Curva 36', tag:'curva de numeração e giro', fonte:"'Sora',system-ui,sans-serif", corpo:"'Sora',system-ui,sans-serif", nav:'side', r:8,
+  l:{bg:'#f4f7f7',surface:'#fff',ink:'#122224',muted:'#587073',line:'#d9e4e5',accent:'#0f7c86','accent-soft':'#d9eff1'},
+  d:{bg:'#0e1617',surface:'#152022',ink:'#e3f0f1',muted:'#8ea8ab',line:'#263a3d',accent:'#4fc4cf','accent-soft':'#163a3e'},
+  logo:c=>`<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="${c}"/><path d="M6 38C14 38 16 10 24 10s10 28 18 28" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><text x="24" y="33" font-size="10" font-weight="800" text-anchor="middle" fill="#fff" font-family="Sora,sans-serif">36</text></svg>`},
+ {k:'troca', nome:'Troca Já', tag:'remanejamento entre regionais', fonte:"'Outfit',system-ui,sans-serif", corpo:"'Outfit',system-ui,sans-serif", nav:'top', r:999,
+  l:{bg:'#f7f7f3',surface:'#fff',ink:'#1d1d16',muted:'#686856',line:'#e5e5d9',accent:'#5b6b0c','accent-soft':'#eaf0cf'},
+  d:{bg:'#131310',surface:'#1d1d18',ink:'#eeeee4',muted:'#a6a693',line:'#33332a',accent:'#b8cf3e','accent-soft':'#2f3614'},
+  logo:c=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="none" stroke="${c}" stroke-width="3"/><path d="M14 19h18l-5-5M34 29H16l5 5" fill="none" stroke="${c}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`},
+ {k:'pulso', nome:'Pulso do Estoque', tag:'saúde da rede em tempo real', fonte:"'IBM Plex Mono',ui-monospace,monospace", corpo:"'Manrope',system-ui,sans-serif", nav:'top', r:6, dense:true,
+  l:{bg:'#f4f4f6',surface:'#fff',ink:'#17171c',muted:'#62626e',line:'#dfdfe6',accent:'#d0245b','accent-soft':'#f9dde6'},
+  d:{bg:'#0d0d10',surface:'#16161b',ink:'#ececf1',muted:'#9a9aa8',line:'#2a2a33',accent:'#ff5a8a','accent-soft':'#3a1626'},
+  logo:c=>`<svg viewBox="0 0 48 48"><rect x="2" y="2" width="44" height="44" rx="8" fill="none" stroke="${c}" stroke-width="3"/><path d="M8 26h8l3-8 5 16 4-12 3 4h9" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`},
+];
+let ID = IDS[0];
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function aplicaId(k){
+  ID = IDS.find(i=>i.k===k)||IDS[0];
+  const dark = document.documentElement.dataset.theme==='dark' || (document.documentElement.dataset.theme!=='light' && matchMedia('(prefers-color-scheme: dark)').matches);
+  const p = dark?ID.d:ID.l, s=document.documentElement.style;
+  for(const [t,v] of Object.entries(p)) s.setProperty('--'+t,v);
+  s.setProperty('--accent-ink', dark?'#111':'#fff');
+  s.setProperty('--display',ID.fonte); s.setProperty('--body',ID.corpo); s.setProperty('--radius',Math.min(ID.r,14)+'px');
+  document.body.classList.toggle('side',ID.nav==='side'); document.body.classList.toggle('dense',!!ID.dense);
+  document.getElementById('brand').innerHTML = ID.logo(p.accent)+`<div><b>${ID.nome}</b><small>${ID.tag}</small></div>`;
+  ls('cg-id2',ID.k); // padrão escolhido pelo Ramon: Passo Certo
+  if(!document.getElementById('v-ident').hidden) vIdent();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>aplicaId(ID.k));
+
+/* ---------- estado ---------- */
+let REG = ls('cg-reg')||'U', TAB = 'geral';
+if(!REGS[REG]) REG = Object.keys(REGS)[0];
+const feito = new Set(JSON.parse(ls('cg-feito')||'[]'));
+const $ = s=>document.querySelector(s);
+const f0 = n=>n==null?'—':Number(n).toLocaleString('pt-BR');
+const f1 = n=>n==null?'—':Number(n).toLocaleString('pt-BR',{maximumFractionDigits:1});
+const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LJ = Object.fromEntries(DATA.lojas.map(l=>[l.cod,l]));
+const FOTOS = DATA.fotos||{};
+const foto = (ref,px=48)=>FOTOS[ref]?`<img src="data:image/jpeg;base64,${FOTOS[ref]}" alt="" width="${px}" height="${px}" loading="lazy" style="border-radius:6px;border:1px solid var(--line);background:#fff;flex:none;object-fit:cover">`:`<span style="width:${px}px;height:${px}px;border-radius:6px;border:1px dashed var(--line);flex:none;display:inline-block"></span>`;
+const comFoto = (ref,html)=>`<div style="display:flex;gap:10px;align-items:flex-start">${foto(ref)}<div style="min-width:0">${html}</div></div>`;
+const nomeL = c=>{const l=LJ[c];return l?`${l.num} ${l.nome}`:c};
+const inReg = c=>REG==='U'||LJ[c]?.reg===REG;
+const lojasR = ()=>DATA.lojas.filter(l=>inReg(l.cod));
+const regTag = c=>`<span class="chip" style="background:color-mix(in srgb,${REGC[LJ[c]?.reg]} 16%,transparent);color:${REGC[LJ[c]?.reg]}">${LJ[c]?.reg==='R'?'Ramon':LJ[c]?.reg==='T'?'Tuanne':'Mandu'}</span>`;
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),2200)}
+async function copia(txt){try{await navigator.clipboard.writeText(txt);toast('Copiado')}catch(e){const ta=document.createElement('textarea');ta.value=txt;document.body.append(ta);ta.select();toast('Selecione e copie (Ctrl+C)');setTimeout(()=>ta.remove(),6000)}}
+
+const status = l=>{
+  if(l.wosPar==null) return '<span class="chip in">sem venda</span>';
+  if(l.wosPar>40) return '<span class="chip ba">excesso</span>';
+  if(l.wosPar>26) return '<span class="chip wa">alto</span>';
+  if(l.wosPar<10) return '<span class="chip in">enxuto</span>';
+  return '<span class="chip ok">saudável</span>';
+};
+const tamsHtml = t=>t.split(' ').map(x=>{const [s,q]=x.split(':');return `<span class="${/^(35|36|37|35\/36|36\/37)$/.test(s)?'c':''}">${s}×${q}</span>`}).join('');
+// regional: só trocas dentro dela; Universal: rede toda, inclusive entre regionais
+// cada sugestão vem calculada para uma visão (esc = U, R, T ou M); dados antigos sem esc caem no filtro por regional
+const sugR = ()=>DATA.sugest.filter(s=>s.esc?s.esc===REG:(REG==='U'||(inReg(s.de)&&inReg(s.para))));
+
+/* ---------- Visão geral ---------- */
+function vGeral(){
+  const L=lojasR(), S=sugR();
+  const sum=(a,k)=>a.reduce((x,y)=>x+(y[k]||0),0);
+  const estPar=sum(L,'estPar'), v7=sum(L,'v7Par'), par=sum(L,'parParados'), furo=sum(L,'furadas'), calc=sum(L,'calc');
+  const wos=v7?estPar/v7:null;
+  const piores=[...L].filter(l=>l.wosPar).sort((a,b)=>b.wosPar-a.wosPar).slice(0,3);
+  const melhores=[...L].filter(l=>l.wosPar).sort((a,b)=>a.wosPar-b.wosPar).slice(0,3);
+  const inter=S.filter(s=>!s.intra).length;
+  const nome = REGS[REG];
+  $('#v-geral').innerHTML=`
+  <div><h2>${nome}</h2>
+  <p class="lead">Cobertura de <b>${f1(wos)} semanas</b> em calçados (${f0(estPar)} pares para ${f0(v7)} vendidos em 7 dias).
+  ${f0(par)} pares (${f1(100*par/estPar)}%) estão nos 30 produtos mais parados de cada loja, sem venda há 30 dias ou mais.
+  ${f1(100*furo/calc)}% dos produtos de calçado com 4+ pares estão com grade furada no 35, 36 ou 37.
+  Maior excesso: ${piores.map(l=>`${l.num} ${l.nome} (${f1(l.wosPar)} sem.)`).join(', ')}. Mais enxutas: ${melhores.map(l=>`${l.num} ${l.nome} (${f1(l.wosPar)})`).join(', ')}.</p></div>
+  <div class="kpis">
+    <div class="kpi"><span>Vendeu em 7 dias</span><b>${f0(v7)}</b><small>pares · ${f0(sum(L,'v7Peca'))} peças de bolsa/acessório</small></div>
+    <div class="kpi"><span>Estoque de calçado</span><b>${f0(estPar)}</b><small>pares · ${f0(sum(L,'estPeca'))} peças</small></div>
+    <div class="kpi"><span>Cobertura (WOS)</span><b>${f1(wos)}</b><small>semanas no ritmo atual</small></div>
+    <div class="kpi"><span>Pares parados 30+ dias</span><b>${f0(par)}</b><small>top 30 parados de cada loja</small></div>
+    <div class="kpi"><span>Remanejamentos sugeridos</span><b>${f0(S.length)}</b><small>${f0(sum(S,'qtd'))} pares · ${inter} entre regionais</small></div>
+  </div>
+  <div class="grid2">
+   <div class="card"><h3>Cobertura por loja (semanas de calçado)</h3>
+    <div class="legend"><span><i style="background:var(--good)"></i>10–26 saudável</span><span><i style="background:var(--warn)"></i>26–40 alto</span><span><i style="background:var(--bad)"></i>40+ excesso</span><span><i style="background:var(--info)"></i>&lt;10 enxuto</span></div>
+    <div class="bars">${[...L].sort((a,b)=>(b.wosPar||0)-(a.wosPar||0)).map(l=>{const w=l.wosPar||0,mx=Math.max(...L.map(x=>x.wosPar||0));const c=w>40?'var(--bad)':w>26?'var(--warn)':w<10?'var(--info)':'var(--good)';return `<div class="brow"><span>${l.num} ${esc(l.nome)}</span><div class="t"><i style="width:${100*w/mx}%;background:${c}"></i></div><span class="v">${f1(w)}</span></div>`}).join('')}</div></div>
+   <div class="card"><h3>Idade do estoque por coleção (peças)</h3>
+    <div class="bars">${colecoes().slice(0,12).map(c=>`<div class="brow"><span>${esc(c.col)}</span><div class="t"><i style="width:${c.p}%;background:${/2026|2027|PERMANENTE|CLASSICOS/.test(c.col)?'var(--accent)':'var(--muted)'}"></i></div><span class="v">${f0(c.v)}</span></div>`).join('')}</div>
+    <p class="note">Coleções de 2025 para trás em cinza: são o primeiro alvo de liquidação e de vitrine de oportunidade.</p></div>
+  </div>
+  <div class="card"><h3>Mix por subgrupo</h3><div class="scroll"><table><thead><tr><th>Subgrupo</th><th>Grupo</th><th class="n">Estoque</th><th class="n">% do total</th><th class="n">Em produtos parados</th></tr></thead><tbody>
+  ${subgrupos().slice(0,18).map(s=>`<tr><td>${esc(s.sub)}</td><td>${esc(s.grupo)}</td><td class="n">${f0(s.v)}</td><td class="n">${f1(s.p)}%</td><td class="n">${REG==='U'?f0(s.paradoTop):'—'}</td></tr>`).join('')}</tbody></table></div></div>
+  <p class="note">Vendas até ${DATA.vendasAte} · estoque de ${DATA.estoqueDe} · ${DATA.pedidosLidos} pedidos de abastecimento lidos para a data de entrada · gerado ${DATA.geradoEm}. Fonte: Sistema Corporativo (Giro da loja, Estoque da loja, Pedidos da loja).</p>`;
+}
+function colecoes(){const tot=DATA.col.reduce((a,c)=>a+(REG==='U'?c.est:c.reg[REG]),0);return DATA.col.map(c=>({col:c.col,v:REG==='U'?c.est:c.reg[REG]})).sort((a,b)=>b.v-a.v).map(c=>({...c,p:100*c.v/Math.max(...DATA.col.map(x=>REG==='U'?x.est:x.reg[REG]))}))}
+function subgrupos(){const tot=DATA.sub.reduce((a,c)=>a+(REG==='U'?c.est:c.reg[REG]),0);return DATA.sub.map(s=>({...s,v:REG==='U'?s.est:s.reg[REG]})).sort((a,b)=>b.v-a.v).map(s=>({...s,p:100*s.v/tot}))}
+
+/* ---------- Remanejamentos ---------- */
+function fechaOrigem(e){const d=document.getElementById('fDe');if(d&&d.open&&!d.contains(e.target)){d.open=false;RF.abre=false}}
+const RF={tipo:'',escopo:'',des:new Set(),para:'',q:'',st:'todos',abre:false,resumo:false,resumoTodas:true,sub:'',grupo:''};
+// unidade do item: calçado em pares, bolsa e acessório em peças
+const un=s=>s.par===false?'pç':'pr', unL=s=>s.par===false?'peças':'pares';
+const GRUPO_N={CALCADOS:'Calçados',BOLSAS:'Bolsas',ACESSORIOS:'Acessórios'};
+// saúde do estoque da loja pela cobertura de calçados (semanas)
+const saude = l=>l.wosPar==null?{t:'sem venda',c:'in',ok:false}:l.wosPar>40?{t:'excesso',c:'ba',ok:false}:l.wosPar>26?{t:'alto',c:'wa',ok:false}:l.wosPar<10?{t:'enxuto',c:'in',ok:false}:{t:'saudável',c:'ok',ok:true};
+const rotSaude = l=>{const s=saude(l);return `${s.ok?'':'⚠ '}${s.t}${l.wosPar!=null?' · '+f1(l.wosPar)+' sem':''}`};
+function vReman(){
+  const S=sugR(); const L=lojasR();
+  const opts = (arr,sel)=>'<option value="">Todas</option>'+arr.map(l=>`<option value="${l.cod}" ${sel===l.cod?'selected':''}>${l.num} ${esc(l.nome)}</option>`).join('');
+  const lista = S.filter(s=>(!RF.tipo||s.tipo===RF.tipo)&&(!RF.escopo||(RF.escopo==='intra'?s.intra:!s.intra))&&(!RF.des.size||RF.des.has(s.de))&&(!RF.para||s.para===RF.para)&&(!RF.sub||(s.sub||'—')===RF.sub)&&(!RF.grupo||(s.grupo||'CALCADOS')===RF.grupo)
+    &&(!RF.q||(s.desc+' '+s.ref+' '+s.sub).toLowerCase().includes(RF.q.toLowerCase()))&&(RF.st==='todos'||(RF.st==='feitos'?feito.has(key(s)):!feito.has(key(s)))));
+  const todas = DATA.lojas;
+  $('#v-reman').innerHTML=`
+  <div><h2>Remanejamentos ${REG==='U'?'da rede':'· '+REGS[REG]}</h2>
+  <p class="lead">${REG==='U'?'Modo Universal: inclui trocas entre as 3 regionais.':'Só trocas entre lojas da '+REGS[REG]+'. Para trocas entre regionais, clique em Universal.'} Duas regras: <b>recompor grade</b> de produto que a loja vende e está sem 35/36/37, e <b>tirar produto parado</b> (30+ dias sem venda) para a loja que vendeu nos últimos 30 dias. Lojas fora do RJ (083, 089, 099) e a 097 (CD do e-commerce) não enviam nem recebem. As duas de BH (048 e 051) trocam só entre si, quando a rota passa de 30 peças. Nada sai de loja onde o produto chegou há menos de ${DATA.carencia} dias (${f0(DATA.bloqueados)} casos barrados pela carência). A origem só cede o 35/36/37 se o produto estiver parado nela.</p></div>
+  <div class="card">
+   <div class="filters${RF.filAberto?' aberto':''}">
+    <button class="btn mfil" id="bFiltros" type="button" aria-expanded="${!!RF.filAberto}">${RF.filAberto?'Fechar filtros':'Filtros'}${[RF.tipo,RF.escopo,RF.para,RF.sub,RF.st!=='todos'?1:''].filter(Boolean).length+RF.des.size?` · ${[RF.tipo,RF.escopo,RF.para,RF.sub,RF.st!=='todos'?1:''].filter(Boolean).length+(RF.des.size?1:0)} ativo(s)`:''}</button>
+    <select id="fTipo" aria-label="Tipo"><option value="">Todos os tipos</option><option value="grade" ${RF.tipo==='grade'?'selected':''}>Recompor grade</option><option value="parado" ${RF.tipo==='parado'?'selected':''}>Tirar parado</option></select>
+    <select id="fEsc" aria-label="Escopo"><option value="">Dentro e entre regionais</option><option value="intra" ${RF.escopo==='intra'?'selected':''}>Só dentro da regional</option><option value="inter" ${RF.escopo==='inter'?'selected':''}>Só entre regionais</option></select>
+    <details class="ms" id="fDe" ${RF.abre?'open':''}><summary>Origem: ${RF.des.size?RF.des.size+' loja'+(RF.des.size>1?'s':''):'todas'}</summary>
+     <div class="msp"><div class="msh"><b>Lojas de origem</b><button class="btn p" id="deOk" type="button">Concluir</button></div><div class="msb"><button class="btn" id="deTodas" type="button">Marcar todas</button><button class="btn" id="deLimpa" type="button">Limpar</button><button class="btn" id="deExc" type="button">Só com excesso</button></div>
+     ${origens().map(l=>{const s=saude(l);return `<label class="msi"><input type="checkbox" id="de-${l.cod}" value="${l.cod}" ${RF.des.has(l.cod)?'checked':''}> <span>${l.num} ${esc(l.nome)}</span> <span class="chip ${s.c}">${rotSaude(l)}</span></label>`}).join('')}</div></details>
+    <select id="fPara" aria-label="Destino"><option value="">Destino: todas</option>${origens().map(l=>`<option value="${l.cod}" ${RF.para===l.cod?'selected':''}>${l.num} ${esc(l.nome)} · ${rotSaude(l)}</option>`).join('')}</select>
+    <select id="fGrupo" aria-label="Grupo"><option value="">Grupo: todos</option>${(()=>{const c={};for(const s of S)c[s.grupo||'CALCADOS']=(c[s.grupo||'CALCADOS']||0)+s.qtd;return Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,q])=>`<option value="${esc(k)}" ${RF.grupo===k?'selected':''}>${esc(GRUPO_N[k]||k)} · ${q} ${k==='CALCADOS'?'pr':'pç'}</option>`).join('')})()}</select>
+    <select id="fSub" aria-label="Categoria"><option value="">Categoria: todas</option>${(()=>{const c={};for(const s of S)if(!RF.grupo||(s.grupo||'CALCADOS')===RF.grupo){const k=s.sub||'—';(c[k]??={q:0,s})['q']+=s.qtd}return Object.entries(c).sort((a,b)=>b[1].q-a[1].q).map(([k,v])=>`<option value="${esc(k)}" ${RF.sub===k?'selected':''}>${esc(k)} · ${v.q} ${un(v.s)}</option>`).join('')})()}</select>
+    <select id="fSt" aria-label="Situação"><option value="todos" ${RF.st==='todos'?'selected':''}>Todas</option><option value="feitos" ${RF.st==='feitos'?'selected':''}>Selecionadas</option><option value="abertos" ${RF.st==='abertos'?'selected':''}>Não selecionadas</option></select>
+    <input id="fQ" type="search" placeholder="Buscar produto, referência ou subgrupo" value="${esc(RF.q)}">
+    <button class="btn" id="bTodas">Selecionar as visíveis</button>
+    <button class="btn" id="bResumo" aria-pressed="${RF.resumo?'true':'false'}">${RF.resumo?'Fechar visão geral':'Visão geral por loja'}</button>
+    <button class="btn p" id="bEmail">Preparar e-mails (${selR().length} selecionadas)</button>
+    <button class="btn" id="bCopia">Copiar lista para WhatsApp</button>
+   </div>
+   ${RF.resumo?resumoLojas():''}
+   <div id="emails"></div>
+   <p class="note">${f0(lista.length)} sugestões · ${f0(lista.reduce((a,s)=>a+s.qtd,0))} pares · venda esperada no destino em 30 dias ≈ ${f0(lista.reduce((a,s)=>a+ganho(s),0))} pares.</p>
+   <div class="scroll"><table><thead><tr><th>Selec.</th><th>Produto</th><th>Origem → Destino</th><th>Numeração</th><th class="n">Qtd</th><th>Justificativa comercial</th><th class="n">Venda esperada</th></tr></thead><tbody>
+   ${lista.slice(0,400).map(s=>`<tr class="${feito.has(key(s))?'done':''}"><td><input type="checkbox" id="ck-${esc(key(s))}" data-k="${esc(key(s))}" ${feito.has(key(s))?'checked':''} aria-label="Selecionar para e-mail"></td>
+     <td class="prod">${comFoto(s.ref,`<b>${esc(s.desc)}</b><small>${s.ref} · ${esc(s.sub||'')} · ${esc(s.col||'')}</small>`)}</td>
+     <td><div class="route">${nomeL(s.de)}<i>→</i>${nomeL(s.para)}</div>${regTag(s.de)} ${s.intra?'':'<span class="chip ac">entre regionais</span> '}${regTag(s.para)}</td>
+     <td class="grade">${s.cores.map(c=>`<div><small>${esc(c.n)}</small><br>${tamsHtml(c.t)}</div>`).join('')}</td>
+     <td class="n"><b>${s.qtd}</b> ${un(s)}</td>
+     <td class="why">${porque(s)}</td>
+     <td class="n">${ganho(s)} ${un(s)}</td></tr>`).join('')}
+   </tbody></table></div>
+   ${lista.length>400?`<p class="note">Mostrando as 400 de maior prioridade. Use os filtros para ver as outras.</p>`:''}
+  </div>`;
+  const bind=(id,k,ev='change')=>$(id).addEventListener(ev,e=>{RF[k]=e.target.value;vReman(); if(ev==='input'){const el=$('#fQ');el.focus();el.setSelectionRange(el.value.length,el.value.length)}});
+  bind('#fTipo','tipo');bind('#fEsc','escopo');bind('#fPara','para');bind('#fSub','sub');
+  $('#fGrupo').addEventListener('change',e=>{RF.grupo=e.target.value;RF.sub='';vReman()});
+  $('#fDe').addEventListener('toggle',e=>{RF.abre=e.target.open});
+  $('#deOk').addEventListener('click',()=>{RF.abre=false;$('#fDe').open=false});
+  // tocar fora da lista fecha (no celular ela cobre a tela)
+  document.removeEventListener('pointerdown',fechaOrigem); document.addEventListener('pointerdown',fechaOrigem);
+  document.querySelectorAll('#fDe input[type=checkbox]').forEach(c=>c.addEventListener('change',()=>{c.checked?RF.des.add(c.value):RF.des.delete(c.value);RF.abre=true;vReman()}));
+  $('#deTodas').onclick=()=>{origens().forEach(l=>RF.des.add(l.cod));RF.abre=true;vReman()};
+  $('#deLimpa').onclick=()=>{RF.des.clear();RF.abre=true;vReman()};
+  $('#deExc').onclick=()=>{RF.des=new Set(origens().filter(l=>l.wosPar>26).map(l=>l.cod));RF.abre=true;vReman()};bind('#fSt','st');bind('#fQ','q','input');
+  const contaSel=()=>{$('#bEmail').textContent=`Preparar e-mails (${selR().length} selecionadas)`};
+  document.querySelectorAll('#v-reman input[type=checkbox]').forEach(c=>c.addEventListener('change',e=>{const k=e.target.dataset.k;e.target.checked?feito.add(k):feito.delete(k);ls('cg-feito',JSON.stringify([...feito]));e.target.closest('tr').classList.toggle('done',e.target.checked);contaSel();if(RF.resumo){const y=scrollY;vReman();scrollTo(0,y)}}));
+  $('#bTodas').addEventListener('click',()=>{for(const s of lista.slice(0,400))feito.add(key(s));ls('cg-feito',JSON.stringify([...feito]));vReman()});
+  $('#bEmail').addEventListener('click',emails);
+  $('#bResumo').addEventListener('click',()=>{RF.resumo=!RF.resumo;vReman()});
+  $('#bFiltros').addEventListener('click',()=>{RF.filAberto=!RF.filAberto;vReman()});
+  $('#bCopiaResumo')?.addEventListener('click',()=>copia(textoResumo()));
+  $('#rsTodas')?.addEventListener('click',()=>{RF.resumoTodas=true;vReman()});
+  $('#rsSel')?.addEventListener('click',()=>{RF.resumoTodas=false;vReman()});
+  $('#bCopia').addEventListener('click',()=>{
+    const g={}; for(const s of lista.slice(0,400)) (g[s.de]??=[]).push(s);
+    const txt=Object.entries(g).map(([de,arr])=>`*Remanejamento · sai da ${nomeL(de)}*\n`+arr.map(s=>`• ${s.ref} ${s.desc} → ${nomeL(s.para)}: ${s.cores.map(c=>c.n+' '+c.t.replace(/:/g,'×')).join(' | ')} (${s.qtd} pr)`).join('\n')).join('\n\n');
+    copia(txt);
+  });
+}
+const key = s=>s.tipo+'|'+s.ref+'|'+s.de+'|'+s.para;
+// lojas que podem participar do remanejamento nesta visão (fora do RJ e 097 não entram)
+const origens = ()=>DATA.lojas.filter(l=>(!l.fora||l.bh)&&inReg(l.cod)).sort((a,b)=>a.num.localeCompare(b.num));
+const selR = ()=>sugR().filter(s=>feito.has(key(s)));
+// resumo das selecionadas por loja: quanto envia e para quem, quanto recebe e de quem (em peças/pares)
+const baseResumo = ()=>RF.resumoTodas?sugR():selR();
+function porLoja(){
+  const m={};
+  for(const s of baseResumo()){
+    const a=(m[s.de]??={env:{},rec:{}}), b=(m[s.para]??={env:{},rec:{}});
+    a.env[s.para]=(a.env[s.para]||0)+s.qtd; b.rec[s.de]=(b.rec[s.de]||0)+s.qtd;
+  }
+  const soma=o=>Object.values(o).reduce((x,y)=>x+y,0);
+  return Object.entries(m).map(([c,v])=>({c,env:Object.entries(v.env).sort((a,b)=>b[1]-a[1]),rec:Object.entries(v.rec).sort((a,b)=>b[1]-a[1]),te:soma(v.env),tr:soma(v.rec)})).sort((a,b)=>LJ[a.c].num.localeCompare(LJ[b.c].num));
+}
+const nCurto=c=>`${LJ[c].num} ${LJ[c].nome}`;
+function visaoGeral(R){
+  // todas as lojas que participam nesta visão, mesmo as que não enviam nem recebem
+  const m=Object.fromEntries(R.map(r=>[r.c,r]));
+  const L=origens().map(l=>({l,te:m[l.cod]?.te||0,tr:m[l.cod]?.tr||0})).sort((a,b)=>b.te-a.te||b.tr-a.tr);
+  const mx=Math.max(1,...L.map(x=>Math.max(x.te,x.tr)));
+  return `<div class="scroll" style="margin-bottom:14px"><table><thead><tr><th>Loja</th><th>Estoque</th><th class="n">Sai</th><th class="n">Entra</th><th class="n">Saldo</th><th style="width:34%">Sai × entra</th></tr></thead><tbody>
+   ${L.map(x=>{const s=saude(x.l),sd=x.tr-x.te;return `<tr><td><b>${x.l.num}</b> ${esc(x.l.nome)}</td><td><span class="chip ${s.c}">${rotSaude(x.l)}</span></td><td class="n"><b>${f0(x.te)}</b></td><td class="n">${f0(x.tr)}</td><td class="n" style="color:${sd<0?'var(--warn)':sd>0?'var(--good)':'var(--muted)'}">${sd>0?'+':''}${f0(sd)}</td>
+     <td><div style="display:flex;height:12px;border-radius:3px;overflow:hidden;background:var(--bg)"><i style="width:${50*x.te/mx}%;background:var(--warn)"></i><i style="width:${50*x.tr/mx}%;background:var(--good)"></i></div></td></tr>`}).join('')}
+   <tr><td><b>Total</b></td><td></td><td class="n"><b>${f0(L.reduce((a,x)=>a+x.te,0))}</b></td><td class="n"><b>${f0(L.reduce((a,x)=>a+x.tr,0))}</b></td><td></td><td></td></tr></tbody></table></div>`;
+}
+function resumoLojas(){
+  const R=porLoja(), tot=baseResumo().reduce((a,s)=>a+s.qtd,0);
+  const chave=`<div class="regs" style="margin:0"><button type="button" id="rsTodas" aria-pressed="${!!RF.resumoTodas}">Todas as sugestões</button><button type="button" id="rsSel" aria-pressed="${!RF.resumoTodas}">Só as marcadas</button></div>`;
+  if(!R.length) return `<div class="card" style="margin:12px 0;background:var(--bg)"><div style="margin-bottom:8px">${chave}</div><p class="note" style="margin:0">${RF.resumoTodas?'Nenhuma sugestão nesta visão.':'Marque as sugestões na primeira coluna da tabela, ou veja todas as sugestões.'}</p></div>`;
+  const lin=(arr,pre)=>arr.map(([c,q])=>`<div class="rl"><b>${q}</b> peças ${pre} ${esc(nCurto(c))}</div>`).join('');
+  return `<div class="card" style="margin:12px 0;background:var(--bg)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Visão geral · ${R.length} lojas · ${f0(tot)} peças ${RF.resumoTodas?'sugeridas':'marcadas'}</h3>${chave}<button class="btn" id="bCopiaResumo">Copiar resumo</button></div>
+   ${visaoGeral(R)}
+   <h3>Por loja: para quem envia e de quem recebe</h3>
+   <div class="rgrid">${R.map(r=>`<div class="rcard"><div class="rtit">${esc(nCurto(r.c))} ${regTag(r.c)}</div>
+     <div class="rcol"><span class="chip wa">Envia ${r.te}</span>${r.env.length?lin(r.env,'para'):'<div class="rl note">Não envia</div>'}</div>
+     <div class="rcol"><span class="chip ok">Recebe ${r.tr}</span>${r.rec.length?lin(r.rec,'de'):'<div class="rl note">Não recebe</div>'}</div></div>`).join('')}</div></div>`;
+}
+const textoResumo=()=>porLoja().map(r=>`*${nCurto(r.c)}*\nEnvia ${r.te} peças: ${r.env.map(([c,q])=>q+' para '+nCurto(c)).join(', ')||'nada'}\nRecebe ${r.tr} peças: ${r.rec.map(([c,q])=>q+' de '+nCurto(c)).join(', ')||'nada'}`).join('\n\n');
+const EMAILS = JSON.parse(ls('cg-emails')||'{}');
+// e-mails das lojas no banco do artifact (mesma lista no celular e no computador); envio direto pelo conector Gmail
+let MCP=null, DB=null; const ENVIADO={};
+if(window.claude?.use){
+  claude.use('mcp').then(m=>{MCP=m;if($('#emails')?.innerHTML)emails()}).catch(()=>{});
+  claude.use('db').then(async d=>{DB=d;if(!d)return;try{const s=await d.doc('config/emails').get();if(s.exists){Object.assign(EMAILS,s.data());ls('cg-emails',JSON.stringify(EMAILS));if($('#emails')?.innerHTML)emails()}}catch(e){}}).catch(()=>{});
+}
+if(window.PLAT?.emails) Object.assign(EMAILS, PLAT.emails);
+const podeEnviar=()=>!!(MCP||window.PLAT?.enviar);
+let salvaT=null; const salvaEmails=()=>{ls('cg-emails',JSON.stringify(EMAILS));clearTimeout(salvaT);salvaT=setTimeout(()=>{DB?.doc('config/emails').set({...EMAILS}).catch(()=>{});window.PLAT?.salvaEmails?.({...EMAILS})},800)};
+const okEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e||'');
+const erroEnvio=e=>({needs_reauth:'Reconecte o Gmail em claude.ai › Configurações › Conectores.',server_not_connected:'Adicione o conector Gmail em claude.ai › Configurações › Conectores.',not_in_manifest:'O envio pelo Gmail não foi permitido para esta página. Libere em Permissões do artifact.',approval_required:'Precisa aprovar o envio pelo Gmail. Toque em Enviar de novo e permita.',blocked_by_policy:'Sua organização bloqueia esse envio.',server_unavailable:'Gmail não respondeu. Confira na caixa de Enviados antes de tentar de novo.',upstream_error:'Gmail não respondeu. Confira na caixa de Enviados antes de tentar de novo.'}[e?.code]||('Não enviou: '+(e?.message||e?.code||'erro')));
+// versão HTML do e-mail: tabela com a foto de cada produto (anexos inline, referenciados por cid:posição)
+function htmlEmail(cod,S){
+  const env=S.filter(s=>s.de===cod), rec=S.filter(s=>s.para===cod), L=LJ[cod];
+  const img=()=>''; // o Gmail tira imagens do corpo: as fotos vão no PDF anexo
+  const h=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const bloco=(arr,campo,rot)=>{const g={};for(const s of arr)(g[s[campo]]??=[]).push(s);return Object.entries(g).map(([c,a])=>`<h3 style="font:600 15px Arial,sans-serif;color:#1d6b4f;margin:18px 0 6px">${rot} ${h(nomeL(c))} · ${a.reduce((x,s)=>x+s.qtd,0)} pares</h3><table cellpadding="6" style="border-collapse:collapse;font:13px Arial,sans-serif;color:#16241d">${a.map(s=>`<tr style="border-bottom:1px solid #dbe5df"><td>${img(s.ref)}</td><td><b>${h(s.ref)} ${h(s.desc)}</b><br>${s.cores.map(c=>h(c.n)+': '+h(c.t.replace(/:/g,'×'))).join('<br>')}</td><td style="text-align:right"><b>${s.qtd}</b> pr</td></tr>`).join('')}</table>`).join('')};
+  const html=`<div style="font:14px Arial,sans-serif;color:#16241d;max-width:640px"><div style="background:#1d6b4f;color:#fff;padding:14px 18px;border-radius:10px 10px 0 0"><span style="font:20px Georgia,serif">Passo Certo</span><br><span style="font-size:11px;letter-spacing:.06em">REMANEJAMENTO DE ESTOQUE · SONHO DOS PÉS</span></div><div style="border:1px solid #dbe5df;border-top:0;padding:16px 18px;border-radius:0 0 10px 10px"><p>Olá, equipe <b>${h(L.num+' '+L.nome)}</b>.</p><p>Segue o remanejamento de estoque definido hoje (${new Date().toLocaleDateString('pt-BR')}). <b>No PDF anexo estão as fotos, referências, cores e numeração de cada produto.</b></p>`+
+    (env.length?`<h2 style="font:600 17px Arial,sans-serif;margin:20px 0 4px">O que a loja envia (separar e despachar)</h2>${bloco(env,'para','Para')}`:'<p>Esta loja não envia nada neste remanejamento.</p>')+
+    (rec.length?`<h2 style="font:600 17px Arial,sans-serif;margin:20px 0 4px">O que a loja vai receber</h2>${bloco(rec,'de','De')}`:'<p>Esta loja não recebe nada neste remanejamento.</p>')+
+    `<p style="margin-top:18px">Total: envia ${env.reduce((a,s)=>a+s.qtd,0)} pares · recebe ${rec.reduce((a,s)=>a+s.qtd,0)} pares.</p>`+
+    `<h3 style="color:#1d6b4f;margin:18px 0 6px">Regras do remanejamento</h3><ol style="padding-left:20px;margin:0">${REGRAS.map(r=>`<li>${h(r)}</li>`).join('')}</ol><p style="margin-top:16px">Obrigado!<br>Supervisão</p></div></div>`;
+  return {html};
+}
+// dados do PDF da loja: o que envia (por destino) e o que recebe (por origem), com foto
+function dadosPdf(cod,S){
+  // o envio pelo conector aceita ~1 MB: fotos entram até ~650 mil caracteres (cada foto conta uma vez)
+  let orc=650000; const usadas=new Set();
+  const ft=ref=>{const f=FOTOS[ref];if(!f)return '';if(usadas.has(ref))return f;if(f.length>orc)return '';orc-=f.length;usadas.add(ref);return f};
+  const grupo=(arr,campo)=>{const g={};for(const s of arr)(g[s[campo]]??=[]).push(s);return Object.entries(g).map(([c,a])=>({grupo:nCurto(c),pares:a.reduce((x,s)=>x+s.qtd,0),itens:a.map(s=>({ref:s.ref,desc:s.desc,cores:s.cores,qtd:s.qtd,foto:ft(s.ref),par:s.par}))}))};
+  return {loja:nCurto(cod),data:new Date().toLocaleDateString('pt-BR'),envia:grupo(S.filter(s=>s.de===cod),'para'),recebe:grupo(S.filter(s=>s.para===cod),'de')};
+}
+const nomePdf=cod=>`Remanejamento ${LJ[cod].num} ${LJ[cod].nome} ${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`;
+function pdfBase64(cod,S){ if(!window.jspdf) throw new Error('sem gerador de PDF'); return pdfLoja(window.jspdf.jsPDF,dadosPdf(cod,S)); }
+let DL=null; if(window.claude?.use) claude.use('downloads').then(d=>{DL=d}).catch(()=>{});
+async function baixarPdf(cod,S){
+  try{ const b=pdfBase64(cod,S), bin=atob(b), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    const blob=new Blob([u],{type:'application/pdf'});
+    if(!DL){ if(window.claude){toast('Baixar arquivo não está disponível nesta visualização');return}
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nomePdf(cod);document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);return }
+    await DL.save({filename:nomePdf(cod),data:blob}); }
+  catch(e){ if(e?.code!=='declined'&&e?.code!=='cancelled') toast('Não foi possível gerar o PDF'); }
+}
+async function enviar(c,S){
+  const t=textoEmail(c,S), to=EMAILS[c], hm=htmlEmail(c,S);
+  if(!okEmail(to)) return {ok:false,msg:'Coloque um e-mail válido.'};
+  let pdf=null; try{ pdf=pdfBase64(c,S); }catch(e){}
+  if(window.PLAT?.enviar){ // app de celular: o servidor (conta da empresa) envia
+    const r=await PLAT.enviar({to,cc:CC,assunto:t.assunto,corpo:t.corpo,html:hm.html,pdf,nomePdf:nomePdf(c)});
+    if(r.ok) ENVIADO[c]=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return r.ok?{ok:true}:{ok:false,msg:r.msg||'Não enviou.'};
+  }
+  try{ await MCP.callTool('Gmail','send_message',{to:[to],cc:CC,subject:t.assunto,body:t.corpo,htmlBody:hm.html,...(pdf?{attachments:[{content:pdf,filename:nomePdf(c),mimeType:'application/pdf'}]}:{})},{cache:false}); ENVIADO[c]=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    DB?.collection('envios').add?.({loja:c,para:to,assunto:t.assunto,itens:S.filter(s=>s.de===c||s.para===c).map(key),em:Date.now()}).catch(()=>{});
+    return {ok:true}; }
+  catch(e){ return {ok:false,msg:erroEnvio(e)}; }
+}
+// em cópia em todo e-mail de remanejamento (pedido do Ramon)
+const CC=['liviafernandes@somossonho.com.br','augustobandeira@somossonho.com.br'];
+// regras que vão em todo e-mail de remanejamento (texto aprovado pelo Ramon, opção 1)
+const REGRAS=['O remanejamento deve ser feito imediatamente, assim que este e-mail chegar.',
+  'A loja de origem solicita o carro, informando a quantidade de volumes (caixas) que vai despachar.',
+  'Cada caixa leva um espelho visível na parte de fora, com: loja de origem, loja de destino e número do romaneio.',
+  'Confiram a numeração na separação. Se algum par não estiver na loja, avisem antes de despachar.',
+  'Se houver inventário próximo, avisem a supervisão antes de separar a mercadoria.'];
+const linhaItem = s=>`${s.ref} ${s.desc}: ${s.cores.map(c=>c.n+' '+c.t.replace(/:/g,'×')).join(' | ')} (${s.qtd} ${unL(s)})`;
+function textoEmail(cod, S){
+  const env=S.filter(s=>s.de===cod), rec=S.filter(s=>s.para===cod), L=LJ[cod], hoje=new Date().toLocaleDateString('pt-BR');
+  const grupo=(arr,campo,rot)=>{const g={};for(const s of arr)(g[s[campo]]??=[]).push(s);return Object.entries(g).map(([c,a])=>`${rot} ${nomeL(c)} (${a.reduce((x,s)=>x+s.qtd,0)} pares):\n`+a.map(s=>'  • '+linhaItem(s)).join('\n')).join('\n\n')};
+  const assunto=`Remanejamento de estoque · ${L.num} ${L.nome} · ${hoje}`;
+  const corpo=`Olá, equipe ${L.num} ${L.nome}.\n\nSegue o remanejamento de estoque definido hoje (${hoje}).\n\n`+
+    (env.length?`O QUE A LOJA ENVIA (separar e despachar):\n\n${grupo(env,'para','Para')}\n\n`:'Esta loja não envia nada neste remanejamento.\n\n')+
+    (rec.length?`O QUE A LOJA VAI RECEBER:\n\n${grupo(rec,'de','De')}\n\n`:'Esta loja não recebe nada neste remanejamento.\n\n')+
+    `Total: envia ${env.reduce((a,s)=>a+s.qtd,0)} pares · recebe ${rec.reduce((a,s)=>a+s.qtd,0)} pares. As fotos de cada produto estão no PDF anexo.\n\n`+
+    `REGRAS DO REMANEJAMENTO\n`+REGRAS.map((r,i)=>`${i+1}. ${r}`).join('\n')+`\n\nObrigado!\nSupervisão`;
+  return {assunto,corpo,env:env.length,rec:rec.length};
+}
+function emails(){
+  const S=selR(); const box=$('#emails');
+  if(!S.length){box.innerHTML='<p class="note">Marque as sugestões na primeira coluna da tabela e clique de novo.</p>';return}
+  const cods=[...new Set(S.flatMap(s=>[s.de,s.para]))].sort((a,b)=>LJ[a].num.localeCompare(LJ[b].num));
+  box.innerHTML=`<div class="card" style="margin:12px 0;background:var(--bg)"><h3>${cods.length} e-mails, um por loja</h3>
+   <p class="note">Coloque o e-mail de cada loja uma vez: fica salvo e vale no celular e no computador. ${podeEnviar()?(window.PLAT?'"Enviar" dispara na hora pelo e-mail da empresa, com PDF das fotos anexo e cópia para Livia Fernandes e Augusto Bandeira.':'"Enviar" dispara na hora pela sua conta Gmail, com PDF das fotos anexo e cópia para Livia Fernandes e Augusto Bandeira (o Claude pede sua permissão no primeiro envio).'):'Envio direto indisponível nesta visualização: use "Abrir no Gmail" ou "Copiar".'}</p>
+   ${podeEnviar()?`<div id="confTodos" style="margin:8px 0"><button class="btn p" id="bTodosEnv">Enviar os ${cods.length} e-mails</button></div>`:''}
+   <div class="scroll"><table><thead><tr><th>Loja</th><th>E-mail da loja</th><th class="n">Envia</th><th class="n">Recebe</th><th></th><th>Situação</th></tr></thead><tbody>
+   ${cods.map(c=>{const t=textoEmail(c,S);return `<tr><td><b>${nomeL(c)}</b></td><td><input id="em-${c}" data-c="${c}" type="email" placeholder="loja@..." value="${esc(EMAILS[c]||'')}" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:6px 8px;width:100%;min-width:180px"></td><td class="n">${t.env}</td><td class="n">${t.rec}</td>
+     <td style="white-space:nowrap">${podeEnviar()?`<button class="btn p" data-env="${c}">Enviar</button> `:''}<button class="btn" data-pdf="${c}">Baixar PDF</button> <a class="btn" id="gm-${c}" target="_blank" rel="noopener" href="${gmail(c,t)}">Abrir no Gmail</a> <button class="btn" data-cp="${c}">Copiar</button></td>
+     <td id="st-${c}">${ENVIADO[c]?`<span class="chip ok">enviado ${ENVIADO[c]}</span>`:''}</td></tr>`}).join('')}
+   </tbody></table></div></div>`;
+  box.querySelectorAll('input[data-c]').forEach(i=>i.addEventListener('input',e=>{const c=e.target.dataset.c;EMAILS[c]=e.target.value.trim();salvaEmails();$('#gm-'+c).href=gmail(c,textoEmail(c,S))}));
+  const um=async(c,b)=>{const st=$('#st-'+c);if(b)b.disabled=true;st.innerHTML='<span class="chip in">enviando…</span>';const r=await enviar(c,S);st.innerHTML=r.ok?`<span class="chip ok">enviado ${ENVIADO[c]}</span>`:`<span class="chip ba">${esc(r.msg)}</span>`;if(b)b.disabled=false;return r.ok};
+  box.querySelectorAll('button[data-env]').forEach(b=>b.addEventListener('click',()=>um(b.dataset.env,b)));
+  box.querySelectorAll('button[data-pdf]').forEach(b=>b.addEventListener('click',()=>baixarPdf(b.dataset.pdf,S)));
+  $('#bTodosEnv')?.addEventListener('click',()=>{
+    const sem=cods.filter(c=>!okEmail(EMAILS[c])), conf=$('#confTodos');
+    conf.innerHTML=`<span class="note">Enviar ${cods.length-sem.length} e-mails agora${sem.length?` (${sem.length} lojas sem e-mail ficam de fora)`:''}?</span> <button class="btn p" id="bSim">Sim, enviar</button> <button class="btn" id="bNao">Cancelar</button>`;
+    $('#bNao').onclick=()=>emails();
+    $('#bSim').onclick=async()=>{conf.innerHTML='<span class="note">Enviando…</span>';let n=0;for(const c of cods){if(!okEmail(EMAILS[c])||ENVIADO[c])continue;if(await um(c))n++}conf.innerHTML=`<span class="chip ok">${n} e-mails enviados</span>`};
+  });
+  box.querySelectorAll('button[data-cp]').forEach(b=>b.addEventListener('click',()=>{const t=textoEmail(b.dataset.cp,S);copia(`Para: ${EMAILS[b.dataset.cp]||''}\nCópia: ${CC.join(', ')}\nAssunto: ${t.assunto}\n\n${t.corpo}`)}));
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+const gmail=(c,t)=>'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(EMAILS[c]||'')+'&cc='+encodeURIComponent(CC.join(','))+'&su='+encodeURIComponent(t.assunto)+'&body='+encodeURIComponent(t.corpo);
+const ganho = s=>{const v=s.vendaDestino14?s.vendaDestino14*2:(s.vendaDestino30||0);return Math.min(s.qtd,Math.max(1,Math.round(v*0.25*(s.tipo==='grade'?1.6:1))))};
+function porque(s){
+  if(s.tipo==='grade') return `Destino vendeu <b>${s.vendaDestino14} pares em 14 dias</b> e está sem ${s.furos.join(', ')}. ${s.paradoOrigem?`Na origem está parado${s.diasSemVendaOrigem?` há ${s.diasSemVendaOrigem} dias`:' há 30+ dias'}.`:'Origem tem a maior sobra e mantém 1 par no core.'}${s.entradaOrigem!=null?` Chegou na origem há ${s.entradaOrigem} dias.`:''}`;
+  return `Sem venda na origem ${s.diasSemVendaOrigem?`há ${s.diasSemVendaOrigem} dias`:'há 30+ dias'} (${s.saldoOrigem} pares lá). Destino vendeu <b>${s.vendaDestino30} em 30 dias</b>; vende em ${s.lojasVendem} lojas.${s.entradaOrigem!=null?` Chegou na origem há ${s.entradaOrigem} dias.`:' Sem entrada nos últimos 75 dias.'}`;
+}
+
+/* ---------- Análise de remanejamentos ---------- */
+function vAnalise(){
+  const S=sugR(), L=lojasR();
+  const tot=S.reduce((a,s)=>a+s.qtd,0), g=S.filter(s=>s.tipo==='grade'), p=S.filter(s=>s.tipo==='parado');
+  const intra=S.filter(s=>s.intra).reduce((a,s)=>a+s.qtd,0);
+  const rotas={}; for(const s of S){const k=s.de+'>'+s.para;(rotas[k]??={de:s.de,para:s.para,n:0,q:0,grade:0,intra:s.intra,vd:0}); rotas[k].n++; rotas[k].q+=s.qtd; if(s.tipo==='grade')rotas[k].grade+=s.qtd; rotas[k].vd+=ganho(s)}
+  const R=Object.values(rotas).sort((a,b)=>b.q-a.q);
+  const bal=L.map(l=>({l,env:S.filter(s=>s.de===l.cod).reduce((a,s)=>a+s.qtd,0),rec:S.filter(s=>s.para===l.cod).reduce((a,s)=>a+s.qtd,0)})).sort((a,b)=>(b.env-b.rec)-(a.env-a.rec));
+  const mx=Math.max(1,...bal.map(b=>Math.max(b.env,b.rec)));
+  const sub={}; for(const s of S){(sub[s.sub||'—']??={q:0,n:0}); sub[s.sub||'—'].q+=s.qtd; sub[s.sub||'—'].n++}
+  const SB=Object.entries(sub).sort((a,b)=>b[1].q-a[1].q).slice(0,12), mxs=Math.max(1,...SB.map(x=>x[1].q));
+  const fluxo={}; for(const s of S){const k=LJ[s.de].reg+'>'+LJ[s.para].reg; fluxo[k]=(fluxo[k]||0)+s.qtd}
+  const nm={R:'Ramon',T:'Tuanne',M:'Mandu'};
+  $('#v-analise').innerHTML=`
+  <div><h2>Análise de remanejamentos ${REG==='U'?'· rede':'· '+REGS[REG]}</h2>
+  <p class="lead">${f0(S.length)} movimentos, <b>${f0(tot)} pares</b> em ${f0(R.length)} rotas. ${f0(g.reduce((a,s)=>a+s.qtd,0))} pares recompõem grade de best-seller e ${f0(p.reduce((a,s)=>a+s.qtd,0))} tiram produto parado. ${f1(100*intra/Math.max(1,tot))}% fica dentro da mesma regional. Agrupe por rota: uma caixa por origem → destino barateia o frete.</p></div>
+  <div class="kpis">
+   <div class="kpi"><span>Pares a mover</span><b>${f0(tot)}</b><small>${f0(S.length)} movimentos</small></div>
+   <div class="kpi"><span>Recompor grade</span><b>${f0(g.reduce((a,s)=>a+s.qtd,0))}</b><small>${g.length} produtos best-seller</small></div>
+   <div class="kpi"><span>Tirar parado</span><b>${f0(p.reduce((a,s)=>a+s.qtd,0))}</b><small>${p.length} produtos 30+ dias sem venda</small></div>
+   <div class="kpi"><span>Venda esperada 30 dias</span><b>${f0(S.reduce((a,s)=>a+ganho(s),0))}</b><small>pares no destino</small></div>
+  </div>
+  <div class="grid2">
+   <div class="card"><h3>Saldo por loja (envia × recebe, pares)</h3>
+    <div class="legend"><span><i style="background:var(--warn)"></i>envia</span><span><i style="background:var(--good)"></i>recebe</span></div>
+    <div class="bars">${bal.map(b=>`<div class="brow"><span>${b.l.num} ${esc(b.l.nome)}</span><div class="t"><i style="width:${50*b.env/mx}%;background:var(--warn)"></i><i style="width:${50*b.rec/mx}%;background:var(--good)"></i></div><span class="v">${b.env}/${b.rec}</span></div>`).join('')}</div></div>
+   <div class="card"><h3>Fluxo entre regionais (pares)</h3><div class="scroll"><table data-fix="1"><thead><tr><th>Sai de \\ vai para</th>${['R','T','M'].map(r=>`<th class="n">${nm[r]}</th>`).join('')}</tr></thead><tbody>
+    ${['R','T','M'].map(a=>`<tr><td><b>${nm[a]}</b></td>${['R','T','M'].map(b=>`<td class="n">${a===b?`<b>${f0(fluxo[a+'>'+b]||0)}</b>`:f0(fluxo[a+'>'+b]||0)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <h3 style="margin-top:18px">Por subgrupo</h3><div class="bars">${SB.map(([k,v])=>`<div class="brow"><span>${esc(k)}</span><div class="t"><i style="width:${100*v.q/mxs}%;background:var(--accent)"></i></div><span class="v">${v.q} pr</span></div>`).join('')}</div></div>
+  </div>
+  <div class="card"><h3>Rotas (uma caixa por linha)</h3><div class="scroll"><table><thead><tr><th>Origem → Destino</th><th class="n">Produtos</th><th class="n">Pares</th><th class="n">Grade</th><th class="n">Venda esperada</th><th></th></tr></thead><tbody>
+  ${R.slice(0,80).map(r=>`<tr><td><div class="route">${nomeL(r.de)}<i>→</i>${nomeL(r.para)}</div>${r.intra?'':'<span class="chip ac">entre regionais</span>'}</td><td class="n">${r.n}</td><td class="n"><b>${r.q}</b></td><td class="n">${r.grade}</td><td class="n">${r.vd}</td><td><button class="btn" data-de="${r.de}" data-para="${r.para}">Ver itens</button></td></tr>`).join('')}</tbody></table></div></div>`;
+  document.querySelectorAll('#v-analise button[data-de]').forEach(b=>b.onclick=()=>{RF.des=new Set([b.dataset.de]);RF.para=b.dataset.para;RF.st='todos';TAB='reman';render();scrollTo(0,0)});
+}
+
+/* ---------- Rupturas ---------- */
+function vRuptura(){
+  const L=lojasR();
+  $('#v-ruptura').innerHTML=`
+  <div><h2>Rupturas e grade furada</h2><p class="lead">Best-sellers que acabaram em alguma loja e produtos que zeram a rede em até 7 dias. A recomposição de grade já aparece em Remanejamentos; o que não tem origem possível vira pedido de reposição ao CD.</p></div>
+  <div class="grid2">
+  <div class="card"><h3>Muito vendidos que acabaram em loja (rede, 14 dias)</h3><div class="scroll"><table><thead><tr><th>Produto</th><th class="n">Vendeu</th><th class="n">Saldo rede</th><th>Acabou em</th></tr></thead><tbody>
+  ${DATA.falta.filter(f=>REG==='U'||f.zeradas.some(z=>{const l=DATA.lojas.find(x=>x.num===z);return l&&inReg(l.cod)})).map(f=>`<tr><td class="prod">${comFoto(f.ref,`<b>${esc(f.desc)}</b><small>${f.ref}</small>`)}</td><td class="n">${f0(f.venda14)}</td><td class="n">${f0(f.saldo)}</td><td>${f.zeradas.map(z=>{const l=DATA.lojas.find(x=>x.num===z);return l&&!inReg(l.cod)?'':`<span class="chip ba">${l?esc(l.num+' '+l.nome):esc(z)}</span> `}).join('')}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="card"><h3>Vai acabar na rede em até 7 dias</h3><div class="scroll"><table><thead><tr><th>Produto</th><th class="n">Vendeu 14d</th><th class="n">Restam</th><th class="n">Dias</th></tr></thead><tbody>
+  ${DATA.acabar.map(a=>`<tr><td class="prod">${comFoto(a.ref,`<b>${esc(a.desc)}</b><small>${a.ref}</small>`)}</td><td class="n">${f0(a.venda14)}</td><td class="n">${f0(a.saldo)}</td><td class="n"><span class="chip ${a.dias<=3?'ba':'wa'}">${a.dias}</span></td></tr>`).join('')}</tbody></table></div>
+  <p class="note">Ação: pedir reposição ao CD hoje para os itens com 3 dias ou menos.</p></div>
+  </div>
+  <div class="card"><h3>Grade furada por loja</h3><div class="scroll"><table><thead><tr><th>Loja</th><th>Regional</th><th class="n">Produtos de calçado (4+ pares)</th><th class="n">Com 35/36/37 zerado</th><th class="n">%</th><th class="n">Em última peça</th></tr></thead><tbody>
+  ${[...L].sort((a,b)=>b.pctFurada-a.pctFurada).map(l=>`<tr><td>${l.num} ${esc(l.nome)}</td><td>${regTag(l.cod)}</td><td class="n">${f0(l.calc)}</td><td class="n">${f0(l.furadas)}</td><td class="n"><span class="chip ${l.pctFurada>45?'ba':l.pctFurada>30?'wa':'ok'}">${f1(l.pctFurada)}%</span></td><td class="n">${f0(l.ultima)}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+/* ---------- Parados e liquidação ---------- */
+function markdown(p){
+  const wos = p.venda30? p.saldo/(p.venda30/4.3) : Infinity;
+  const velho = p.col && /20(1\d|2[0-4])/.test(p.col);
+  if(wos>52||(!p.venda30)) return {pct:velho?50:40, t:'Liquidar', c:'ba', w:wos};
+  if(wos>26) return {pct:velho?40:30, t:'Remarcar', c:'wa', w:wos};
+  if(wos>12) return {pct:20, t:'Vitrine + isca', c:'in', w:wos};
+  return {pct:0, t:'Remanejar', c:'ok', w:wos};
+}
+function vParado(){
+  const L=lojasR();
+  $('#v-parado').innerHTML=`
+  <div><h2>Parados e liquidação</h2><p class="lead">Produtos parados em muitas lojas e vendendo pouco na rede. Cobertura = saldo ÷ venda semanal (venda de 30 dias das lojas que mais vendem). Acima de 52 semanas a venda casada e o remanejamento não resolvem: é preço.</p></div>
+  <div class="card"><h3>Mais parados da rede</h3><div class="scroll"><table><thead><tr><th>Produto</th><th>Coleção</th><th class="n">Saldo</th><th class="n">Lojas paradas</th><th class="n">Venda 30d (top lojas)</th><th class="n">Cobertura</th><th>Ação</th><th>Onde vende</th></tr></thead><tbody>
+  ${DATA.liquidar.map(p=>{const m=markdown(p);return `<tr><td class="prod">${comFoto(p.ref,`<b>${esc(p.desc)}</b><small>${p.ref} · ${esc(p.sub||'')}</small>`)}</td><td>${esc(p.col||'—')}</td><td class="n">${f0(p.saldo)}</td><td class="n">${p.nParadas}</td><td class="n">${p.venda30}</td><td class="n">${m.w===Infinity?'∞':f0(m.w)+' sem.'}</td><td><span class="chip ${m.c}">${m.t}${m.pct?' −'+m.pct+'%':''}</span></td><td class="why">${p.vendem.map(v=>{const l=DATA.lojas.find(x=>x.num===v.loja);return esc(l?l.num+' '+l.nome:v.loja)+': '+v.q}).join(' · ')}</td></tr>`}).join('')}
+  </tbody></table></div></div>
+  <div class="card"><h3>Peso do parado por loja</h3><div class="scroll"><table><thead><tr><th>Loja</th><th>Regional</th><th class="n">Produtos parados</th><th class="n">Pares parados (top 30)</th><th class="n">% do estoque de calçado</th><th class="n">Chegou em 30 dias</th></tr></thead><tbody>
+  ${[...L].sort((a,b)=>b.pctParado-a.pctParado).map(l=>`<tr><td>${l.num} ${esc(l.nome)}</td><td>${regTag(l.cod)}</td><td class="n">${f0(l.nParado)}</td><td class="n">${f0(l.parParados)}</td><td class="n"><span class="chip ${l.pctParado>15?'ba':l.pctParado>8?'wa':'ok'}">${f1(l.pctParado)}%</span></td><td class="n">${f0(l.entrou30)}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note">Venda casada sugerida: em loja que recebe calçado por remanejamento, levar junto bolsa e carteira da mesma cor (ex.: "leve a bolsa com 20% na compra do sapato") para subir o PA.</p></div>`;
+}
+
+/* ---------- Lojas ---------- */
+function vLojas(){
+  const L=lojasR();
+  const S=DATA.sugest;
+  $('#v-lojas').innerHTML=`<div><h2>Lojas ${REG==='U'?'das 3 regionais':'· '+REGS[REG]}</h2></div>
+  <div class="card"><div class="scroll"><table><thead><tr><th>Loja</th><th>Regional</th><th class="n">Vendeu 7d (pr)</th><th class="n">Estoque (pr)</th><th class="n">WOS</th><th>Situação</th><th class="n">% parado</th><th class="n">% grade furada</th><th class="n">Envia</th><th class="n">Recebe</th></tr></thead><tbody>
+  ${[...L].sort((a,b)=>(b.wosPar||0)-(a.wosPar||0)).map(l=>{const env=S.filter(s=>s.de===l.cod).reduce((a,s)=>a+s.qtd,0),rec=S.filter(s=>s.para===l.cod).reduce((a,s)=>a+s.qtd,0);return `<tr><td><b>${l.num}</b> ${esc(l.nome)}</td><td>${regTag(l.cod)}</td><td class="n">${f0(l.v7Par)}</td><td class="n">${f0(l.estPar)}</td><td class="n">${f1(l.wosPar)}</td><td>${status(l)}</td><td class="n">${f1(l.pctParado)}%</td><td class="n">${f1(l.pctFurada)}%</td><td class="n">${l.bh?`<span class="chip in">só entre BH</span> ${f0(env)}`:l.fora?'<span class="chip in">fora do remanejamento</span>':f0(env)}</td><td class="n">${l.fora&&!l.bh?'—':f0(rec)}</td></tr>`}).join('')}
+  </tbody></table></div></div>`;
+}
+
+/* ---------- Identidade ---------- */
+function vIdent(){
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme!=='light' || document.documentElement.dataset.theme==='dark';
+  $('#v-ident').innerHTML=`<div><h2>10 opções de layout e logomarca</h2><p class="lead">Toque numa opção para aplicar no app inteiro. Cada uma muda logo, nome, cores, tipografia e o jeito da navegação (topo ou lateral no computador). A escolha fica salva neste aparelho.</p></div>
+  <div class="ids">${IDS.map((i,n)=>{const p=dark?i.d:i.l;return `<button class="id" aria-pressed="${i.k===ID.k}" data-k="${i.k}">
+   <div class="sw" style="background:${p.bg};color:${p.ink};font-family:${i.fonte}">${i.logo(p.accent)}<div><b>${i.nome}</b><small style="font-family:${i.corpo}">${i.tag}</small></div></div>
+   <div class="pal">${[p.accent,p['accent-soft'],p.ink,p.muted,p.bg].map(c=>`<i style="background:${c}"></i>`).join('')}</div>
+   <div class="meta"><b>${n+1}. ${i.nome}</b>Navegação ${i.nav==='side'?'lateral':'no topo'} · cantos ${i.r>=20?'bem arredondados':i.r<=4?'retos':'suaves'}${i.dense?' · tabela compacta':''}</div></button>`}).join('')}</div>`;
+  document.querySelectorAll('.id').forEach(b=>b.addEventListener('click',()=>aplicaId(b.dataset.k)));
+}
+
+/* ---------- navegação ---------- */
+const TABS=[['geral','Visão geral',vGeral],['analise','Análise de remanejamentos',vAnalise],['reman','Remanejamentos',vReman],['ruptura','Rupturas e grade',vRuptura],['parado','Parados e liquidação',vParado],['lojas','Lojas',vLojas]];
+// nome curto e ícone de cada aba na barra de baixo do celular
+const TAB_CEL={geral:['Geral','M3 12l9-8 9 8M5 10v10h14V10'],analise:['Análise','M4 20V10M10 20V4M16 20v-7M22 20H2'],reman:['Remanejar','M4 8h13l-4-4M20 16H7l4 4'],ruptura:['Rupturas','M12 3l9 16H3zM12 10v4M12 17v.5'],parado:['Parados','M6 4h4v16H6zM14 4h4v16h-4z'],lojas:['Lojas','M3 9l2-5h14l2 5M4 9v11h16V9M9 20v-6h6v6'],ident:['Layout','M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-1.3 1-1.9 2-1.9H18a3 3 0 003-3c0-6-4-11.5-9-11.5zM7.5 12h.01M10 7.5h.01M15 7.5h.01']};
+const icTab=k=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${TAB_CEL[k][1]}"/></svg>`;
+// celular: toda tabela de dados vira cartão; cada célula ganha o rótulo da sua coluna
+function rotular(raiz){
+  for(const t of raiz.querySelectorAll('table')){
+    const ths=[...t.querySelectorAll('thead th')]; if(ths.length<3||t.dataset.fix)continue;
+    t.classList.add('tcard'); const nomes=ths.map(th=>th.textContent.trim());
+    for(const tr of t.querySelectorAll('tbody tr')) [...tr.children].forEach((td,i)=>{ if(td.dataset.label!==undefined)return;
+      td.dataset.label=nomes[i]||''; if(td.querySelector(':scope>input[type=checkbox]')){td.classList.add('sel');td.dataset.label='Selecionar';return}
+      if(i===0||td.classList.contains('prod')||td.classList.contains('grade')||td.classList.contains('why')||td.querySelector('.route,.bars,input[type=email]')||(td.querySelector('div')&&!td.classList.contains('n')))td.classList.add('wide'); });
+  }
+}
+new MutationObserver(()=>rotular($('#main'))).observe($('#main'),{childList:true,subtree:true});
+function render(){
+  $('#regs').innerHTML=Object.entries(REGS).map(([k,v])=>`<button aria-pressed="${k===REG}" data-r="${k}">${k==='U'?'Universal':v.replace('Regional ','')}</button>`).join('');
+  $('#tabs').innerHTML=TABS.map(([k,t])=>`<button role="tab" aria-selected="${k===TAB}" data-t="${k}" aria-label="${t}">${icTab(k)}<span class="tx lg">${t}</span><span class="tx cel">${TAB_CEL[k][0]}</span></button>`).join('');
+  for(const [k,,fn] of TABS){const s=$('#v-'+k);s.hidden=k!==TAB;if(k===TAB)fn()}
+  document.querySelectorAll('#regs button').forEach(b=>b.onclick=()=>{REG=b.dataset.r;ls('cg-reg',REG);render()});
+  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;history.replaceState(null,'','#'+TAB);render();scrollTo(0,0)});
+}
+const h=location.hash.slice(1); if(TABS.some(t=>t[0]===h)) TAB=h;
+aplicaId('jarbas'); render();
+</script>
+
+<div id="espera"><div><b>GIRO</b><span id="eMsg">Carregando estoque e remanejamentos…</span></div></div>
+<script>
+(function(){
+  const API='https://script.google.com/macros/s/AKfycby74n9FlCpQT8VFXmgCVWh5Dy8xGg5o9h7xd3cp4pzFRPvkl-RRzQTba8nGwvLXcgsM/exec', $=s=>document.querySelector(s);
+  let pin=null;try{pin=localStorage.getItem('jarbas_pin')}catch(e){}
+  if(!pin){location.replace('index.html');return}
+  const api=o=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({pin},o)),redirect:'follow'}).then(r=>r.json());
+  api({acao:'giro'}).then(r=>{
+    if(!r.ok){$('#eMsg').innerHTML=(r.msg||'Não deu certo.')+'<br><br><a class="voltaJ" href="index.html">‹ VOLTAR AO JARBAS</a>';return}
+    window.PLAT={DATA:r.dados,nome:'Supervisão',emails:r.emails||{},
+      salvaEmails:e=>api({acao:'salvarEmailsGiro',emails:e}).catch(()=>{}),
+      enviar:async m=>{try{return await api(Object.assign({acao:'enviarGiro'},m))}catch(e){return {ok:false,msg:'Sem conexão com o servidor. Confira se o e-mail saiu antes de tentar de novo.'}}}};
+    $('#espera').remove();
+    new Function(document.getElementById('appjs').textContent)();
+    const v=document.createElement('a');v.className='voltaJ';v.href='index.html#inicio';v.textContent='‹ JARBAS';
+    const br=document.getElementById('brand');br.parentNode.insertBefore(v,br);
+  }).catch(()=>{$('#eMsg').innerHTML='Sem conexão. Confira a internet e tente de novo.<br><br><a class="voltaJ" href="index.html">‹ VOLTAR AO JARBAS</a>'});
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>

@@ -200,6 +200,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .li.pd span{font-family:var(--f-num);font-size:22px;letter-spacing:.06em;color:var(--gold)}
 .li.pd small{font-family:var(--f-mono);font-size:10.5px;letter-spacing:0;color:var(--sand)}
 
+#dock[style*="repeat(6"] a{font-size:15px;letter-spacing:.02em}
 /* app do gerente */
 .topdir{display:flex;align-items:center;gap:10px}
 .sair{border:1px solid var(--gold);background:#00000040;color:var(--gold);font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:6px 9px;border-radius:3px;cursor:pointer;white-space:nowrap}
@@ -876,25 +877,32 @@ function cardsDia(r,rot){const falta=Math.max(r.meta_mes-r.venda,0);
   return `<div class="pcards"><div class="pc"><small>Ontem · ${esc(V.ate)}</small><b>${brl(r.ontem)}</b><span>meta ${brl(r.meta_ontem)} · <em class="tag ${pct(r.ontem,r.meta_ontem)>=100?'ok':pct(r.ontem,r.meta_ontem)<85?'r':''}">${p1(pct(r.ontem,r.meta_ontem))}</em></span></div>
   <div class="pc"><small>Acumulado do mês</small><b>${mil(r.venda)}</b><span>ritmo <em class="tag ${pct(r.venda,r.meta_periodo)>=100?'ok':'r'}">${p1(pct(r.venda,r.meta_periodo))}</em> · ${p1(pct(r.venda,r.meta_mes))} da meta do mês (${mil(r.meta_mes)})</span></div>
   <div class="pc hoje"><small>Hoje · ${rot}</small><b>${brl(r.meta_hoje)}</b><span>meta do dia · para fechar o mês: ${brl(falta/diasRest)}/dia em média (${diasRest} dia${diasRest>1?'s':''})</span></div></div>`}
-let pk='resumo',vk='mes';
+let pk='resumo',vk='mes',ek='R';
+// escopo do painel: sua regional, as outras duas ou a rede inteira (só quando a lista completa vem nos dados)
+const NOMES_REG={R:'Ramon',T:'Tuanne',M:'Mandu'},TODAS=V.todas||null;
+const somaRegs=rs=>rs.reduce((a,r)=>{for(const k in r)a[k]=(a[k]||0)+r[k];return a},{});
+function escopo(){if(!TODAS||ek==='R')return {L,R,nome:'Regional Ramon'};
+  if(ek==='rede')return {L:TODAS,R:somaRegs(Object.values(V.regs)),nome:'Rede'};
+  return {L:TODAS.filter(l=>l.reg===ek),R:V.regs[ek]||somaRegs([]),nome:'Regional '+(NOMES_REG[ek]||ek)}}
 function rPainel(){
   $('#vsub').textContent=`Venda física (sem online) · dias fechados até ${V.ate} · atualizado ${DATA.gerado}`;
   $$('#pseg button').forEach(b=>b.classList.toggle('on',b.dataset.k===pk));
-  const box=$('#pbox');
+  const box=$('#pbox'),{L,R,nome:eNome}=escopo();
+  const eseg=TODAS&&pk!=='rede'?`<div class="seg" id="eseg">${[['R','Ramon'],['T','Tuanne'],['M','Mandu'],['rede','Rede']].map(([k,t])=>`<button class="${ek===k?'on':''}" data-e="${k}">${t}</button>`).join('')}</div>`:'';
   if(pk==='resumo'){
     const rank=[...L].sort((a,b)=>pct(b.ontem,b.meta_ontem)-pct(a.ontem,a.meta_ontem));const bat=rank.filter(l=>pct(l.ontem,l.meta_ontem)>=100).length;
-    box.innerHTML=`<div class="sec">Regional Ramon</div>`+cardsDia(R,'Regional Ramon')+
+    box.innerHTML=eseg+`<div class="sec">${eNome} · ${L.length} lojas</div>`+cardsDia(R,eNome)+
       `<div class="panel"><h3>Ranking de ontem · ${bat} de ${L.length} bateram a diária</h3><div class="rows">`+
       rank.map((l,i)=>{const p=pct(l.ontem,l.meta_ontem);return `<div class="row" style="--c:${cor(p)}"><span class="nm">${i+1}º ${esc(l.nome)}<i>${esc(l.n2)}</i></span><span class="pc">${p1(p)}</span><span class="det"><span>${brl(l.ontem)} de ${brl(l.meta_ontem)}</span><span>P.A. ${num(l.pa_ontem)}</span></span></div>`}).join('')+`</div></div>`;
   }else if(pk==='lojas'){
     const val=l=>vk==='mes'?pct(l.venda,l.meta_mes):vk==='ritmo'?pct(l.venda,l.meta_periodo):pct(l.ontem,l.meta_ontem);
-    box.innerHTML=`<div class="seg" id="vseg">${[['mes','Meta do mês'],['ritmo','Ritmo'],['ontem','Ontem']].map(([k,t])=>`<button class="${vk===k?'on':''}" data-k="${k}">${t}</button>`).join('')}</div><div class="rows" style="margin-top:10px">`+
+    box.innerHTML=eseg+`<div class="sec">${eNome}</div><div class="seg" id="vseg">${[['mes','Meta do mês'],['ritmo','Ritmo'],['ontem','Ontem']].map(([k,t])=>`<button class="${vk===k?'on':''}" data-k="${k}">${t}</button>`).join('')}</div><div class="rows" style="margin-top:10px">`+
       [...L].sort((a,b)=>val(b)-val(a)).map(l=>{const p=val(l),alvo=vk==='mes'&&l.meta_mes?Math.min(100,pct(l.meta_periodo,l.meta_mes)):null;
         const det=vk==='ontem'?`<span>${brl(l.ontem)} de ${brl(l.meta_ontem)}</span><span>P.A. ${num(l.pa_ontem)}</span>`:`<span>${mil(l.venda)} de ${mil(vk==='mes'?l.meta_mes:l.meta_periodo)}</span><span>P.A. ${num(l.pa)}</span><span>${l.atend} atend.</span>`;
         return `<div class="row" style="--c:${cor(vk==='mes'?pct(l.venda,l.meta_periodo):p)}"><span class="nm">${esc(l.nome)}<i>${esc(l.n2)}</i></span><span class="pc">${p1(p)}</span><span class="bar"><i style="width:${Math.min(p,100)}%"></i>${alvo!=null?`<u style="left:${alvo}%"></u>`:''}</span><span class="det">${det}</span></div>`}).join('')+
       `</div><p class="note">Ritmo = venda do mês sobre a meta acumulada até ontem. Na visão "Meta do mês", a linha branca marca onde a loja deveria estar hoje.</p>`;
   }else if(pk==='mapa'){
-    box.innerHTML=`<div class="rows" style="margin-top:10px">`+[...L].sort((a,b)=>(b.pa||0)-(a.pa||0)).map(l=>{const vm=l.atend?l.venda/l.atend:0,as=l.assoc!=null?l.assoc*100:null;
+    box.innerHTML=eseg+`<div class="sec">${eNome}</div><div class="rows" style="margin-top:10px">`+[...L].sort((a,b)=>(b.pa||0)-(a.pa||0)).map(l=>{const vm=l.atend?l.venda/l.atend:0,as=l.assoc!=null?l.assoc*100:null;
       return `<div class="row" style="--c:${(l.pa||0)>=1.6?'var(--ok)':(l.pa||0)>=1.5?'var(--gold)':'var(--red)'}"><span class="nm">${esc(l.nome)}<i>${esc(l.n2)}</i></span><span class="pc">${num(l.pa)}</span><span class="det"><span>${l.atend} atend.</span><span>V.M. ${brl(vm)}</span><span>${l.bolsas??'—'} bolsas</span><span>${l.acess??'—'} acess.</span><span style="color:${as==null?'inherit':as>=90?'var(--ok)':'#ff8b95'}">assoc. ${as!=null?p1(as):'—'}</span></span></div>`}).join('')+
       `</div><p class="note">Mapa da mina do mês, ordenado por P.A. Cor do P.A.: verde na meta da regional (1,60), dourado perto da meta (1,50 a 1,59), vermelho abaixo. Associação: meta 90%.</p>`;
   }else{
@@ -907,16 +915,16 @@ function rPainel(){
   }
 }
 $('#pseg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pk=b.dataset.k;rPainel()});
-$('#pbox').addEventListener('click',e=>{const b=e.target.closest('#vseg button');if(!b)return;vk=b.dataset.k;rPainel()});
+$('#pbox').addEventListener('click',e=>{const s=e.target.closest('#eseg button');if(s){ek=s.dataset.e;rPainel();return}const b=e.target.closest('#vseg button');if(!b)return;vk=b.dataset.k;rPainel()});
 rPainel();
 $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado ${DATA.gerado}`;
 
 
   }
   $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${S.perfil.master?'SUPERVISÃO · REGIONAL RAMON':esc(S.perfil.nome.toUpperCase())}`;
-  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']])
+  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','GIRO'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']])
     .map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');
-  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?5:2},1fr)`;
+  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?6:2},1fr)`;
   $('#selLojaBox').hidden=!S.perfil.master;
   if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML='<option value="">Regional Ramon (todas)</option>'+L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
     $('#selLoja').onchange=async e=>{S.cod=e.target.value;try{await carregar()}catch(err){toast(err.message)}}}
@@ -929,7 +937,8 @@ function rReator(V,L,R){
   const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:'Regional Ramon';
   const pProp=pct(a.venda,a.meta_periodo), pDia=pct(a.ontem,a.meta_ontem);
   // parcial de hoje (Central Comercial, a cada carga): soma da loja ou das lojas da regional
-  const P=S.parcial, cods=l?[l.cod]:L.map(x=>x.cod), hj=P?cods.reduce((s,c)=>{const x=P.lojas[c];if(x){s.v+=x.venda;s.m+=x.meta;s.a+=x.atend;s.p+=x.pecas}return s},{v:0,m:0,a:0,p:0}):null;
+  const P=S.parcial, cods=l?[l.cod]:L.map(x=>x.cod), hj=P?cods.reduce((s,c)=>{const x=P.lojas[c];if(x){s.v+=x.venda;s.a+=x.atend;s.p+=x.pecas}return s},{v:0,m:0,a:0,p:0}):null;
+  if(hj)hj.m=a.meta_hoje; // meta do dia sempre do painel diário (a da parcial não vale)
   const hora=P?String(P.carga||'').slice(11,16):'';
   const sl=(v,lab,big,sub,cap)=>`<div class="sl"><div class="sock"><div class="core" style="--v:${Math.min(v,100).toFixed(1)}"><div><small>${lab}</small><b>${big}</b><small>${sub}</small></div></div></div><div class="cap">${cap}</div></div>`;
   $('#car').innerHTML=sl(pProp,'META PROPORCIONAL',Math.round(pProp)+'%',mil(a.venda),`${esc(nome)} · meta até ${esc(V.ate)} <b>${mil(a.meta_periodo)}</b><br>${a.venda>=a.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(a.meta_periodo-a.venda))}</b> · meta do mês ${p1(pct(a.venda,a.meta_mes))}`)+
@@ -1650,7 +1659,8 @@ function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['check','revisao','de
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
   if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}}
-$('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();ir(a.dataset.v)});
+// GIRO abre o app da Central de Giro (página própria, mesmo PIN)
+$('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v==='giro'){location.href='giro.html';return}ir(a.dataset.v)});
 try{history.scrollRestoration='manual'}catch{}
 if(S.pin)carregar().catch(()=>{S.pin=null;$('#telaLogin').hidden=false});
 // parcial nova a cada carga: recarrega a cada 10 min com o app aberto na tela inicial
