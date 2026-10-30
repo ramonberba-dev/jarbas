@@ -320,6 +320,8 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
           <div class="mic-txt"><b id="micStatus">Toque para gravar</b><small id="micDica">Fale as particularidades da visita. A fala vira texto na hora.</small></div>
         </div>
         <label class="f">Transcrição da visita<textarea class="inp" id="cTrans" rows="5" placeholder="O que você falar aparece aqui. Você também pode digitar."></textarea></label>
+        <div class="sec">0. Antes da visita · raio-X da loja</div>
+        <div class="panel" id="cPre"></div>
         <div class="sec">Checklist da loja</div>
         <div id="cSecoes"></div>
         <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button><button class="btn ghost" type="button" id="bLimpar">Nova visita</button></div>
@@ -863,7 +865,7 @@ let iniciado=false;
 function iniciar(){
   const DATA=S.D, V=DATA.vendas, L=V.lojas, R=V.regs.R;
   const pMes=pct(R.venda,R.meta_mes), pOntem=pct(R.ontem,R.meta_ontem);
-  window.__V=V;
+  window.__V=V;window.__G=DATA.giro_lojas||[];
   if(!iniciado){iniciado=true;
     /* ---------- painel diário (mesmos dados do Painel de Venda Física) ---------- */
 const [dAte,mAte]=V.ate.split('/').map(Number);
@@ -1549,6 +1551,7 @@ function rCheck(){
   if(!$('#cLoja').options.length)$('#cLoja').innerHTML=L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
   if(!V2.cod)V2.cod=S.cod||L[0].cod;
   $('#cLoja').value=V2.cod;$('#cData').value=V2.data;$('#cGerente').value=V2.gerente;$('#cTrans').value=V2.trans;
+  rPre();
   $('#cSecoes').innerHTML=CHECK.map(s=>{const f=s.itens.filter(i=>V2.resp[i.id]?.v).length,aj=s.itens.filter(i=>['at','no'].includes(V2.resp[i.id]?.v)).length;
     return `<details class="secao" ${f<s.itens.length?'':''}><summary><span>${esc(s.t)}</span><em class="tag ${aj?'r':f===s.itens.length?'ok':'n'}">${aj?aj+' ajustar':f+'/'+s.itens.length}</em></summary>`+
     s.itens.map(i=>{const r=V2.resp[i.id]||{};return `<div class="ck ${['at','no'].includes(r.v)?'aj':''}" data-id="${i.id}"><span class="q">${esc(i.t)}${i.ref?`<small>${esc(i.ref)}</small>`:''}</span>
@@ -1556,7 +1559,40 @@ function rCheck(){
       <input class="inp obs" data-obs="${i.id}" placeholder="Observação" value="${esc(r.o||'')}"></div>`}).join('')+`</details>`}).join('');
   rRel();
 }
-$('#cLoja').onchange=e=>{V2.cod=e.target.value;salvaV()};$('#cData').onchange=e=>{V2.data=e.target.value;salvaV()};
+// raio-X "Antes da visita": dados do painel diário + análise curta + pré-marcação dos itens da seção 0
+function analisePre(l){
+  const V=window.__V,pp=(a,b)=>b?a/b*100:null,f=x=>x==null?'—':p1(x),cls=(v,ok,at)=>v==null?'n':v>=ok?'ok':v>=at?'':'r';
+  const ritmo=pp(l.venda,l.meta_periodo),sss=l.v25?(l.venda/l.v25-1)*100:null,va=l.atend?l.venda/l.atend:null;
+  const tk25=l.at25&&l.at25>=l.atend*0.4?l.at25:null,tkVar=tk25?(l.atend/tk25-1)*100:null;
+  const bolsa=l.atend&&l.bolsas!=null?l.bolsas/l.atend*100:null,assoc=l.assoc!=null?l.assoc*100:null;
+  const c=l.cartao,fr=l.meta_mes?l.meta_periodo/l.meta_mes:1,cartMeta=c&&c.meta?pp(c.aprovados,c.meta*fr):null;
+  const ativ=c&&c.aprovados?pp(c.ativados,c.aprovados):null,cons=c&&c.atend?pp(c.consultas,c.atend):null;
+  const g=(window.__G||[]).find(x=>String(x.num).slice(-2)===l.cod.slice(-2));
+  const M=[['Venda do mês',mil(l.venda),`ritmo ${f(ritmo)}`,cls(ritmo,100,90)],['Meta proporcional',mil(l.meta_periodo),`do mês ${f(pp(l.venda,l.meta_mes))}`,cls(ritmo,100,90)],
+    ['SSS (vs 2025)',sss==null?'—':(sss>=0?'+':'')+f(sss),`2025: ${l.v25?mil(l.v25):'—'}`,cls(sss,0,-5)],['P.A.',num(l.pa),'meta 1,60',cls(l.pa,1.6,1.5)],
+    ['V.A. (por atend.)',va?brl(va):'—','venda ÷ atendimentos',''],['Tickets',String(l.atend||'—'),tkVar==null?'sem base 2025':`vs 2025 ${(tkVar>=0?'+':'')+f(tkVar)}`,cls(tkVar,0,-5)],
+    ['Bolsas',String(l.bolsas??'—'),bolsa==null?'':`${f(bolsa)} dos atend. · meta 10%`,cls(bolsa,10,7)],['Cartão',c?`${c.aprovados}/${c.meta}`:'—',c?`ritmo ${f(cartMeta)} · ativ. ${f(ativ)} · consulta ${f(cons)}`:'sem dado',cls(cartMeta,100,80)],
+    ['Associação',f(assoc),'meta 90%',cls(assoc,90,85)]];
+  const pos=[],neg=[];M.forEach(([k,,,c2])=>{if(c2==='ok')pos.push(k);else if(c2==='r')neg.push(k)});
+  const texto=`${l.nome}: venda do mês ${mil(l.venda)}, ritmo ${f(ritmo)} da meta proporcional`+(sss!=null?`, SSS ${(sss>=0?'+':'')+f(sss)} sobre 2025`:'')+
+    `. P.A. ${num(l.pa)} (meta 1,60), V.A. ${va?brl(va):'—'}, ${l.atend} tickets`+(tkVar!=null?` (${(tkVar>=0?'+':'')+f(tkVar)} vs 2025)`:'')+
+    `, bolsas ${bolsa==null?'—':f(bolsa)} dos atendimentos, cartão ${c?c.aprovados+' de '+c.meta+' aprovados (ritmo '+f(cartMeta)+', ativação '+f(ativ)+', consulta '+f(cons)+')':'sem dado'}, associação ${f(assoc)}`+
+    (g?`. Estoque: ${f(g.pctParado)} parado, ${f(g.pctFurada)} de grades furadas`:'')+'.';
+  const leitura=(pos.length?`Vai bem em ${pos.join(', ')}. `:'')+(neg.length?`Precisa de atenção em ${neg.join(', ')}.`:'Nenhum indicador crítico.');
+  const sug={pre1:ritmo,pre2:sss,pre3:l.pa,pre5:bolsa,pre6:cartMeta};const lim={pre1:[100,90],pre2:[0,-5],pre3:[1.6,1.5],pre5:[10,7],pre6:[100,80]};
+  const st={};for(const k in sug){const v=sug[k];if(v!=null)st[k]=v>=lim[k][0]?'ok':v>=lim[k][1]?'at':'no'}
+  if(g)st.pre7=g.pctParado<=12?'ok':g.pctParado<=18?'at':'no';
+  return {M,texto,leitura,st,periodoCartao:V.cartao_periodo};
+}
+function rPre(){
+  const l=window.__V.lojas.find(x=>x.cod===V2.cod);if(!l){$('#cPre').innerHTML='';return}
+  const A=analisePre(l);
+  $('#cPre').innerHTML=`<div class="kv">${A.M.map(([k,v,s,c])=>`<div style="border-left-color:${c==='ok'?'var(--ok)':c==='r'?'var(--red)':c==='n'?'#ffffff40':'var(--gold)'}"><small>${k}</small><b>${v}</b><span style="display:block;font-size:10.5px;color:var(--sand)">${esc(s)}</span></div>`).join('')}</div>
+    <p class="note" style="margin-top:10px"><b style="color:var(--gold)">Leitura:</b> ${esc(A.leitura)}</p><p class="note">Dados do painel diário até ${esc(window.__V.ate)}${A.periodoCartao?' · cartão '+esc(A.periodoCartao):''}. Os itens da seção 0 já vêm marcados; ajuste se precisar.</p>`;
+  let mudou=false;for(const k in A.st){const r=V2.resp[k]||={};if(!r.v){r.v=A.st[k];r.auto=1;mudou=true}}
+  V2.preTexto=A.texto+' '+A.leitura;if(mudou)salvaV();
+}
+$('#cLoja').onchange=e=>{V2.cod=e.target.value;for(const k in V2.resp)if(V2.resp[k].auto)delete V2.resp[k];salvaV();rCheck()};$('#cData').onchange=e=>{V2.data=e.target.value;salvaV()};
 $('#cGerente').oninput=e=>{V2.gerente=e.target.value;salvaV()};$('#cTrans').oninput=e=>{V2.trans=e.target.value;salvaV()};
 $('#cSecoes').addEventListener('click',e=>{const b=e.target.closest('.op button');if(!b)return;const ck=b.closest('.ck'),id=ck.dataset.id,r=V2.resp[id]||={};
   r.v=r.v===b.dataset.v?'':b.dataset.v;ck.querySelectorAll('.op button').forEach(x=>x.classList.toggle('on',x.dataset.v===r.v));ck.classList.toggle('aj',['at','no'].includes(r.v));salvaV()});
@@ -1587,7 +1623,7 @@ $('#bRel').onclick=async()=>{
   const b=$('#bRel');b.disabled=true;b.textContent='Gerando relatório…';
   const ind=`ritmo ${p1(pct(l.venda,l.meta_periodo))}, meta do mês ${p1(pct(l.venda,l.meta_mes))}, P.A. ${num(l.pa)}, atendimentos ${l.atend}, bolsas ${l.bolsas??'?'}, associação ${l.assoc!=null?p1(l.assoc*100):'?'}`;
   try{const s={};Object.keys(SETORES).filter(k=>!k.startsWith('_')&&k!=='sempre_cc').forEach(k=>s[k]=SETORES[k].nome);
-    const j=await api('relatorio',{loja:l.nome,data:V2.data,gerente:V2.gerente,indicadores:ind,itens,transcricao:V2.trans,setores:s});
+    const j=await api('relatorio',{loja:l.nome,data:V2.data,gerente:V2.gerente,indicadores:V2.preTexto||ind,itens,transcricao:V2.trans,setores:s});
     V2.rel=j.relatorio;
     V2.envios=(V2.rel.emails||[]).map(e=>{const cfg=SETORES[e.setor]||{};return {setor:e.setor,para:(cfg.para||[]).filter(x=>!x.startsWith('<')).join(', '),cc:(cfg.cc||[]).concat(SETORES.sempre_cc||[]).join(', '),assunto:`[${l.nome}] ${e.assunto||'Visita de supervisão'}`,corpo:e.corpo||'',ok:true}});
     salvaV();rRel();$('#cRel').scrollIntoView({behavior:'smooth'});
@@ -1595,7 +1631,8 @@ $('#bRel').onclick=async()=>{
 function rRel(){
   const R=V2.rel;if(!R){$('#cRel').innerHTML='';return}
   const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join('');
-  $('#cRel').innerHTML=`<div class="panel"><h3>Relatório da visita</h3><div class="md"><p>${esc(R.resumo||'')}</p>
+  const lj=window.__V.lojas.find(x=>x.cod===V2.cod),A=lj?analisePre(lj):null;
+  $('#cRel').innerHTML=`<div class="panel"><h3>Relatório da visita</h3>${A?`<div class="kv" style="margin-bottom:10px">${A.M.map(([k,v,s])=>`<div><small>${k}</small><b>${v}</b><span style="display:block;font-size:10.5px;color:var(--sand)">${esc(s)}</span></div>`).join('')}</div><p class="note" style="margin-top:0">${esc(A.leitura)}</p>`:''}<div class="md"><p>${esc(R.resumo||'')}</p>
     ${R.pontos_fortes?.length?`<h4>Pontos fortes</h4>${li(R.pontos_fortes)}`:''}${R.pontos_atencao?.length?`<h4>Pontos de atenção</h4>${li(R.pontos_atencao)}`:''}
     ${(R.topicos||[]).map(t=>`<h4>${esc(t.titulo)}</h4>${li(t.pontos)}`).join('')}
     <h4>Plano de ação</h4>${(R.planos||[]).map(p=>`<li><b>${esc(p.acao)}</b> · ${esc(p.responsavel||'')} · ${esc(p.prazo||'')} · ${esc(p.prioridade||'')}</li>`).join('')}</div></div>
