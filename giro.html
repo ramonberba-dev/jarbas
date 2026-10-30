@@ -257,6 +257,8 @@ nav.tabs button[aria-selected="true"]{color:#f4cf7a}
 .toast{background:#e3b04b;color:#2a0a0c}
 @media (max-width:720px){nav.tabs{background:linear-gradient(180deg,#5a0910,#2a0507);border-top:2px solid #e3b04b}.brand b{font-size:26px}h2{font-size:28px}.kpi b{font-size:32px}}
 #espera{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:#2a0507;color:#fff5e6;font:500 17px "Barlow",sans-serif}
+.atuJ{font:500 13px/1.3 "Barlow",sans-serif;color:#d9b98a;padding:0 0 8px;letter-spacing:.02em}
+.atuJ b{color:#f4cf7a;font-weight:700}
 #espera b{display:block;font:600 34px "Teko",sans-serif;letter-spacing:.1em;color:#f4cf7a}
 </style>
 
@@ -846,6 +848,10 @@ aplicaId('jarbas'); render();
     new Function(document.getElementById('appjs').textContent)();
     const v=document.createElement('a');v.className='voltaJ';v.href='index.html#inicio';v.textContent='‹ VOLTAR';v.setAttribute('aria-label','Voltar ao início do Jarbas');
     const br=document.getElementById('brand');br.parentNode.insertBefore(v,br);
+    // data e hora da última atualização do estoque, sempre visível no topo
+    const D=r.dados,g=String(D.geradoEm||'').split(', '),at=document.createElement('div');at.className='atuJ';
+    at.innerHTML='Estoque atualizado em <b>'+(g[0]||'—')+'</b>'+(g[1]?' às <b>'+g[1].slice(0,5)+'</b>':'')+(D.vendasAte?' · vendas até '+D.vendasAte:'');
+    br.closest('.bar').after(at);
   }).catch(()=>{$('#eMsg').innerHTML='Sem conexão. Confira a internet e tente de novo.<br><br><a class="voltaJ" href="index.html">‹ VOLTAR AO JARBAS</a>'});
 })();
 </script>
