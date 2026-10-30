@@ -305,14 +305,21 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 
       <!-- CHECKLIST DA SUPERVISÃO (visita) -->
       <section class="view" id="tela-check">
-        <h2 class="t">Checklist da supervisão</h2>
-        <div class="sub">Marque o que viu, grave a conversa e gere o relatório com os e-mails para os setores.</div>
+        <h2 class="t" id="cTitulo">Checklist da supervisão</h2>
+        <div class="sub" id="cSub">Marque o que viu, grave a conversa e gere o relatório com os e-mails para os setores.</div>
+        <div class="acts" id="cTopo"><button class="btn ghost" type="button" id="bLimpar">Nova visita</button><button class="btn" type="button" id="bHab">Habilitar Checklist Loja</button></div>
+        <div class="panel" id="habBox" hidden>
+          <h3>Habilitar o checklist para as lojas</h3>
+          <p class="note" style="margin-top:0">Os gerentes das lojas marcadas ganham a aba CHECK com este mesmo checklist. O que eles enviarem aparece em Revisão › Relatórios.</p>
+          <div class="chips" id="habLojas"></div>
+          <div class="acts"><button class="btn" type="button" id="bHabSalvar">Salvar</button><button class="btn ghost" type="button" id="bHabTodas">Marcar todas</button><button class="btn ghost" type="button" id="bHabFechar">Fechar</button></div>
+        </div>
         <div class="panel">
           <div class="grid2">
             <label class="f">Loja<select class="inp" id="cLoja"></select></label>
             <label class="f">Data<input class="inp" type="date" id="cData"></label>
           </div>
-          <label class="f" style="margin-top:8px">Gerente presente<input class="inp" id="cGerente" maxlength="80"></label>
+          <label class="f" style="margin-top:8px"><span id="cGerenteRot">Gerente presente</span><input class="inp" id="cGerente" maxlength="80"></label>
         </div>
         <div class="panel mic-box">
           <button type="button" class="mic" id="bMic" aria-pressed="false" aria-label="Gravar áudio da visita">
@@ -326,7 +333,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div class="panel" id="cPre"></div>
         <div class="sec">Checklist da loja</div>
         <div id="cSecoes"></div>
-        <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button><button class="btn ghost" type="button" id="bLimpar">Nova visita</button></div>
+        <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button></div>
         <div id="cRel"></div>
       </section>
 
@@ -334,7 +341,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <section class="view" id="tela-revisao">
         <h2 class="t">Revisão da rotina</h2>
         <div class="sub">Aprove ou reprove o que as lojas enviaram nos últimos 3 dias.</div>
-        <div class="seg" id="rseg"><button class="on" data-k="enviado">Para revisar</button><button data-k="reprovado">Reprovados</button><button data-k="aprovado">Aprovados</button></div>
+        <div class="seg" id="rseg"><button class="on" data-k="enviado">Para revisar</button><button data-k="reprovado">Reprovados</button><button data-k="aprovado">Aprovados</button><button data-k="rel">Relatórios</button></div>
         <div class="list" id="listaRev"></div>
         <div class="panel ver" id="verRev" hidden></div>
       </section>
@@ -855,7 +862,7 @@ $('#bInstalar').onclick=()=>{pedidoInstalar?.prompt();$('#bInstalar').hidden=tru
 
 async function carregar(){
   const j=await api('dados',{data:S.hoje,cod:S.cod});
-  S.perfil=j.perfil;S.D=j.painel;S.parcial=j.parcial;S.rotina=j.rotina||[];S.demandas=j.demandas||[];S.atualizado=j.atualizado;
+  S.perfil=j.perfil;S.D=j.painel;S.parcial=j.parcial;S.rotina=j.rotina||[];S.demandas=j.demandas||[];S.atualizado=j.atualizado;S.checkHab=j.checkHab;
   if(!S.perfil.master)S.cod=S.perfil.cod;
   if(!S.D){$('#erroLogin').textContent='O painel ainda não chegou ao servidor. Ele é enviado todo dia de manhã.';throw new Error('Sem dados do painel ainda.')}
   $('#telaLogin').hidden=true;$('#telaApp').hidden=false;$('#dockBox').hidden=false;
@@ -922,9 +929,9 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
 
   }
   $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${S.perfil.master?'SUPERVISÃO · REGIONAL RAMON':esc(S.perfil.nome.toUpperCase())}`;
-  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','GIRO'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']])
+  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','GIRO'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']].concat(S.checkHab===true?[['check','CHECK']]:[]))
     .map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');
-  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?6:2},1fr)`;
+  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?6:S.checkHab===true?3:2},1fr)`;
   $('#selLojaBox').hidden=!S.perfil.master;
   if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML='<option value="">Regional Ramon (todas)</option>'+L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
     $('#selLoja').onchange=async e=>{S.cod=e.target.value;try{await carregar()}catch(err){toast(err.message)}}}
@@ -1035,7 +1042,26 @@ let rk='enviado';
 $('#rseg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rk=b.dataset.k;$$('#rseg button').forEach(x=>x.classList.toggle('on',x===b));rRevisao()});
 const nomeLoja=c=>(window.__V.lojas.find(l=>l.cod===c)||{}).nome||c;
 const tituloPil=pid=>pid.startsWith('dem:')?'Demanda: '+((S.fila?.demandas||[]).find(d=>'dem:'+d.id===pid)?.titulo||''):(PIL[pid]?.titulo||pid);
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const nomeMes=ym=>MESES[+ym.slice(5,7)-1]+' de '+ym.slice(0,4);
+const ehLoja=r=>String(r.autor||'').startsWith('Gerente');
+async function rRelatorios(){
+  $('#verRev').hidden=true;$('#listaRev').innerHTML='<p class="empty">Carregando relatórios…</p>';
+  try{const j=await api('checklists',{});S.rels=j.checklists;if(Array.isArray(j.hab))S.checkHab=j.hab}catch(err){$('#listaRev').innerHTML=`<p class="empty">${esc(err.message)}</p>`;return}
+  const item=r=>`<button class="li" data-relid="${esc(r.id)}"><span>${esc(r.loja||nomeLoja(r.cod))} · ${dataBR(r.data)}/${String(r.data).slice(0,4)}<small>${esc(r.autor||'')}${r.resumo?' · '+esc(String(r.resumo).slice(0,90))+'…':''}</small></span><em class="tag ${ehLoja(r)?'':'ok'}">${ehLoja(r)?'LOJA':'SUPERV.'}</em></button>`;
+  // mês corrente aberto; cada mês que já virou vira uma pasta
+  const mesAtual=S.hoje.slice(0,7),grupos={};S.rels.forEach(r=>{const ym=String(r.data).slice(0,7);(grupos[ym]||=[]).push(r)});
+  const atual=grupos[mesAtual]||[],antigos=Object.keys(grupos).filter(k=>k!==mesAtual).sort().reverse();
+  $('#listaRev').innerHTML=`<div class="sec">${nomeMes(mesAtual)}</div>`+(atual.length?atual.map(item).join(''):'<p class="empty">Nenhum relatório neste mês ainda.</p>')+
+    antigos.map(k=>`<details class="secao pasta"><summary><span>📁 ${nomeMes(k)}</span><em class="tag n">${grupos[k].length}</em></summary>${grupos[k].map(item).join('')}</details>`).join('');
+}
+$('#listaRev').addEventListener('click',async e=>{const b=e.target.closest('[data-relid]');if(!b)return;const r=(S.rels||[]).find(x=>x.id===b.dataset.relid);if(!r)return;
+  $('#verRev').hidden=false;$('#verRev').dataset.id='';
+  $('#verRev').innerHTML=`<h3>${esc(r.loja||nomeLoja(r.cod))} · ${dataBR(r.data)}/${String(r.data).slice(0,4)} · ${esc(r.autor||'')}</h3><div class="note" style="white-space:pre-wrap;color:var(--cream)">${esc(r.texto||'')}</div>${(r.fotos||[]).map(id=>`<img data-fid="${esc(id)}" alt="Foto" style="max-width:100%;border-radius:8px;margin-top:8px">`).join('')}`;
+  $('#verRev').scrollIntoView({behavior:'smooth'});
+  for(const im of $$('#verRev img[data-fid]')){try{const j=await api('foto',{id:im.dataset.fid});im.src='data:image/jpeg;base64,'+j.b64}catch{im.alt='Foto indisponível'}}});
 async function rRevisao(){
+  if(rk==='rel')return rRelatorios();
   if(!S.fila)await carregarFila();
   const lista=S.fila.rotina.filter(r=>r.status===rk).sort((a,b)=>b.data.localeCompare(a.data));
   $('#verRev').hidden=true;
@@ -1509,7 +1535,11 @@ function salvaV(){guarda.set('jarbas_visita',JSON.stringify(V2))}
 function rCheck(){
   if(!V2)novaV();const L=window.__V.lojas;
   if(!$('#cLoja').options.length)$('#cLoja').innerHTML=L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
-  if(!V2.cod)V2.cod=S.cod||L[0].cod;
+  const M=S.perfil.master;if(!M)V2.cod=S.perfil.cod;else if(!V2.cod)V2.cod=S.cod||L[0].cod;
+  $('#cLoja').disabled=!M;$('#bHab').hidden=!M;$('#cTitulo').textContent=M?'Checklist da supervisão':'Checklist da loja';
+  $('#cSub').textContent=M?'Marque o que viu, grave a conversa e gere o relatório com os e-mails para os setores.':'A supervisão habilitou este checklist para a sua loja. Marque cada item, tire as fotos, grave o que quiser explicar, gere o relatório e envie para a supervisão.';
+  $('#cGerenteRot').textContent=M?'Gerente presente':'Quem preencheu';$('#bLimpar').textContent=M?'Nova visita':'Novo checklist';
+  rHabBtn();
   $('#cLoja').value=V2.cod;$('#cData').value=V2.data;$('#cGerente').value=V2.gerente;$('#cTrans').value=V2.trans;
   rPre();
   $('#cSecoes').innerHTML=CHECK.map(s=>{const f=s.itens.filter(i=>V2.resp[i.id]?.v).length,aj=s.itens.filter(i=>['at','no'].includes(V2.resp[i.id]?.v)).length;
@@ -1565,8 +1595,8 @@ $('#cSecoes').addEventListener('change',async e=>{const f=e.target.closest('[dat
   for(const a of arq){try{const b64=await reduzir(a),th=await miniatura(b64),j=await api('fotoVisita',{b64,cod:V2.cod,data:V2.data,item:id});((V2.resp[id]||={}).fotos||=[]).push({id:j.id,th});salvaV()}catch(err){toast('Uma foto não subiu: '+err.message)}}
   rCheck();toast('Fotos salvas')});
 $('#cSecoes').addEventListener('click',e=>{const x=e.target.closest('[data-rmf]');if(!x)return;V2.resp[x.dataset.rmf]?.fotos?.splice(+x.dataset.k,1);salvaV();rCheck()},true);
-$('#bLimpar').onclick=()=>{if(!$('#bLimpar').dataset.c){$('#bLimpar').dataset.c=1;$('#bLimpar').textContent='Toque de novo para apagar';setTimeout(()=>{delete $('#bLimpar').dataset.c;$('#bLimpar').textContent='Nova visita'},4000);return}
-  delete $('#bLimpar').dataset.c;$('#bLimpar').textContent='Nova visita';novaV();rCheck();toast('Visita nova')};
+$('#bLimpar').onclick=()=>{if(!$('#bLimpar').dataset.c){$('#bLimpar').dataset.c=1;$('#bLimpar').textContent='Toque de novo para apagar';setTimeout(()=>{delete $('#bLimpar').dataset.c;$('#bLimpar').textContent=S.perfil.master?'Nova visita':'Novo checklist'},4000);return}
+  delete $('#bLimpar').dataset.c;$('#bLimpar').textContent=S.perfil.master?'Nova visita':'Novo checklist';novaV();rCheck();toast('Visita nova')};
 
 $('#bApagarTxt').onclick=()=>{const b=$('#bApagarTxt');
   if(!b.dataset.c){b.dataset.c=1;b.textContent='Toque de novo para apagar';setTimeout(()=>{delete b.dataset.c;b.textContent='Apagar texto'},4000);return}
@@ -1612,7 +1642,8 @@ $('#bRel').onclick=async()=>{
   }catch(err){toast(err.message)}finally{b.disabled=false;b.textContent='Gerar relatório'}};
 function textoRelatorio(l){
   const R=V2.rel||{},A=analisePre(l),L=[];
-  L.push(`RELATÓRIO DE SUPERVISÃO · ${l.nome} · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,`Supervisor: Ramon Berba · Gerente presente: ${V2.gerente||'não informado'}`,'');
+  if(S.perfil.master)L.push(`RELATÓRIO DE SUPERVISÃO · ${l.nome} · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,`Supervisor: Ramon Berba · Gerente presente: ${V2.gerente||'não informado'}`,'');
+  else L.push(`CHECKLIST DA LOJA · ${l.nome} · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,`Preenchido pela loja · ${V2.gerente||'responsável não informado'}`,'');
   L.push('INDICADORES (painel diário até '+window.__V.ate+')');A.M.forEach(([k,v,sub])=>L.push(`- ${k}: ${v}${sub?' ('+sub+')':''}`));L.push('Leitura: '+A.leitura,'');
   if(R.resumo)L.push('RESUMO',R.resumo,'');
   if(R.pontos_fortes?.length)L.push('PONTOS FORTES',...R.pontos_fortes.map(x=>'- '+x),'');
@@ -1632,30 +1663,48 @@ function rRel(){
     ${R.pontos_fortes?.length?`<h4>Pontos fortes</h4>${li(R.pontos_fortes)}`:''}${R.pontos_atencao?.length?`<h4>Pontos de atenção</h4>${li(R.pontos_atencao)}`:''}
     ${(R.topicos||[]).map(t=>`<h4>${esc(t.titulo)}</h4>${li(t.pontos)}`).join('')}
     <h4>Plano de ação</h4>${(R.planos||[]).map(p=>`<li><b>${esc(p.acao)}</b> · ${esc(p.responsavel||'')} · ${esc(p.prazo||'')} · ${esc(p.prioridade||'')}</li>`).join('')}</div></div>
-    <div class="sec">E-mails para os setores · confira antes de enviar</div>`+
+    `+(!S.perfil.master?`<div class="acts"><button class="btn" type="button" id="bEnviarSup">Enviar para a supervisão</button></div><p class="note">O relatório fica registrado com a data em Revisão › Relatórios da supervisão.</p>`:`<div class="sec">E-mails para os setores · confira antes de enviar</div>`+
     (V2.envios||[]).map((e,k)=>`<div class="email" data-k="${k}"><h4><label><input type="checkbox" data-f="ok" ${e.ok?'checked':''}> ${esc(nomeSetor(e.setor))}</label></h4>
       <label class="f">Para<input class="inp" data-f="para" value="${esc(e.para)}" placeholder="e-mails separados por vírgula"></label>
       <label class="f">Cópia<input class="inp" data-f="cc" value="${esc(e.cc)}"></label>
       <label class="f">Assunto<input class="inp" data-f="assunto" value="${esc(e.assunto)}"></label>
       <label class="f">Texto<textarea class="inp" rows="6" data-f="corpo">${esc(e.corpo)}</textarea></label>${(e.fotos||[]).length?`<small class="selo">${e.fotos.length} foto(s) anexada(s)</small>`:''}</div>`).join('')+
-    `<div class="acts"><button class="btn" type="button" id="bEnviarEmails">Enviar e-mails marcados</button></div><p class="note">Os e-mails saem da conta ramonberba@somossonho.com.br. Só seguem endereços da empresa e da Credsystem.</p>`;
-  $('#bEnviarEmails').onclick=enviarEmails;
+    `<div class="acts"><button class="btn" type="button" id="bEnviarEmails">Enviar e-mails marcados</button></div><p class="note">Os e-mails saem da conta ramonberba@somossonho.com.br. Só seguem endereços da empresa e da Credsystem. O relatório também fica registrado em Revisão › Relatórios.</p>`);
+  if(S.perfil.master)$('#bEnviarEmails').onclick=enviarEmails;else $('#bEnviarSup').onclick=enviarSup;
 }
 $('#cRel').addEventListener('input',e=>{const f=e.target.closest('[data-f]');if(!f)return;const k=+f.closest('.email').dataset.k;V2.envios[k][f.dataset.f]=f.type==='checkbox'?f.checked:f.value;salvaV()});
 $('#cRel').addEventListener('change',e=>{const f=e.target.closest('[data-f="ok"]');if(f){V2.envios[+f.closest('.email').dataset.k].ok=f.checked;salvaV()}});
+const fotosVisita=()=>CHECK.flatMap(sc=>sc.itens.flatMap(i=>(V2.resp[i.id]?.fotos||[]).map(f=>f.id)));
+async function enviarSup(){
+  const b=$('#bEnviarSup');if(!b.dataset.c){b.dataset.c=1;b.textContent='Confirmar envio para a supervisão';return}
+  b.disabled=true;b.textContent='Enviando…';const l=window.__V.lojas.find(x=>x.cod===V2.cod)||{nome:S.perfil.nome};
+  try{await api('salvarChecklist',{data:V2.data,quem:V2.gerente,texto:textoRelatorio(l),resumo:V2.rel?.resumo||'',fotos:fotosVisita()});b.textContent='Enviado ✓';toast('Checklist enviado para a supervisão')}
+  catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;b.textContent='Enviar para a supervisão'}}
+// supervisão: quais lojas têm o checklist liberado para o gerente
+let habSel=null;
+function rHabBtn(){if(!S.perfil.master)return;const n=Array.isArray(S.checkHab)?S.checkHab.length:0;$('#bHab').textContent='Habilitar Checklist Loja'+(n?` (${n})`:'')}
+function rHab(){const L=window.__V.lojas;$('#habLojas').innerHTML=L.map(l=>`<button type="button" data-hl="${l.cod}" class="${habSel.has(l.cod)?'on':''}">${esc(l.nome)}</button>`).join('')}
+$('#bHab').onclick=()=>{const box=$('#habBox');if(!box.hidden){box.hidden=true;return}habSel=new Set(Array.isArray(S.checkHab)?S.checkHab:[]);rHab();box.hidden=false;box.scrollIntoView({behavior:'smooth',block:'nearest'})};
+$('#habLojas').addEventListener('click',e=>{const b=e.target.closest('[data-hl]');if(!b)return;habSel.has(b.dataset.hl)?habSel.delete(b.dataset.hl):habSel.add(b.dataset.hl);b.classList.toggle('on')});
+$('#bHabTodas').onclick=()=>{const L=window.__V.lojas;habSel=habSel.size===L.length?new Set():new Set(L.map(l=>l.cod));rHab()};
+$('#bHabFechar').onclick=()=>{$('#habBox').hidden=true};
+$('#bHabSalvar').onclick=async()=>{const b=$('#bHabSalvar');b.disabled=true;
+  try{const j=await api('habilitarChecklist',{cods:[...habSel]});S.checkHab=j.cods;rHabBtn();$('#habBox').hidden=true;toast(j.cods.length?`Checklist liberado para ${j.cods.length} loja(s)`:'Checklist desligado para todas as lojas')}
+  catch(err){toast(err.message)}finally{b.disabled=false}};
+
 async function enviarEmails(){
   const b=$('#bEnviarEmails'),sel=(V2.envios||[]).filter(e=>e.ok&&e.para.trim());
   if(!sel.length){toast('Marque ao menos um e-mail com destinatário.');return}
   if(!b.dataset.c){b.dataset.c=1;b.textContent=`Confirmar envio de ${sel.length} e-mail(s)`;return}
   b.disabled=true;b.textContent='Enviando…';const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
   const sp=s=>s.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
-  try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo,fotos:e.fotos||[]})),registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel}});
+  try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo,fotos:e.fotos||[]})),registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel},texto:textoRelatorio(l),resumo:V2.rel?.resumo||'',fotosRel:fotosVisita()});
     toast(`${j.enviados} e-mail(s) enviados`+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
   }catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;b.textContent='Enviar e-mails marcados'}}
 
 /* ---------- navegação ---------- */
 const VIEWS=['inicio','painel','pilar','check','revisao','demandas'];
-function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['check','revisao','demandas'].includes(v)))v='inicio';
+function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas'].includes(v))||(!S.perfil?.master&&v==='check'&&S.checkHab!==true))v='inicio';
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
   if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}}
