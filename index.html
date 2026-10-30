@@ -341,8 +341,6 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         </div>
         <label class="f">Transcrição da visita<textarea class="inp" id="cTrans" rows="5" placeholder="O que você falar aparece aqui. Você também pode digitar."></textarea></label>
         <div class="acts" style="margin-top:8px"><button class="btn ghost sm" type="button" id="bApagarTxt">Apagar texto</button></div>
-        <div class="sec">0. Antes da visita · raio-X da loja</div>
-        <div class="panel" id="cPre"></div>
         <div class="sec">Checklist da loja</div>
         <div id="cSecoes"></div>
         <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button></div>
@@ -1134,29 +1132,6 @@ $('#listaDemM').addEventListener('click',async e=>{const b=e.target.closest('[da
 /* ---------- checklist da supervisão: microfone, relatório (Gemini) e e-mails ---------- */
 const CHECK=[
  {
-  "id": "pre",
-  "t": "0. Antes da visita (preparação)",
-  "setor": "loja",
-  "itens": [
-   {
-    "id": "pre7",
-    "t": "Estoque parado e grades furadas sob controle",
-    "ref": "Vem da Central de Giro",
-    "setor": "loja"
-   },
-   {
-    "id": "pre8",
-    "t": "Bateu a meta nos últimos 3 meses",
-    "setor": "loja"
-   },
-   {
-    "id": "pre9",
-    "t": "Plano de ação da última visita executado",
-    "setor": "loja"
-   }
-  ]
- },
- {
   "id": "imp",
   "t": "1. Primeira impressão da loja",
   "setor": "loja",
@@ -1612,8 +1587,9 @@ function analisePre(l){
   return {M,texto,leitura,st,periodoCartao:V.cartao_periodo};
 }
 function rPre(){
-  const l=window.__V.lojas.find(x=>x.cod===V2.cod);if(!l){$('#cPre').innerHTML='';return}
-  const A=analisePre(l);
+  const l=window.__V.lojas.find(x=>x.cod===V2.cod);if(!l)return;
+  const A=analisePre(l);V2.preTexto=A.texto+' '+A.leitura; // seção 0 retirada da tela: os indicadores seguem no relatório
+  if(!$('#cPre'))return;
   $('#cPre').innerHTML=`<div class="kv">${A.M.map(([k,v,s,c])=>`<div style="border-left-color:${c==='ok'?'var(--ok)':c==='r'?'var(--red)':c==='n'?'#ffffff40':'var(--gold)'}"><small>${k}</small><b>${v}</b><span style="display:block;font-size:10.5px;color:var(--sand)">${esc(s)}</span></div>`).join('')}</div>
     <p class="note" style="margin-top:10px"><b style="color:var(--gold)">Leitura:</b> ${esc(A.leitura)}</p><p class="note">Dados do painel diário até ${esc(window.__V.ate)}${A.periodoCartao?' · cartão '+esc(A.periodoCartao):''}. Os itens da seção 0 já vêm marcados; ajuste se precisar.</p>`;
   const IDS=new Set(CHECK.flatMap(x=>x.itens.map(i=>i.id)));let mudou=false;for(const k in A.st){if(!IDS.has(k))continue;const r=V2.resp[k]||={};if(!r.v){r.v=A.st[k];r.auto=1;mudou=true}}
