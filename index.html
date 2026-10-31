@@ -301,7 +301,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
     <div class="wrap">
       <!-- INÍCIO -->
       <section class="view on" id="tela-inicio">
-        <div id="selLojaBox" class="panel" hidden><label class="f">Ver a loja<select class="inp" id="selLoja"></select></label></div>
+        <div id="selLojaBox" class="panel" hidden><label class="f">Ver a rede, a regional ou a loja<select class="inp" id="selLoja"></select></label></div>
         <div class="car" id="car" aria-label="Reator: deslize para trocar entre meta proporcional e dia"></div>
         <div class="dots" id="dots"><button class="on" aria-label="Meta proporcional"></button><button aria-label="Dia"></button><span>deslize ›</span></div>
         <div id="rankDia"></div>
@@ -998,14 +998,19 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
 
 
   }
-  $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${S.perfil.master?'SUPERVISÃO · REGIONAL RAMON':esc(S.perfil.nome.toUpperCase())}`;
+  // visão da supervisão: rede inteira, uma regional (R/T/M) ou uma loja da Regional Ramon (S.cod)
+  const ESC={U:'Rede',R:'Regional Ramon',T:'Regional Tuanne',M:'Regional Mandu'}, E=S.perfil.master&&V.todas&&ESC[S.esc]?S.esc:'R', TD=V.todas||L;
+  const LS=E==='R'?L:E==='U'?TD:TD.filter(x=>x.reg===E);
+  const RA=E==='R'?R:E==='U'?Object.values(V.regs).reduce((s,g)=>{for(const k of ['venda','meta_mes','meta_periodo','ontem','meta_ontem','meta_hoje'])s[k]=(s[k]||0)+(g[k]||0);return s},{}):V.regs[E];
+  $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${S.perfil.master?'SUPERVISÃO · '+ESC[E].toUpperCase():esc(S.perfil.nome.toUpperCase())}`;
   $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','ESTOQUE'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']].concat(S.checkHab===true?[['check','CHECK']]:[]))
     .map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');
   $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?6:S.checkHab===true?3:2},1fr)`;
   $('#selLojaBox').hidden=!S.perfil.master;
-  if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML='<option value="">Regional Ramon (todas)</option>'+L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
-    $('#selLoja').onchange=async e=>{S.cod=e.target.value;try{await carregar()}catch(err){toast(err.message)}}}
-  rReator(V,L,R);rInicio();
+  if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML=`<optgroup label="Visão">${V.todas?'<option value="reg:U">Rede (todas as lojas)</option>':''}<option value="">Regional Ramon (todas)</option>${V.todas?'<option value="reg:T">Regional Tuanne</option><option value="reg:M">Regional Mandu</option>':''}</optgroup>`+
+      `<optgroup label="Lojas da Regional Ramon">${L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('')}</optgroup>`;
+    $('#selLoja').onchange=async e=>{const v=e.target.value;S.esc=v.startsWith('reg:')?v.slice(4):'R';if(v.startsWith('reg:')&&!S.cod){iniciar();return}S.cod=v.startsWith('reg:')?'':v;try{await carregar()}catch(err){toast(err.message)}}}
+  rReator(V,LS,RA,ESC[E]);rInicio();
   $('#atualizado').textContent=`Painel com dias fechados até ${V.ate} · enviado ao app ${S.atualizado?new Date(S.atualizado).toLocaleString('pt-BR').slice(0,16):''}`;
   ir(location.hash.slice(1)||'inicio');
 }
@@ -1014,8 +1019,8 @@ function rankDia(itens,titulo,destaque){
   const r=itens.filter(x=>x.m).sort((a,b)=>b.v/b.m-a.v/a.m),bat=r.filter(x=>x.v>=x.m).length;
   return r.length?`<div class="panel rankdia"><h3>${titulo} · ${bat} de ${r.length} na meta</h3><div class="rows">`+r.map((x,i)=>{const p=x.v/x.m*100;
     return `<div class="row${x.cod===destaque?' eu':''}" style="--c:${cor(p)}"><span class="nm">${i+1}º ${esc(x.nome)}</span><span class="pc">${p1(p)}</span><span class="det"><span>${brl(x.v)} de ${brl(x.m)}</span>${x.a!=null?`<span>${x.a} atend.</span>`:''}</span></div>`}).join('')+`</div></div>`:''}
-function rReator(V,L,R){
-  const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:'Regional Ramon';
+function rReator(V,L,R,nomeVisao='Regional Ramon'){
+  const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:nomeVisao;
   const pProp=pct(a.venda,a.meta_periodo), pDia=pct(a.ontem,a.meta_ontem);
   // parcial de hoje (Central Comercial, a cada carga): soma da loja ou das lojas da regional
   const P=S.parcial, cods=l?[l.cod]:L.map(x=>x.cod), hj=P?cods.reduce((s,c)=>{const x=P.lojas[c];if(x){s.v+=x.venda;s.a+=x.atend;s.p+=x.pecas}return s},{v:0,m:0,a:0,p:0}):null;
