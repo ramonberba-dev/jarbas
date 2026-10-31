@@ -137,6 +137,9 @@ tr:hover td{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
 .ajl{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
 .ajl .st{display:flex;align-items:center;gap:6px}.ajl .st b{min-width:36px;text-align:center;font-size:17px}
 .ajl .st button{width:38px;height:34px;padding:0;font-size:18px}
+.iabox{border:1px solid var(--accent);border-radius:var(--radius);padding:12px;margin-bottom:12px;background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.iabox b{display:block;margin-bottom:6px}.iabox textarea{width:100%;min-height:64px;box-sizing:border-box;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:8px;font:inherit;resize:vertical}
+.iabox .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.iares{margin-top:10px;line-height:1.45}
 .btn.mini{padding:3px 8px;font-size:12px;margin-top:4px}
 .toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--radius);font-weight:700;z-index:20}
 
@@ -504,7 +507,7 @@ function subgrupos(){const tot=DATA.sub.reduce((a,c)=>a+(REG==='U'?c.est:c.reg[R
 
 /* ---------- Remanejamentos ---------- */
 function fechaOrigem(e){const d=document.getElementById('fDe');if(d&&d.open&&!d.contains(e.target)){d.open=false;RF.abre=false}}
-const RF={tipo:'',escopo:'',des:new Set(),para:'',q:'',st:'todos',abre:false,resumo:false,resumoTodas:true,sub:'',grupo:''};
+const RF={ia:null,tipo:'',escopo:'',des:new Set(),para:'',q:'',st:'todos',abre:false,resumo:false,resumoTodas:true,sub:'',grupo:''};
 // unidade do item: calçado em pares, bolsa e acessório em peças
 const un=s=>s.par===false?'pç':'pr', unL=s=>s.par===false?'peças':'pares';
 const GRUPO_N={CALCADOS:'Calçados',BOLSAS:'Bolsas',ACESSORIOS:'Acessórios'};
@@ -514,7 +517,7 @@ const rotSaude = l=>{const s=saude(l);return `${s.ok?'':'⚠ '}${s.t}${l.wosPar!
 function vReman(){
   const S=sugR(); const L=lojasR();
   const opts = (arr,sel)=>'<option value="">Todas</option>'+arr.map(l=>`<option value="${l.cod}" ${sel===l.cod?'selected':''}>${l.num} ${esc(l.nome)}</option>`).join('');
-  const base = RF.para?S.concat(altR(S).sort((a,b)=>b.score-a.score)):S;
+  const base = RF.ia?RF.ia.raw.map(ajusta):RF.para?S.concat(altR(S).sort((a,b)=>b.score-a.score)):S;
   const lista = base.filter(s=>(!RF.tipo||s.tipo===RF.tipo)&&(!RF.escopo||(RF.escopo==='intra'?s.intra:!s.intra))&&(!RF.des.size||RF.des.has(s.de))&&(!RF.para||s.para===RF.para)&&(!RF.sub||(s.sub||'—')===RF.sub)&&(!RF.grupo||(s.grupo||'CALCADOS')===RF.grupo)
     &&(!RF.q||(s.desc+' '+s.ref+' '+s.sub).toLowerCase().includes(RF.q.toLowerCase()))&&(RF.st==='todos'||(RF.st==='feitos'?feito.has(key(s)):!feito.has(key(s)))));
   const todas = DATA.lojas;
@@ -522,6 +525,10 @@ function vReman(){
   <div><h2>Remanejamentos ${REG==='U'?'da rede':'· '+REGS[REG]}</h2>
   <p class="lead">${REG==='U'?'Modo Universal: inclui trocas entre as 3 regionais.':'Só trocas entre lojas da '+REGS[REG]+'. Para trocas entre regionais, clique em Universal.'} Duas regras: <b>recompor grade</b> de produto que a loja vende e está sem 35/36/37, e <b>tirar produto parado</b> (30+ dias sem venda) para a loja que vendeu nos últimos 30 dias. Lojas fora do RJ (083, 089, 099) e a 097 (CD do e-commerce) não enviam nem recebem. As duas de BH (048 e 051) trocam só entre si, quando a rota passa de 30 peças. Nada sai de loja onde o produto chegou há menos de ${DATA.carencia} dias (${f0(DATA.bloqueados)} casos barrados pela carência). A origem só cede o 35/36/37 se o produto estiver parado nela.</p></div>
   <div class="card">
+   ${window.PLAT?.pedir&&DATA.est?`<div class="iabox"><b>Pedir ao Jarbas</b>
+    <textarea id="iaTxt" placeholder="Ex.: retirar as pontas de Icaraí e mandar para uma loja que venda pontas">${esc(RF.ia?.texto||RF.iaRasc||'')}</textarea>
+    <div class="acoes"><button class="btn p" id="iaOk" type="button">Montar sugestão</button>${RF.ia?'<button class="btn" id="iaLimpa" type="button">Limpar pedido</button>':''}</div>
+    ${RF.ia?`<div class="iares"><b style="display:inline">${esc(RF.ia.resumo||'')}</b> ${RF.ia.raw.length?`${f0(RF.ia.raw.length)} produtos · ${f0(RF.ia.raw.reduce((a,s)=>a+s.qtd,0))} peças. Confira, ajuste e marque o que for fazer.`:'Nada encontrado com esse pedido.'}${RF.ia.aviso?`<br><small>${esc(RF.ia.aviso)}</small>`:''}</div>`:''}</div>`:''}
    <div class="filters${RF.filAberto?' aberto':''}">
     <button class="btn mfil" id="bFiltros" type="button" aria-expanded="${!!RF.filAberto}">${RF.filAberto?'Fechar filtros':'Filtros'}${[RF.tipo,RF.escopo,RF.para,RF.sub,RF.st!=='todos'?1:''].filter(Boolean).length+RF.des.size?` · ${[RF.tipo,RF.escopo,RF.para,RF.sub,RF.st!=='todos'?1:''].filter(Boolean).length+(RF.des.size?1:0)} ativo(s)`:''}</button>
     <select id="fTipo" aria-label="Tipo"><option value="">Todos os tipos</option><option value="grade" ${RF.tipo==='grade'?'selected':''}>Recompor grade</option><option value="parado" ${RF.tipo==='parado'?'selected':''}>Tirar parado</option></select>
@@ -557,6 +564,13 @@ function vReman(){
   const bind=(id,k,ev='change')=>$(id).addEventListener(ev,e=>{RF[k]=e.target.value;vReman(); if(ev==='input'){const el=$('#fQ');el.focus();el.setSelectionRange(el.value.length,el.value.length)}});
   bind('#fTipo','tipo');bind('#fEsc','escopo');bind('#fPara','para');bind('#fSub','sub');
   $('#fGrupo').addEventListener('change',e=>{RF.grupo=e.target.value;RF.sub='';vReman()});
+  $('#iaTxt')?.addEventListener('input',e=>{RF.iaRasc=e.target.value});
+  $('#iaLimpa')?.addEventListener('click',()=>{RF.ia=null;RF.iaRasc='';vReman()});
+  $('#iaOk')?.addEventListener('click',async e=>{const txt=$('#iaTxt').value.trim();if(!txt){toast('Escreva o pedido');return}
+    e.target.disabled=true;e.target.textContent='Pensando…';
+    const r=await PLAT.pedir(txt,ctxPedido());
+    if(!r?.ok){e.target.disabled=false;e.target.textContent='Montar sugestão';toast(r?.msg||'Não deu certo');return}
+    RF.ia=montaPedido(r.pedido,txt);RF.des.clear();RF.para='';RF.tipo='';RF.escopo='';RF.sub='';RF.grupo='';RF.q='';RF.st='todos';vReman()});
   $('#fDe').addEventListener('toggle',e=>{RF.abre=e.target.open});
   $('#deOk').addEventListener('click',()=>{RF.abre=false;$('#fDe').open=false});
   // tocar fora da lista fecha (no celular ela cobre a tela)
@@ -587,7 +601,80 @@ function vReman(){
 const key = s=>s.tipo+'|'+s.ref+'|'+s.de+'|'+s.para;
 // lojas que podem participar do remanejamento nesta visão (fora do RJ e 097 não entram)
 const origens = ()=>DATA.lojas.filter(l=>(!l.fora||l.bh)&&inReg(l.cod)).sort((a,b)=>a.num.localeCompare(b.num));
-const selR = ()=>{const S=sugR();return S.concat(altR(S)).filter(s=>feito.has(key(s)))};
+const selR = ()=>{const S=sugR(),ja=new Set(S.map(key));return S.concat(altR(S),(RF.ia?.raw||[]).filter(s=>!ja.has(key(s))).map(ajusta)).filter(s=>feito.has(key(s)))};
+/* ---------- Pedir ao Jarbas: o Gemini traduz o pedido em filtros; aqui as trocas saem do estoque real (DATA.est) ---------- */
+const lojaNum = n=>DATA.lojas.find(l=>l.num===String(n).padStart(3,'0'));
+const REGN={R:'Ramon',T:'Tuanne',M:'Mandu'};
+function ctxPedido(){
+  const E=DATA.est, m=Object.values(E.m), uniq=a=>[...new Set(a.filter(Boolean))].sort();
+  return {regional:REG==='U'?'rede toda':REGN[REG],lojas:E.lojas.map(c=>LJ[c]).filter(Boolean).map(l=>`${l.num} ${l.nome} (${REGN[l.reg]})`),
+    grupos:uniq(m.map(x=>x[3])),subgrupos:uniq(m.map(x=>x[1])),colecoes:uniq(m.map(x=>x[2]))};
+}
+const grade = t=>Object.fromEntries(t.split(' ').map(x=>{const [s,q]=x.split(':');return [s,+q]}));
+function montaPedido(ped,texto){
+  const E=DATA.est, I=Object.fromEntries(E.lojas.map((c,i)=>[c,i])), up=a=>(a||[]).map(x=>String(x).toUpperCase());
+  const O=(ped.origens||[]).map(lojaNum).filter(l=>l&&I[l.cod]!=null);
+  if(!O.length) return {texto,raw:[],resumo:ped.resumo,aviso:'Não entendi de qual loja sai. Escreva o nome ou o número da loja de origem.'};
+  const Dx=(ped.destinos||[]).map(lojaNum).filter(l=>l&&I[l.cod]!=null);
+  const bh=c=>/^(048|051)$/.test(LJ[c]?.num);
+  const podeD=(o,d)=>d!==o&&bh(d)===bh(o)&&(ped.entreRegionais||Dx.length||inReg(d));
+  const G=up(ped.grupos), SB=up(ped.subgrupos), CL=up(ped.colecoes), RF_=(ped.refs||[]).map(String), crit=ped.criterio||'tudo';
+  const v7=E.lojas.map(c=>LJ[c]?.v7Par||0), mv=v7.reduce((a,b)=>a+b,0)/Math.max(1,v7.filter(Boolean).length);
+  const cands=[]; let bloq=0;
+  for(const o of O){ const io=I[o.cod];
+    for(const [ref,cores] of Object.entries(E.e)){ const m=E.m[ref];
+      if(G.length&&!G.includes(String(m[3]).toUpperCase()))continue;
+      if(SB.length&&!SB.some(x=>String(m[1]).toUpperCase().includes(x)))continue;
+      if(CL.length&&!CL.some(x=>String(m[2]).toUpperCase().includes(x)))continue;
+      if(RF_.length&&!RF_.includes(ref))continue;
+      const lin=[]; for(const [cor,[nome,ls]] of Object.entries(cores)){const x=ls.find(y=>y[0]===io);if(x)lin.push({cor,nome,g:grade(x[1])})}
+      if(!lin.length)continue;
+      if((E.c[ref]||[]).includes(io)){bloq++;continue}
+      const tot=lin.reduce((a,x)=>a+Object.values(x.g).reduce((p,q)=>p+q,0),0);
+      const tem=s=>lin.some(x=>Object.entries(x.g).some(([k,q])=>q>0&&k.split('/').includes(s)));
+      const furoCore=['35','36','37'].filter(s=>!tem(s)).length;
+      if(crit==='pontas'&&!(m[4]?(tot<=3||(furoCore>=2&&tot<=6)):tot<=1))continue;
+      if(crit==='parado'&&!(E.p[ref]||[]).includes(io))continue;
+      // destino: quem vendeu o produto, quem tem o modelo com a numeração faltando; loja parada no produto não recebe
+      const ops=[];
+      for(const d of (Dx.length?Dx.map(l=>l.cod):E.lojas)){ if(!podeD(o.cod,d))continue; const id=I[d];
+        if((E.p[ref]||[]).includes(id)&&!Dx.length)continue;
+        const vend=(E.v[ref]||{})[id]||0; let leva=false,falt=[];
+        for(const x of lin){const dl=(cores[x.cor]?.[1]||[]).find(y=>y[0]===id);const dg=dl?grade(dl[1]):null;if(dl)leva=true;
+          for(const [s,q] of Object.entries(x.g))if(q>0&&(!dg||!dg[s]))falt.push(s)}
+        if(!leva)leva=Object.values(cores).some(c=>c[1].some(y=>y[0]===id));
+        if(!vend&&!leva&&!Dx.length)continue;
+        const L=LJ[d], score=vend*3+(leva?3:0)+Math.min(falt.length,6)*2+2*(L?.v7Par||0)/mv-((L?.wosPar||0)>40?3:0)+(L?.reg===o.reg?1:0);
+        ops.push({d,vend,leva,falt:[...new Set(falt)],score});
+      }
+      cands.push({o,ref,m,lin,tot,furoCore,ops:ops.sort((a,b)=>b.score-a.score)});
+    }
+  }
+  // sem histórico do modelo em lugar nenhum: vai para a loja da regional que mais vende calçado (e não está em excesso)
+  const reserva=o=>E.lojas.filter(d=>podeD(o.cod,d)&&(LJ[d]?.wosPar||0)<=40).sort((a,b)=>(LJ[b]?.v7Par||0)-(LJ[a]?.v7Par||0))[0];
+  let unico=null;
+  if(ped.umDestino||Dx.length===1){
+    if(Dx.length===1)unico=Dx[0].cod;
+    else{const sc={};for(const c of cands)for(const x of c.ops)sc[x.d]=(sc[x.d]||0)+x.score;unico=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0]?.[0]||(cands[0]&&reserva(cands[0].o))}
+  }
+  const raw=[];
+  for(const c of cands){
+    let op=unico?(c.ops.find(x=>x.d===unico)||{d:unico,vend:0,leva:false,falt:[],score:0}):c.ops[0];
+    if(!op){const d=reserva(c.o);if(!d)continue;op={d,vend:0,leva:false,falt:[],score:0}}
+    if(op.d===c.o.cod)continue;
+    let resto=ped.maxPorProduto>0?+ped.maxPorProduto:1e9; const cs=[];
+    for(const x of c.lin){const t=[];for(const [s,q] of Object.entries(x.g)){const n=Math.min(q,resto);if(n>0){t.push(s+':'+n);resto-=n}}if(t.length)cs.push({n:x.nome,t:t.join(' ')})}
+    const qtd=somaT(cs); if(!qtd)continue;
+    const u=c.m[4]?(c.tot>1?'pares':'par'):(c.tot>1?'peças':'peça'), gtxt=cs.map(x=>x.t.replace(/:/g,'×')).join(' ');
+    const motivo=(crit==='pontas'?`Ponta na origem: só ${c.tot} ${u} (${gtxt})${c.furoCore?`, sem ${c.furoCore} das numerações 35/36/37`:''}. `:crit==='parado'?'Parado 30+ dias na origem. ':'')+
+      (op.vend?`Destino vendeu <b>${op.vend} em ~30 dias</b>. `:'')+(op.leva&&op.falt.length?`Destino tem o modelo e está sem ${op.falt.slice(0,6).join(', ')}. `:op.leva?'Destino tem o modelo. ':'')+
+      (!op.vend&&!op.leva?'Sem venda registrada do modelo; vai para a loja que mais vende calçado. ':'');
+    raw.push({tipo:'pedido',ref:c.ref,desc:c.m[0],sub:c.m[1],col:c.m[2],grupo:c.m[3],par:!!c.m[4],de:c.o.cod,para:op.d,cores:cs,qtd,
+      intra:LJ[c.o.cod]?.reg===LJ[op.d]?.reg,score:Math.round(op.score*10),motivo,ia:true});
+  }
+  raw.sort((a,b)=>b.score-a.score);
+  return {texto,raw:raw.slice(0,300),resumo:ped.resumo||'',aviso:bloq?`${bloq} produtos ficaram de fora porque chegaram na origem há menos de ${DATA.carencia} dias.`:''};
+}
 // popup de confirmação (Sim / Não)
 function pergunta(tit,txt,sim,nao){return new Promise(ok=>{const d=document.createElement('div');d.className='dlg';
   d.innerHTML=`<div role="dialog" aria-modal="true"><h3>${tit}</h3><p>${txt}</p><div class="acoes"><button class="btn" type="button" data-r="0">${nao}</button><button class="btn p" type="button" data-r="1">${sim}</button></div></div>`;
@@ -763,6 +850,7 @@ function emails(){
 const gmail=(c,t)=>'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(EMAILS[c]||'')+'&cc='+encodeURIComponent(CC.join(','))+'&su='+encodeURIComponent(t.assunto)+'&body='+encodeURIComponent(t.corpo);
 const ganho = s=>{const v=s.vendaDestino14?s.vendaDestino14*2:(s.vendaDestino30||0);return Math.min(s.qtd,Math.max(1,Math.round(v*0.25*(s.tipo==='grade'?1.6:1))))};
 function porque(s){
+  if(s.tipo==='pedido') return s.motivo;
   if(s.tipo==='grade') return `Destino vendeu <b>${s.vendaDestino14} pares em 14 dias</b> e está sem ${s.furos.join(', ')}. ${s.paradoOrigem?`Na origem está parado${s.diasSemVendaOrigem?` há ${s.diasSemVendaOrigem} dias`:' há 30+ dias'}.`:'Origem tem a maior sobra e mantém 1 par no core.'}${s.entradaOrigem!=null?` Chegou na origem há ${s.entradaOrigem} dias.`:''}`;
   return `Sem venda na origem ${s.diasSemVendaOrigem?`há ${s.diasSemVendaOrigem} dias`:'há 30+ dias'} (${s.saldoOrigem} pares lá). Destino vendeu <b>${s.vendaDestino30} em 30 dias</b>; vende em ${s.lojasVendem} lojas.${s.entradaOrigem!=null?` Chegou na origem há ${s.entradaOrigem} dias.`:' Sem entrada nos últimos 75 dias.'}`;
 }
@@ -898,7 +986,8 @@ aplicaId('jarbas'); render();
     if(!r.ok){$('#eMsg').innerHTML=(r.msg||'Não deu certo.')+'<br><br><a class="voltaJ" href="index.html">‹ VOLTAR AO JARBAS</a>';return}
     window.PLAT={DATA:r.dados,nome:'Supervisão',emails:r.emails||{},
       salvaEmails:e=>api({acao:'salvarEmailsGiro',emails:e}).catch(()=>{}),
-      enviar:async m=>{try{return await api(Object.assign({acao:'enviarGiro'},m))}catch(e){return {ok:false,msg:'Sem conexão com o servidor. Confira se o e-mail saiu antes de tentar de novo.'}}}};
+      enviar:async m=>{try{return await api(Object.assign({acao:'enviarGiro'},m))}catch(e){return {ok:false,msg:'Sem conexão com o servidor. Confira se o e-mail saiu antes de tentar de novo.'}}},
+      pedir:(texto,ctx)=>api({acao:'pedidoGiro',texto,ctx}).catch(()=>({ok:false,msg:'Sem conexão com o servidor.'}))};
     $('#espera').remove();
     new Function(document.getElementById('appjs').textContent)();
     const v=document.createElement('a');v.className='voltaJ';v.href='index.html#inicio';v.textContent='‹ VOLTAR';v.setAttribute('aria-label','Voltar ao início do Jarbas');
