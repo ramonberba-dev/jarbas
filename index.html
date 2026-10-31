@@ -866,6 +866,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const brl=v=>'R$ '+Math.round(v||0).toLocaleString('pt-BR');
 const mil=v=>v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+' mi':'R$ '+Math.round(v/1000).toLocaleString('pt-BR')+' mil';
 const pct=(a,b)=>b?a/b*100:0;
+// reacende o reator (animação fluor do CSS); o Painel tem a própria cópia dentro do código dele
+const piscaReator=c=>{if(!c)return;c.style.animation='none';void c.offsetWidth;c.style.animation=''};
 const p1=x=>x.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
 const cor=p=>p>=100?'var(--ok)':p>=85?'var(--gold)':'var(--red)';
 const num=x=>x==null||x===''?'—':Number(x).toLocaleString('pt-BR',{maximumFractionDigits:2});
@@ -1009,7 +1011,7 @@ function rReator(V,L,R){
       :sl(pDia,'VENDA DO DIA',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`));
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   car.dataset.i=0;
-  if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));if(i!=car.dataset.i){car.dataset.i=i;piscaCore(car.querySelectorAll('.core')[i])}}));
+  if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i])}}));
     dots.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})))}
   // ranking das lojas da regional no dia: parcial de hoje (se já chegou) ou o último dia fechado
   $('#rankDia').innerHTML=P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome,v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
