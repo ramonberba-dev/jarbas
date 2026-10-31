@@ -129,6 +129,15 @@ tr:hover td{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:10px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .note{font-size:12.5px;color:var(--muted);max-width:90ch}
+.dlg{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
+.dlg>div{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:16px;width:min(440px,100%);max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.dlg h3{margin:0 0 8px}.dlg p{margin:0 0 12px;line-height:1.45}
+.dlg .acoes{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
+.ajc{margin:10px 0 4px;font-weight:700;font-size:13px;color:var(--muted)}
+.ajl{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
+.ajl .st{display:flex;align-items:center;gap:6px}.ajl .st b{min-width:36px;text-align:center;font-size:17px}
+.ajl .st button{width:38px;height:34px;padding:0;font-size:18px}
+.btn.mini{padding:3px 8px;font-size:12px;margin-top:4px}
 .toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--radius);font-weight:700;z-index:20}
 
 /* identidades */
@@ -447,7 +456,13 @@ const status = l=>{
 const tamsHtml = t=>t.split(' ').map(x=>{const [s,q]=x.split(':');return `<span class="${/^(35|36|37|35\/36|36\/37)$/.test(s)?'c':''}">${s}×${q}</span>`}).join('');
 // regional: só trocas dentro dela; Universal: rede toda, inclusive entre regionais
 // cada sugestão vem calculada para uma visão (esc = U, R, T ou M); dados antigos sem esc caem no filtro por regional
-const sugR = ()=>DATA.sugest.filter(s=>s.esc?s.esc===REG:(REG==='U'||(inReg(s.de)&&inReg(s.para))));
+// quantidade ajustada à mão (menos peças que o sugerido): key -> cores [{n,t}]
+const AJ = JSON.parse(ls('cg-aj')||'{}');
+const somaT = cs=>cs.reduce((a,c)=>a+c.t.split(' ').reduce((x,y)=>x+(+y.split(':')[1]||0),0),0);
+const ajusta = s=>{const a=AJ[key(s)];return a?{...s,cores:a,qtd:somaT(a),orig:s.cores,sug:s.qtd,ajustado:true}:s};
+const sugR = ()=>DATA.sugest.filter(s=>s.esc?s.esc===REG:(REG==='U'||(inReg(s.de)&&inReg(s.para)))).map(ajusta);
+// opções fora do padrão: todas as origens possíveis para o destino escolhido (o robô guarda sem o mínimo de peças e sem dividir estoque)
+const altR = (S=sugR())=>{const ja=new Set(S.map(key));return (DATA.alt||[]).filter(s=>inReg(s.de)&&inReg(s.para)&&!ja.has(key(s))).map(s=>ajusta({...s,fora:true}))};
 
 /* ---------- Visão geral ---------- */
 function vGeral(){
@@ -499,7 +514,8 @@ const rotSaude = l=>{const s=saude(l);return `${s.ok?'':'⚠ '}${s.t}${l.wosPar!
 function vReman(){
   const S=sugR(); const L=lojasR();
   const opts = (arr,sel)=>'<option value="">Todas</option>'+arr.map(l=>`<option value="${l.cod}" ${sel===l.cod?'selected':''}>${l.num} ${esc(l.nome)}</option>`).join('');
-  const lista = S.filter(s=>(!RF.tipo||s.tipo===RF.tipo)&&(!RF.escopo||(RF.escopo==='intra'?s.intra:!s.intra))&&(!RF.des.size||RF.des.has(s.de))&&(!RF.para||s.para===RF.para)&&(!RF.sub||(s.sub||'—')===RF.sub)&&(!RF.grupo||(s.grupo||'CALCADOS')===RF.grupo)
+  const base = RF.para?S.concat(altR(S).sort((a,b)=>b.score-a.score)):S;
+  const lista = base.filter(s=>(!RF.tipo||s.tipo===RF.tipo)&&(!RF.escopo||(RF.escopo==='intra'?s.intra:!s.intra))&&(!RF.des.size||RF.des.has(s.de))&&(!RF.para||s.para===RF.para)&&(!RF.sub||(s.sub||'—')===RF.sub)&&(!RF.grupo||(s.grupo||'CALCADOS')===RF.grupo)
     &&(!RF.q||(s.desc+' '+s.ref+' '+s.sub).toLowerCase().includes(RF.q.toLowerCase()))&&(RF.st==='todos'||(RF.st==='feitos'?feito.has(key(s)):!feito.has(key(s)))));
   const todas = DATA.lojas;
   $('#v-reman').innerHTML=`
@@ -525,13 +541,14 @@ function vReman(){
    </div>
    ${RF.resumo?resumoLojas():''}
    <div id="emails"></div>
+   ${(()=>{const n=lista.filter(s=>s.fora).length;return RF.para?`<p class="note"><span class="chip wa">fora do padrão</span> ${n?`${f0(n)} opções a mais entre ${RF.des.size?'as origens escolhidas':'as lojas'} e ${esc(nomeL(RF.para))}: trocas pequenas ou de outra origem, que não entraram nas sugestões automáticas. Ao marcar, o app pergunta se quer fazer assim.`:'Nenhuma opção a mais entre estas lojas.'}</p>`:''})()}
    <p class="note">${f0(lista.length)} sugestões · ${f0(lista.reduce((a,s)=>a+s.qtd,0))} pares · venda esperada no destino em 30 dias ≈ ${f0(lista.reduce((a,s)=>a+ganho(s),0))} pares.</p>
    <div class="scroll"><table><thead><tr><th>Selec.</th><th>Produto</th><th>Origem → Destino</th><th>Numeração</th><th class="n">Qtd</th><th>Justificativa comercial</th><th class="n">Venda esperada</th></tr></thead><tbody>
    ${lista.slice(0,400).map(s=>`<tr class="${feito.has(key(s))?'done':''}"><td><input type="checkbox" id="ck-${esc(key(s))}" data-k="${esc(key(s))}" ${feito.has(key(s))?'checked':''} aria-label="Selecionar para e-mail"></td>
      <td class="prod">${comFoto(s.ref,`<b>${esc(s.desc)}</b><small>${s.ref} · ${esc(s.sub||'')} · ${esc(s.col||'')}</small>`)}</td>
-     <td><div class="route">${nomeL(s.de)}<i>→</i>${nomeL(s.para)}</div>${regTag(s.de)} ${s.intra?'':'<span class="chip ac">entre regionais</span> '}${regTag(s.para)}</td>
+     <td><div class="route">${nomeL(s.de)}<i>→</i>${nomeL(s.para)}</div>${regTag(s.de)} ${s.intra?'':'<span class="chip ac">entre regionais</span> '}${regTag(s.para)}${s.fora?' <span class="chip wa">fora do padrão</span>':''}</td>
      <td class="grade">${s.cores.map(c=>`<div><small>${esc(c.n)}</small><br>${tamsHtml(c.t)}</div>`).join('')}</td>
-     <td class="n"><b>${s.qtd}</b> ${un(s)}</td>
+     <td class="n"><b>${s.qtd}</b> ${un(s)}${s.ajustado?`<br><small>de ${s.sug} sugeridos</small>`:''}<br><button class="btn mini" type="button" data-aj="${esc(key(s))}">Ajustar</button></td>
      <td class="why">${porque(s)}</td>
      <td class="n">${ganho(s)} ${un(s)}</td></tr>`).join('')}
    </tbody></table></div>
@@ -549,8 +566,12 @@ function vReman(){
   $('#deLimpa').onclick=()=>{RF.des.clear();RF.abre=true;vReman()};
   $('#deExc').onclick=()=>{RF.des=new Set(origens().filter(l=>l.wosPar>26).map(l=>l.cod));RF.abre=true;vReman()};bind('#fSt','st');bind('#fQ','q','input');
   const contaSel=()=>{$('#bEmail').textContent=`Preparar e-mails (${selR().length} selecionadas)`};
-  document.querySelectorAll('#v-reman input[type=checkbox]').forEach(c=>c.addEventListener('change',e=>{const k=e.target.dataset.k;e.target.checked?feito.add(k):feito.delete(k);ls('cg-feito',JSON.stringify([...feito]));e.target.closest('tr').classList.toggle('done',e.target.checked);contaSel();if(RF.resumo){const y=scrollY;vReman();scrollTo(0,y)}}));
-  $('#bTodas').addEventListener('click',()=>{for(const s of lista.slice(0,400))feito.add(key(s));ls('cg-feito',JSON.stringify([...feito]));vReman()});
+  const PK=Object.fromEntries(lista.slice(0,400).map(s=>[key(s),s]));
+  document.querySelectorAll('#v-reman button[data-aj]').forEach(b=>b.addEventListener('click',()=>ajustar(PK[b.dataset.aj])));
+  document.querySelectorAll('#v-reman input[data-k]').forEach(c=>c.addEventListener('change',async e=>{const k=e.target.dataset.k;
+    if(e.target.checked&&PK[k]?.fora&&!AJ[k]&&!await pergunta('Remanejar fora do padrão?',`${esc(PK[k].desc)}: ${PK[k].qtd} ${unL(PK[k])} de ${esc(nomeL(PK[k].de))} para ${esc(nomeL(PK[k].para))}. Esta troca não entrou nas sugestões automáticas (poucas peças ou outra loja foi escolhida como origem). Quer fazer assim mesmo?`,'Sim, remanejar assim','Não')){e.target.checked=false;return}
+    e.target.checked?feito.add(k):feito.delete(k);ls('cg-feito',JSON.stringify([...feito]));e.target.closest('tr').classList.toggle('done',e.target.checked);contaSel();if(RF.resumo){const y=scrollY;vReman();scrollTo(0,y)}}));
+  $('#bTodas').addEventListener('click',()=>{for(const s of lista.slice(0,400))if(!s.fora)feito.add(key(s));ls('cg-feito',JSON.stringify([...feito]));vReman()});
   $('#bEmail').addEventListener('click',emails);
   $('#bResumo').addEventListener('click',()=>{RF.resumo=!RF.resumo;vReman()});
   $('#bFiltros').addEventListener('click',()=>{RF.filAberto=!RF.filAberto;vReman()});
@@ -566,7 +587,41 @@ function vReman(){
 const key = s=>s.tipo+'|'+s.ref+'|'+s.de+'|'+s.para;
 // lojas que podem participar do remanejamento nesta visão (fora do RJ e 097 não entram)
 const origens = ()=>DATA.lojas.filter(l=>(!l.fora||l.bh)&&inReg(l.cod)).sort((a,b)=>a.num.localeCompare(b.num));
-const selR = ()=>sugR().filter(s=>feito.has(key(s)));
+const selR = ()=>{const S=sugR();return S.concat(altR(S)).filter(s=>feito.has(key(s)))};
+// popup de confirmação (Sim / Não)
+function pergunta(tit,txt,sim,nao){return new Promise(ok=>{const d=document.createElement('div');d.className='dlg';
+  d.innerHTML=`<div role="dialog" aria-modal="true"><h3>${tit}</h3><p>${txt}</p><div class="acoes"><button class="btn" type="button" data-r="0">${nao}</button><button class="btn p" type="button" data-r="1">${sim}</button></div></div>`;
+  d.addEventListener('click',e=>{const r=e.target.closest('[data-r]')?.dataset.r;if(r==null&&e.target!==d)return;d.remove();ok(r==='1')});document.body.append(d)})}
+// ajustar a quantidade: só para menos que o sugerido, por cor e numeração; abaixo do sugerido pede confirmação
+function ajustar(s){
+  if(!s)return; const k=key(s), base=s.orig||s.cores, cur={};
+  for(const c of s.cores)for(const x of c.t.split(' ')){const [t,q]=x.split(':');cur[c.n+'|'+t]=+q}
+  const mx={}, linhas=base.map(c=>`<div class="ajc">${esc(c.n)}</div>`+c.t.split(' ').map(x=>{const [t,q]=x.split(':'),id=c.n+'|'+t;mx[id]=+q;cur[id]??=0;
+    return `<div class="ajl"><span>Numeração <b>${esc(t)}</b> <small>(sugerido ${q})</small></span><span class="st"><button class="btn" type="button" data-m="${esc(id)}">−</button><b data-v="${esc(id)}">${cur[id]}</b><button class="btn" type="button" data-p="${esc(id)}">+</button></span></div>`}).join('')).join('');
+  const tot=()=>Object.values(cur).reduce((a,b)=>a+b,0), Y=s.sug||s.qtd;
+  const d=document.createElement('div');d.className='dlg';
+  d.innerHTML=`<div role="dialog" aria-modal="true"><h3>Ajustar quantidade</h3><p><b>${esc(s.desc)}</b><br><small>${esc(nomeL(s.de))} → ${esc(nomeL(s.para))}</small></p>${linhas}
+   <p style="margin-top:12px">Total: <b id="ajTot">${tot()}</b> de ${Y} ${unL(s)} sugeridos</p>
+   <div class="acoes">${s.ajustado?'<button class="btn" type="button" id="ajVolta">Voltar ao sugerido</button>':''}<button class="btn" type="button" id="ajCanc">Cancelar</button><button class="btn p" type="button" id="ajOk">Salvar</button></div></div>`;
+  document.body.append(d);
+  const mostra=id=>{d.querySelector(`[data-v="${CSS.escape(id)}"]`).textContent=cur[id];d.querySelector('#ajTot').textContent=tot()};
+  d.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const id=b.dataset.m;if(cur[id]>0){cur[id]--;mostra(id)}});
+  d.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const id=b.dataset.p;if(cur[id]<mx[id]){cur[id]++;mostra(id)}else toast('Não passa do sugerido')});
+  const fecha=()=>{d.remove();const y=scrollY;vReman();scrollTo(0,y)};
+  d.querySelector('#ajCanc').onclick=()=>d.remove();
+  d.addEventListener('click',e=>{if(e.target===d)d.remove()});
+  d.querySelector('#ajVolta')?.addEventListener('click',()=>{delete AJ[k];ls('cg-aj',JSON.stringify(AJ));fecha()});
+  d.querySelector('#ajOk').onclick=async()=>{
+    const n=tot(); if(!n){toast('Deixe pelo menos 1 '+(s.par===false?'peça':'par'));return}
+    if(n===Y&&!s.fora){delete AJ[k];ls('cg-aj',JSON.stringify(AJ));fecha();return}
+    d.style.display='none';
+    const ok=await pergunta('Remanejar fora do padrão?',n<Y?`O sugerido são <b>${Y} ${unL(s)}</b>. Você vai remanejar <b>${n}</b>. Quer fazer assim?`:`Esta troca não entrou nas sugestões automáticas. Quer remanejar ${n} ${unL(s)} assim mesmo?`,'Sim, remanejar assim','Não');
+    if(!ok){d.style.display='';return}
+    const cs=base.map(c=>({n:c.n,t:c.t.split(' ').map(x=>{const t=x.split(':')[0];return cur[c.n+'|'+t]?t+':'+cur[c.n+'|'+t]:''}).filter(Boolean).join(' ')})).filter(c=>c.t);
+    if(n===Y)delete AJ[k];else AJ[k]=cs; ls('cg-aj',JSON.stringify(AJ));
+    feito.add(k); ls('cg-feito',JSON.stringify([...feito])); fecha(); toast('Ajustado e marcado para envio');
+  };
+}
 // resumo das selecionadas por loja: quanto envia e para quem, quanto recebe e de quem (em peças/pares)
 const baseResumo = ()=>RF.resumoTodas?sugR():selR();
 function porLoja(){
