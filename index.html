@@ -224,6 +224,12 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 @keyframes arcHalo{0%,70%{opacity:0}100%{opacity:1}}
 @keyframes arcRespira{50%{opacity:.7;transform:scale(.96)}}
 @media (prefers-reduced-motion:reduce){.arc svg{animation:none;filter:brightness(1.2) drop-shadow(0 0 14px #8ff)}.arcHalo{animation:none;opacity:1}}
+/* assinatura sutil, flutuando devagar no pé da tela de entrada */
+.assin{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-mono);font-size:12px;letter-spacing:.18em;color:#f3d08a;opacity:0;pointer-events:none;
+  text-shadow:0 0 10px #f3d08a55;animation:assinVem 1.6s ease 4.6s forwards,assinFlutua 6s ease-in-out 4.6s infinite}
+@keyframes assinVem{to{opacity:.45}}
+@keyframes assinFlutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.assin{animation:none;opacity:.45}}
 .login .logo{font-size:64px}
 .login p{margin:0;color:var(--sand);font-size:14px}
 .login .inp{text-align:center;font-size:22px;letter-spacing:.2em;font-family:var(--f-mono)}
@@ -282,6 +288,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <p id="dicaIos" hidden>No iPhone: toque em Compartilhar e depois em "Adicionar à Tela de Início" para instalar.</p>
       <button class="btn ghost" type="button" id="bInstalar" hidden>Instalar o app</button>
     </form>
+    <span class="assin">By Ramon Berba</span>
   </section>
 
   <div id="telaApp" hidden>
