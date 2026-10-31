@@ -79,7 +79,6 @@ h2.t{font-family:var(--f-num);font-weight:500;font-size:30px;letter-spacing:.06e
 #pdots{margin-top:12px}
 @keyframes fluor{0%{filter:brightness(.12)}6%{filter:brightness(1.25)}10%{filter:brightness(.18)}17%{filter:brightness(.95)}21%{filter:brightness(.25)}
   30%{filter:brightness(1.1)}34%{filter:brightness(.45)}46%{filter:brightness(1)}50%{filter:brightness(.7)}62%,100%{filter:brightness(1)}}
-.car.mini .core.liga{animation:fluor .95s steps(1,end) both}
 .car.mini .sock{width:min(50%,196px)}
 .car.mini .core b{font-size:clamp(30px,9vw,40px)}
 .car.mini .cap{margin-top:18px}
@@ -87,7 +86,8 @@ h2.t{font-family:var(--f-num);font-weight:500;font-size:30px;letter-spacing:.06e
 .dots button{width:8px;height:8px;padding:0;border-radius:50%;border:0;background:#f3d6a055;cursor:pointer}
 .dots button.on{width:20px;border-radius:4px;background:var(--gold)}
 .dots span{font-family:var(--f-mono);font-size:9.5px;color:#f3d6a099;margin-left:4px}
-@media (prefers-reduced-motion:no-preference){.core{animation:pulse 3.5s ease-in-out infinite}@keyframes pulse{50%{box-shadow:0 0 52px 2px #ffffffee}}}
+/* todo reator acende piscando como lâmpada fluorescente ao aparecer (abrir o app, trocar de tela) e ao trocar de slide */
+@media (prefers-reduced-motion:no-preference){.core{animation:fluor .95s steps(1,end) both,pulse 3.5s ease-in-out .95s infinite}@keyframes pulse{50%{box-shadow:0 0 52px 2px #ffffffee}}}
 /* placas douradas */
 .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
 .plate{padding:9px 10px;border-radius:3px 12px 3px 12px;color:var(--ink);
@@ -887,6 +887,8 @@ function iniciar(){
   window.__V=V;window.__G=DATA.giro_lojas||[];
   if(!iniciado){iniciado=true;
     /* ---------- painel diário (mesmos dados do Painel de Venda Física) ---------- */
+// reacende o reator (a animação fluor do CSS roda de novo)
+function piscaCore(c){if(!c)return;c.style.animation='none';void c.offsetWidth;c.style.animation=''}
 const [dAte,mAte]=V.ate.split('/').map(Number);
 const anoAte=new Date().getMonth()+1<mAte?new Date().getFullYear()-1:new Date().getFullYear();
 const diasMes=new Date(anoAte,mAte,0).getDate(), diasRest=Math.max(diasMes-dAte,1);
@@ -906,7 +908,7 @@ let pk='resumo',vk='mes',ek='R';
   dots.innerHTML=itens.map((x,i)=>`<button type="button" class="${i?'':'on'}" aria-pressed="${!i}">${x[0].replace('Regional ','')}</button>`).join('');
   const bs=[...dots.querySelectorAll('button')];
   let atual=0,alvo=null; // alvo: no toque, só o reator escolhido pisca (não os do meio do caminho)
-  const piscar=k=>{const c=car.querySelectorAll('.core')[k];if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;c.classList.remove('liga');void c.offsetWidth;c.classList.add('liga')};
+  const piscar=k=>piscaCore(car.querySelectorAll('.core')[k]);
   car.addEventListener('animationend',e=>e.target.classList.remove('liga'));
   car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);bs.forEach((d,k)=>{d.classList.toggle('on',k===i);d.setAttribute('aria-pressed',k===i)});
     if(alvo!=null){if(i===alvo)alvo=null;return}if(i!==atual){atual=i;piscar(i)}}));
@@ -983,7 +985,8 @@ function rReator(V,L,R){
     (hj&&hj.m?sl(pct(hj.v,hj.m),'VENDA DE HOJE',Math.round(pct(hj.v,hj.m))+'%',brl(hj.v),`Até a carga das <b>${esc(hora)}</b> · meta do dia ${brl(hj.m)}<br>Faltam <b>${brl(Math.max(hj.m-hj.v,0))}</b> · P.A. ${hj.a&&hj.p?num(hj.p/hj.a):'—'} · ${hj.a} atend.`)
       :sl(pDia,'VENDA DO DIA',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`));
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
-  if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i))}));
+  car.dataset.i=0;
+  if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));if(i!=car.dataset.i){car.dataset.i=i;piscaCore(car.querySelectorAll('.core')[i])}}));
     dots.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})))}
   // ranking das lojas da regional no dia: parcial de hoje (se já chegou) ou o último dia fechado
   $('#rankDia').innerHTML=P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome,v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
