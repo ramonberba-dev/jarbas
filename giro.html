@@ -139,6 +139,10 @@ tr:hover td{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
 .ajl .st button{width:38px;height:34px;padding:0;font-size:18px}
 .iabox{border:1px solid var(--accent);border-radius:var(--radius);padding:12px;margin-bottom:12px;background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
 .iabox b{display:block;margin-bottom:6px}.iabox textarea{width:100%;min-height:64px;box-sizing:border-box;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:8px;font:inherit;resize:vertical}
+.iarow{display:flex;gap:8px;align-items:stretch}.iarow textarea{flex:1}
+.iamic{flex:none;width:52px;display:grid;place-items:center;padding:0}.iamic svg{width:24px;height:24px}
+.iamic.on{background:var(--bad,#c0392b);color:#fff;border-color:transparent;animation:iapulsa 1s ease-in-out infinite}
+@keyframes iapulsa{50%{opacity:.6}}
 .iabox .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.iares{margin-top:10px;line-height:1.45}
 .btn.mini{padding:3px 8px;font-size:12px;margin-top:4px}
 .toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--radius);font-weight:700;z-index:20}
@@ -526,7 +530,7 @@ function vReman(){
   <p class="lead">${REG==='U'?'Modo Universal: inclui trocas entre as 3 regionais.':'Só trocas entre lojas da '+REGS[REG]+'. Para trocas entre regionais, clique em Universal.'} Duas regras: <b>recompor grade</b> de produto que a loja vende e está sem 35/36/37, e <b>tirar produto parado</b> (30+ dias sem venda) para a loja que vendeu nos últimos 30 dias. Lojas fora do RJ (083, 089, 099) e a 097 (CD do e-commerce) não enviam nem recebem. As duas de BH (048 e 051) trocam só entre si, quando a rota passa de 30 peças. Nada sai de loja onde o produto chegou há menos de ${DATA.carencia} dias (${f0(DATA.bloqueados)} casos barrados pela carência). A origem só cede o 35/36/37 se o produto estiver parado nela.</p></div>
   <div class="card">
    ${window.PLAT?.pedir&&DATA.est?`<div class="iabox"><b>Pedir ao Jarbas</b>
-    <textarea id="iaTxt" placeholder="Ex.: retirar as pontas de Icaraí e mandar para uma loja que venda pontas">${esc(RF.ia?.texto||RF.iaRasc||'')}</textarea>
+    <div class="iarow"><textarea id="iaTxt" placeholder="Ex.: retirar as pontas de Icaraí e mandar para uma loja que venda pontas">${esc(RF.ia?.texto||RF.iaRasc||'')}</textarea>${VOZ?`<button class="btn iamic" id="iaMic" type="button" aria-label="Falar o pedido" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>`:''}</div>
     <div class="acoes"><button class="btn p" id="iaOk" type="button">Montar sugestão</button>${RF.ia?'<button class="btn" id="iaLimpa" type="button">Limpar pedido</button>':''}</div>
     ${RF.ia?`<div class="iares"><b style="display:inline">${esc(RF.ia.resumo||'')}</b> ${RF.ia.raw.length?`${f0(RF.ia.raw.length)} produtos · ${f0(RF.ia.raw.reduce((a,s)=>a+s.qtd,0))} peças. Confira, ajuste e marque o que for fazer.`:'Nada encontrado com esse pedido.'}${RF.ia.aviso?`<br><small>${esc(RF.ia.aviso)}</small>`:''}</div>`:''}</div>`:''}
    <div class="filters${RF.filAberto?' aberto':''}">
@@ -565,6 +569,7 @@ function vReman(){
   bind('#fTipo','tipo');bind('#fEsc','escopo');bind('#fPara','para');bind('#fSub','sub');
   $('#fGrupo').addEventListener('change',e=>{RF.grupo=e.target.value;RF.sub='';vReman()});
   $('#iaTxt')?.addEventListener('input',e=>{RF.iaRasc=e.target.value});
+  $('#iaMic')?.addEventListener('click',falarPedido);
   $('#iaLimpa')?.addEventListener('click',()=>{RF.ia=null;RF.iaRasc='';vReman()});
   $('#iaOk')?.addEventListener('click',async e=>{const txt=$('#iaTxt').value.trim();if(!txt){toast('Escreva o pedido');return}
     e.target.disabled=true;e.target.textContent='Pensando…';
@@ -602,6 +607,19 @@ const key = s=>s.tipo+'|'+s.ref+'|'+s.de+'|'+s.para;
 // lojas que podem participar do remanejamento nesta visão (fora do RJ e 097 não entram)
 const origens = ()=>DATA.lojas.filter(l=>(!l.fora||l.bh)&&inReg(l.cod)).sort((a,b)=>a.num.localeCompare(b.num));
 const selR = ()=>{const S=sugR(),ja=new Set(S.map(key));return S.concat(altR(S),(RF.ia?.raw||[]).filter(s=>!ja.has(key(s))).map(ajusta)).filter(s=>feito.has(key(s)))};
+// microfone do pedido: reconhecimento de voz do próprio celular; o texto falado entra na caixa para conferir antes de montar
+const VOZ=window.SpeechRecognition||window.webkitSpeechRecognition; let vozRec=null;
+function falarPedido(){
+  const b=$('#iaMic'), ta=$('#iaTxt');
+  if(vozRec){vozRec.stop();return}
+  const r=vozRec=new VOZ(); r.lang='pt-BR'; r.interimResults=true; r.continuous=false;
+  const antes=ta.value.trim()?ta.value.trim()+' ':'';
+  b.classList.add('on'); b.setAttribute('aria-pressed','true'); ta.placeholder='Fale o pedido…';
+  r.onresult=ev=>{let txt='';for(let i=0;i<ev.results.length;i++)txt+=ev.results[i][0].transcript;ta.value=antes+txt.trim();RF.iaRasc=ta.value};
+  r.onerror=ev=>{if(ev.error==='not-allowed'||ev.error==='service-not-allowed')toast('Permita o microfone para o app');else if(ev.error==='no-speech')toast('Não ouvi nada. Toque e fale de novo')};
+  r.onend=()=>{vozRec=null;const bb=$('#iaMic');if(bb){bb.classList.remove('on');bb.setAttribute('aria-pressed','false')}if($('#iaTxt').value.trim())toast('Confira o texto e toque em Montar sugestão')};
+  try{r.start()}catch(e){vozRec=null;b.classList.remove('on')}
+}
 /* ---------- Pedir ao Jarbas: o Gemini traduz o pedido em filtros; aqui as trocas saem do estoque real (DATA.est) ---------- */
 const lojaNum = n=>DATA.lojas.find(l=>l.num===String(n).padStart(3,'0'));
 const REGN={R:'Ramon',T:'Tuanne',M:'Mandu'};
