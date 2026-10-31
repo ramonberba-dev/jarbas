@@ -210,6 +210,9 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .li.pd small{font-family:var(--f-mono);font-size:10.5px;letter-spacing:0;color:var(--sand)}
 
 #dock[style*="repeat(6"] a{font-size:15px;letter-spacing:.02em}
+/* ESTOQUE em destaque: botão dourado escovado dentro da barra */
+#dock a[data-v="giro"]{margin:6px 2px;padding:7px 0 4px;align-self:center;border-radius:3px 10px 3px 10px;color:var(--ink);font-weight:600;background:repeating-linear-gradient(90deg,#ffffff1c 0 1px,transparent 1px 3px,#00000012 3px 4px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f,0 0 12px #e8b54a55}
+#dock a[data-v="giro"]:active{filter:brightness(.9)}
 /* app do gerente */
 .topdir{display:flex;align-items:center;gap:10px}
 .sair{border:1px solid var(--gold);background:#00000040;color:var(--gold);font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:6px 9px;border-radius:3px;cursor:pointer;white-space:nowrap}
@@ -983,7 +986,7 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
 
   }
   $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${S.perfil.master?'SUPERVISÃO · REGIONAL RAMON':esc(S.perfil.nome.toUpperCase())}`;
-  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','GIRO'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']].concat(S.checkHab===true?[['check','CHECK']]:[]))
+  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','ESTOQUE'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']].concat(S.checkHab===true?[['check','CHECK']]:[]))
     .map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');
   $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?6:S.checkHab===true?3:2},1fr)`;
   $('#selLojaBox').hidden=!S.perfil.master;
@@ -1748,7 +1751,7 @@ function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas']
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
   if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}}
-// GIRO abre o app da Central de Giro (página própria, mesmo PIN)
+// ESTOQUE abre o app da Central de Giro (página própria, mesmo PIN)
 $('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v==='giro'){location.href='giro.html';return}ir(a.dataset.v)});
 try{history.scrollRestoration='manual'}catch{}
 if(S.pin)carregar().catch(()=>{S.pin=null;$('#telaLogin').hidden=false});

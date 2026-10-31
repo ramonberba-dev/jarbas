@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Jarbas">
 <meta name="robots" content="noindex,nofollow">
-<title>Jarbas · Giro</title>
+<title>Jarbas · Estoque</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -373,7 +373,7 @@ const REGC = {R:'var(--accent)', T:'var(--info)', M:'var(--warn)'};
 
 /* ---------- 10 identidades (logo + paleta + tipografia + navegação) ---------- */
 const IDS = [
- {k:'jarbas', nome:'GIRO', tag:'estoque · remanejamentos', fonte:"'Teko','Chakra Petch',sans-serif", corpo:"'Barlow','Segoe UI',system-ui,sans-serif", nav:'top', r:6,
+ {k:'jarbas', nome:'ESTOQUE', tag:'giro · remanejamentos', fonte:"'Teko','Chakra Petch',sans-serif", corpo:"'Barlow','Segoe UI',system-ui,sans-serif", nav:'top', r:6,
   l:{bg:'#2a0507',surface:'#3d0b10',ink:'#fff5e6',muted:'#d9b98a',line:'#ffffff24',accent:'#e3b04b','accent-soft':'#5c3a12'},
   d:{bg:'#2a0507',surface:'#3d0b10',ink:'#fff5e6',muted:'#d9b98a',line:'#ffffff24',accent:'#e3b04b','accent-soft':'#5c3a12'},
   logo:c=>`<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="${c}"/><circle cx="24" cy="24" r="18" fill="#14171c"/><circle cx="24" cy="24" r="15" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="24" cy="24" r="12" fill="#eafcff"/><path d="M24 15l7 12H17z" fill="none" stroke="#14171c" stroke-width="2" stroke-linejoin="round"/></svg>`},
@@ -1017,7 +1017,7 @@ const h=location.hash.slice(1); if(TABS.some(t=>t[0]===h)) TAB=h;
 aplicaId('jarbas'); render();
 </script>
 
-<div id="espera"><div><b>GIRO</b><span id="eMsg">Carregando estoque e remanejamentos…</span></div></div>
+<div id="espera"><div><b>ESTOQUE</b><span id="eMsg">Carregando estoque e remanejamentos…</span></div></div>
 <script>
 (function(){
   const API='https://script.google.com/macros/s/AKfycby74n9FlCpQT8VFXmgCVWh5Dy8xGg5o9h7xd3cp4pzFRPvkl-RRzQTba8nGwvLXcgsM/exec', $=s=>document.querySelector(s);
