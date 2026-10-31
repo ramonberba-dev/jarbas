@@ -233,6 +233,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 @keyframes assinVem{to{opacity:.45}}
 @keyframes assinFlutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){.assin{animation:none;opacity:.45}}
+#gBox .ou{margin:4px 0;opacity:.7;font-size:13px}#gBtn{display:flex;justify-content:center;min-height:44px}
 .login .logo{font-size:64px}
 .login p{margin:0;color:var(--sand);font-size:14px}
 .login .inp{text-align:center;font-size:22px;letter-spacing:.2em;font-family:var(--f-mono)}
@@ -287,6 +288,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <p>Supervisão Regional Ramon · Sonho dos Pés</p>
       <label class="f" style="text-align:left">PIN da loja<input class="inp" id="pin" autocomplete="off" autocapitalize="characters" maxlength="40" required></label>
       <button class="btn" type="submit" id="bEntrar">Entrar</button>
+      <div id="gBox" hidden><p class="ou">ou</p><div id="gBtn"></div></div>
       <span class="erro" id="erroLogin"></span>
       <p id="dicaIos" hidden>No iPhone: toque em Compartilhar e depois em "Adicionar à Tela de Início" para instalar.</p>
       <button class="btn ghost" type="button" id="bInstalar" hidden>Instalar o app</button>
@@ -892,7 +894,18 @@ const PIL={};ROTINA.forEach(p=>PIL[p.id]=p);
 /* ---------- login ---------- */
 $('#fLogin').addEventListener('submit',async e=>{e.preventDefault();S.pin=$('#pin').value.trim();$('#bEntrar').disabled=true;$('#erroLogin').textContent='';
   try{await carregar();guarda.set('jarbas_pin',S.pin)}catch(err){$('#erroLogin').textContent=err.message;S.pin=null}finally{$('#bEntrar').disabled=false}});
-function sair(){guarda.set('jarbas_pin',null);location.hash='';location.reload()}
+// entrar com a conta Google (opcional): o servidor confere o token e devolve uma sessão que fica no lugar do PIN
+const GID='1078229030387-h0scmaguic93j4vgp31t5kpu8iofk8re.apps.googleusercontent.com';
+if(GID&&!GID.startsWith('__')){
+  const sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.async=true;
+  sc.onload=()=>{google.accounts.id.initialize({client_id:GID,callback:async r=>{$('#erroLogin').textContent='';
+      try{const j=await api('google',{credential:r.credential});S.pin=j.sessao;await carregar();guarda.set('jarbas_pin',S.pin)}
+      catch(err){$('#erroLogin').textContent=err.message;S.pin=null}}});
+    google.accounts.id.renderButton($('#gBtn'),{theme:'filled_black',size:'large',shape:'pill',text:'signin_with',locale:'pt-BR',width:260});
+    $('#gBox').hidden=false};
+  document.head.append(sc);
+}
+function sair(){if(window.google?.accounts)google.accounts.id.disableAutoSelect();guarda.set('jarbas_pin',null);location.hash='';location.reload()}
 $('#bSair').onclick=sair;$('#bSairTopo').onclick=sair;
 if(/iphone|ipad/i.test(navigator.userAgent)&&!navigator.standalone)$('#dicaIos').hidden=false;
 let pedidoInstalar=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();pedidoInstalar=e;$('#bInstalar').hidden=false});
