@@ -1022,9 +1022,11 @@ function rReator(V,L,R){
   if(hj)hj.m=a.meta_hoje; // meta do dia sempre do painel diário (a da parcial não vale)
   const hora=P?String(P.carga||'').slice(11,16):'';
   const sl=(v,lab,big,sub,cap)=>`<div class="sl"><div class="sock"><div class="core" style="--v:${Math.min(v,100).toFixed(1)}"><div><small>${lab}</small><b>${big}</b><small>${sub}</small></div></div></div><div class="cap">${cap}</div></div>`;
-  $('#car').innerHTML=sl(pProp,'META PROPORCIONAL',Math.round(pProp)+'%',mil(a.venda),`${esc(nome)} · meta até ${esc(V.ate)} <b>${mil(a.meta_periodo)}</b><br>${a.venda>=a.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(a.meta_periodo-a.venda))}</b> · meta do mês ${p1(pct(a.venda,a.meta_mes))}`)+
-    (hj&&hj.m?sl(pct(hj.v,hj.m),'VENDA DE HOJE',Math.round(pct(hj.v,hj.m))+'%',brl(hj.v),`Até a carga das <b>${esc(hora)}</b> · meta do dia ${brl(hj.m)}<br>Faltam <b>${brl(Math.max(hj.m-hj.v,0))}</b> · P.A. ${hj.a&&hj.p?num(hj.p/hj.a):'—'} · ${hj.a} atend.`)
-      :sl(pDia,'VENDA DO DIA',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`));
+  // com a parcial de hoje, o reator abre na venda em tempo real (% da meta do dia); a meta proporcional vem depois
+  const sProp=sl(pProp,'META PROPORCIONAL',Math.round(pProp)+'%',mil(a.venda),`${esc(nome)} · meta até ${esc(V.ate)} <b>${mil(a.meta_periodo)}</b><br>${a.venda>=a.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(a.meta_periodo-a.venda))}</b> · meta do mês ${p1(pct(a.venda,a.meta_mes))}`);
+  $('#car').innerHTML=hj&&hj.m?sl(pct(hj.v,hj.m),'VENDA DE HOJE',Math.round(pct(hj.v,hj.m))+'%',brl(hj.v),`Até a carga das <b>${esc(hora)}</b> · meta do dia ${brl(hj.m)}<br>Faltam <b>${brl(Math.max(hj.m-hj.v,0))}</b>${hj.a?` · P.A. ${hj.p?num(hj.p/hj.a):'—'} · ${hj.a} atend.`:''}`)+sProp
+    :sProp+sl(pDia,'VENDA DO DIA',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`);
+  $$('#dots button').forEach((d,k)=>d.setAttribute('aria-label',(hj&&hj.m?['Venda de hoje','Meta proporcional']:['Meta proporcional','Dia'])[k]));
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   car.dataset.i=0;
   if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i])}}));
