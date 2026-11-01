@@ -225,6 +225,28 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 /* ESTOQUE em destaque: botão dourado escovado dentro da barra */
 #dock a[data-v="giro"]{margin:6px 2px;padding:7px 0 4px;align-self:center;border-radius:3px 10px 3px 10px;color:var(--ink);font-weight:600;background:repeating-linear-gradient(90deg,#ffffff1c 0 1px,transparent 1px 3px,#00000012 3px 4px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f,0 0 12px #e8b54a55}
 #dock a[data-v="giro"]:active{filter:brightness(.9)}
+#dock[style*="repeat(7"] a{font-size:12.5px;letter-spacing:0}
+/* EQUIPE: vendedores e Planilha de Metas do Sistema Corporativo */
+.eqv{display:grid;gap:8px;margin-top:10px}
+.eqc{background:#00000040;border:1px solid #ffffff18;border-left:3px solid var(--c,var(--gold));padding:10px 12px;border-radius:4px}
+.eqc b{display:block;font-size:15px}.eqc small{display:block;opacity:.75;margin-top:2px;line-height:1.4}
+.eqc .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;justify-content:flex-start}
+.eqc .acts .btn{padding:7px 10px;font-size:13px;min-height:0}
+.btn.perigo{background:#7d1018;color:#fff;border-color:#ff8b95}
+.eqbadge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:#3ecf7a33;color:#9ff0bf;margin-left:6px;vertical-align:middle}
+.eqbadge.off{background:#ffffff1a;color:#ffffffaa}
+.eqbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.eqbar .f{flex:1;min-width:140px}
+.eqmeta{overflow:auto;max-height:62vh;margin-top:10px;border:1px solid #ffffff18;background:#00000040}
+.eqmeta table{border-collapse:collapse;font-size:12px;white-space:nowrap}
+.eqmeta th,.eqmeta td{padding:5px 7px;border-bottom:1px solid #ffffff12;text-align:right}
+.eqmeta th{position:sticky;top:0;background:#3a0a0e;color:var(--sand);font-weight:600;z-index:1}
+.eqmeta td:first-child,.eqmeta th:first-child{position:sticky;left:0;background:#2a0507;text-align:left;z-index:2;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.eqmeta td.v{background:#1f6b3d;color:#fff}
+.eqdlg{position:fixed;inset:0;z-index:60;background:#000a;display:grid;place-items:center;padding:16px}
+.eqdlg>div{background:#2a0507;border:1px solid var(--gold);border-radius:6px;padding:16px;width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 12px 40px #000c}
+.eqdlg h3{margin:0 0 8px;font-family:var(--f-disp);color:var(--gold);letter-spacing:.04em}.eqdlg p{margin:0 0 10px;line-height:1.45}
+.eqdlg .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+
 /* app do gerente */
 .topdir{display:flex;align-items:center;gap:10px}
 .sair{border:1px solid var(--gold);background:#00000040;color:var(--gold);font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:6px 9px;border-radius:3px;cursor:pointer;white-space:nowrap}
@@ -417,6 +439,29 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         </form>
         <div class="sec">Demandas ativas</div>
         <div class="list" id="listaDemM"></div>
+      </section>
+
+      <!-- EQUIPE (supervisão/comercial): vendedores e Planilha de Metas do Sistema Corporativo -->
+      <section class="view" id="tela-equipe">
+        <h2 class="t">Equipe</h2>
+        <div class="sub">Movimente vendedores e ajuste a Planilha de Metas direto no Sistema Corporativo, com o seu login.</div>
+        <form class="panel" id="eqLogin" hidden autocomplete="off">
+          <h3 style="margin:0 0 6px">Entrar no Sistema Corporativo</h3>
+          <p class="note" style="margin:0 0 8px">Use o mesmo usuário e senha do sistemacorporativo.somossonho.com.br. A senha não fica guardada no Jarbas; a conexão vale por até 6 horas.</p>
+          <label class="f">Usuário<input class="inp" id="eqUsu" autocomplete="username" required></label>
+          <label class="f" style="margin-top:8px">Senha<input class="inp" id="eqSen" type="password" autocomplete="current-password" required></label>
+          <div class="acts"><button class="btn" type="submit" id="eqEntrar">Conectar</button></div>
+          <span class="erro" id="eqErro"></span>
+        </form>
+        <div id="eqApp" hidden>
+          <div class="panel">
+            <div class="eqbar"><label class="f">Loja<select class="inp" id="eqLoja"></select></label>
+              <button class="btn ghost sm" type="button" id="eqSair" title="Desconectar do Sistema Corporativo">Desconectar</button></div>
+            <small class="note" id="eqQuem"></small>
+          </div>
+          <div class="seg" id="eqSeg"><button class="on" data-k="equipe">Equipe</button><button data-k="metas">Planilha de Metas</button><button data-k="pend">Pendências</button></div>
+          <div id="eqBox"></div>
+        </div>
       </section>
     </div>
   </div>
@@ -1027,9 +1072,9 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
   const LS=E==='R'?L:E==='U'?TD:TD.filter(x=>x.reg===E);
   const RA=E==='R'?R:E==='U'?Object.values(V.regs).reduce((s,g)=>{for(const k of ['venda','meta_mes','meta_periodo','ontem','meta_ontem','meta_hoje'])s[k]=(s[k]||0)+(g[k]||0);return s},{}):V.regs[E];
   $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${S.perfil.master?'SUPERVISÃO · '+ESC[E].toUpperCase():esc(S.perfil.nome.toUpperCase())}`;
-  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','ESTOQUE'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']].concat(S.checkHab===true?[['check','CHECK']]:[]))
+  $('#dock').innerHTML=(S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','ESTOQUE'],['revisao','REVISÃO'],['demandas','DEMANDAS']].concat(S.perfil.equipe?[['equipe','EQUIPE']]:[]):[['inicio','INÍCIO'],['painel','PAINEL']].concat(S.checkHab===true?[['check','CHECK']]:[]))
     .map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');
-  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?6:S.checkHab===true?3:2},1fr)`;
+  $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?(S.perfil.equipe?7:6):S.checkHab===true?3:2},1fr)`;
   $('#selLojaBox').hidden=!S.perfil.master;
   if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML=`<optgroup label="Visão">${V.todas?'<option value="reg:U">Rede (todas as lojas)</option>':''}<option value="">Regional Ramon (todas)</option>${V.todas?'<option value="reg:T">Regional Tuanne</option><option value="reg:M">Regional Mandu</option>':''}</optgroup>`+
       `<optgroup label="Lojas da Regional Ramon">${L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('')}</optgroup>`;
@@ -1789,12 +1834,182 @@ async function enviarEmails(){
     toast(`${j.enviados} e-mail(s) enviados`+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
   }catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;b.textContent='Enviar e-mails marcados'}}
 
+/* ---------- EQUIPE: Sistema Corporativo pelo Jarbas (só supervisão/comercial) ---------- */
+const EQ={ok:null,usuario:'',lojas:null,num:'',aba:'equipe',sit:'ativos',busca:'',lin:null,grade:null,mes:new Date().getMonth()+1,ano:new Date().getFullYear(),conf:null,dias:'30',ver:{}};
+// lojas da Regional Ramon pelo número da loja (o mesmo do robô da Central de Giro)
+const EQ_RAMON='008 016 029 030 032 036 037 048 049 051 063 077 083 084 087 097 099 1204'.split(' ');
+const EQ_MESES=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+async function eqApi(acao,extra={}){
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao,pin:S.pin,...extra}),redirect:'follow'});
+  const j=await r.json();if(j.precisaLogin){EQ.ok=false;eqRender();throw new Error(j.msg)}if(!j.ok)throw new Error(j.msg||'O Sistema Corporativo não respondeu.');return j}
+function eqDlg(html){const d=document.createElement('div');d.className='eqdlg';d.innerHTML=`<div role="dialog" aria-modal="true">${html}</div>`;document.body.append(d);return d}
+function eqPergunta(tit,txt,ok='Confirmar',perigo=false){return new Promise(res=>{const d=eqDlg(`<h3>${tit}</h3><p>${txt}</p><div class="acts"><button class="btn ghost" data-r="0">Cancelar</button><button class="btn${perigo?' perigo':''}" data-r="1">${ok}</button></div>`);
+  d.addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b&&e.target!==d)return;d.remove();res(b?.dataset.r==='1')})})}
+function eqEspera(t){const d=eqDlg(`<h3>Aguarde</h3><p>${esc(t)}</p>`);return()=>d.remove()}
+async function eqFaz(espera,fn){const f=eqEspera(espera);try{const j=await fn();f();toast(j.msg||'Pronto.');return j}catch(err){f();await eqPergunta('Não foi possível concluir',esc(err.message),'Entendi');return null}}
+const eqLoja=()=>EQ.lojas?.find(l=>l.num===EQ.num)||{};
+async function eqAbrir(){
+  if(EQ.ok===null){try{const j=await eqApi('scStatus');EQ.ok=true;EQ.usuario=j.usuario}catch{EQ.ok=false}}
+  if(EQ.ok&&!EQ.lojas)await eqCarregaLojas();
+  eqRender();
+}
+async function eqCarregaLojas(){
+  const j=await eqApi('scLojas'),num=t=>(String(t).match(/^(?:SAP\s+)?(\d{3,4})\b/)||[])[1];
+  const m={};(j.metas||[]).forEach(x=>{const n=(String(x.nome).match(/^(\d{3,4})\b/)||[])[1];if(n&&!m[n])m[n]=x.id});
+  EQ.lojas=(j.filiais||[]).filter(f=>!/^SAP/.test(f.t)).map(f=>({num:num(f.t),filial:f.v,nome:f.t.replace(/^\d{3,4}\s+/,''),meta:m[num(f.t)]||''})).filter(l=>l.num);
+  EQ.lojas.sort((a,b)=>(EQ_RAMON.includes(b.num)-EQ_RAMON.includes(a.num))||a.num.localeCompare(b.num));
+  if(!EQ.num)EQ.num=(S.cod&&EQ.lojas.find(l=>('1'+l.num).endsWith(S.cod.slice(-2))&&EQ_RAMON.includes(l.num))?.num)||EQ.lojas.find(l=>EQ_RAMON.includes(l.num))?.num||EQ.lojas[0]?.num||'';
+}
+function eqRender(){
+  $('#eqLogin').hidden=EQ.ok!==false;$('#eqApp').hidden=!EQ.ok;if(!EQ.ok||!EQ.lojas)return;
+  const g=(t,f)=>`<optgroup label="${t}">${EQ.lojas.filter(f).map(l=>`<option value="${l.num}"${l.num===EQ.num?' selected':''}>${esc(l.num+' · '+l.nome)}</option>`).join('')}</optgroup>`;
+  $('#eqLoja').innerHTML=g('Regional Ramon',l=>EQ_RAMON.includes(l.num))+g('Outras lojas',l=>!EQ_RAMON.includes(l.num));
+  $('#eqQuem').textContent=`Conectado ao Sistema Corporativo como ${EQ.usuario}. Tudo que você fizer aqui fica no histórico do sistema com o seu login.`;
+  $$('#eqSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===EQ.aba));
+  if(EQ.aba==='equipe')eqEquipe();else if(EQ.aba==='metas')eqMetas();else eqPend();
+}
+$('#eqLogin').addEventListener('submit',async e=>{e.preventDefault();const b=$('#eqEntrar');b.disabled=true;$('#eqErro').textContent='';
+  try{const j=await eqApi('scEntrar',{usuario:$('#eqUsu').value.trim(),senha:$('#eqSen').value});EQ.ok=true;EQ.usuario=j.usuario;$('#eqSen').value='';await eqCarregaLojas();eqRender()}
+  catch(err){$('#eqErro').textContent=err.message}finally{b.disabled=false}});
+$('#eqSair').onclick=async()=>{try{await eqApi('scSair')}catch{}EQ.ok=false;EQ.lojas=null;eqRender()};
+$('#eqLoja').onchange=e=>{EQ.num=e.target.value;EQ.lin=null;EQ.grade=null;EQ.conf=null;eqRender()};
+$('#eqSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;EQ.aba=b.dataset.k;eqRender()});
+
+/* --- aba Equipe: vendedores da loja --- */
+async function eqEquipe(){
+  const box=$('#eqBox'),l=eqLoja();
+  box.innerHTML=`<div class="panel"><div class="eqbar"><label class="f">Procurar<input class="inp" id="eqBusca" placeholder="nome, código ou CPF (busca em todas as lojas)" value="${esc(EQ.busca)}"></label>
+    <label class="f" style="max-width:150px">Situação<select class="inp" id="eqSit">${[['ativos','Ativos'],['inativos','Inativos'],['todos','Todos']].map(([v,t])=>`<option value="${v}"${EQ.sit===v?' selected':''}>${t}</option>`).join('')}</select></label></div>
+    <div class="acts" style="justify-content:space-between"><button class="btn ghost sm" type="button" id="eqIncluir">+ Incluir vendedor</button><button class="btn sm" type="button" id="eqProcurar">Atualizar lista</button></div></div>
+    <div class="eqv" id="eqLista"><p class="empty">Carregando os vendedores…</p></div>`;
+  $('#eqIncluir').onclick=()=>eqPergunta('Incluir vendedor','Hoje só o acesso do TI tem a inclusão no Sistema Corporativo (o cadastro vem do PEC feito pelo DP). Quando o botão aparecer para a supervisão, ele entra aqui no Jarbas.','Entendi');
+  const ler=async()=>{EQ.busca=$('#eqBusca').value.trim();EQ.sit=$('#eqSit').value;const q=EQ.busca,dig=q.replace(/\D/g,'');
+    const filtro=!q?{filial:l.filial}:/^\d{11}$/.test(dig)?{cpf:dig}:/^\d{1,6}$/.test(q)?{vendedor:q}:{nome:q};
+    $('#eqLista').innerHTML='<p class="empty">Carregando os vendedores…</p>';
+    try{const j=await eqApi('scVendedores',{...filtro,situacao:EQ.sit});EQ.lin=j.linhas;eqLista()}catch(err){$('#eqLista').innerHTML=`<p class="empty">${esc(err.message)}</p>`}};
+  $('#eqProcurar').onclick=ler;$('#eqSit').onchange=ler;$('#eqBusca').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ler()}});
+  ler();
+}
+function eqLista(){
+  const L=EQ.lin||[];
+  $('#eqLista').innerHTML=L.length?L.map((x,i)=>{const c=x.cel,ativo=!/inativ/i.test(c['Situação']||''),f=x.forms.find(f=>/Ativar|Inativar/.test(f.handler));
+    return `<div class="eqc" style="--c:${ativo?'var(--ok)':'#ffffff44'}"><b>${esc(c.Nome||'')}<span class="eqbadge${ativo?'':' off'}">${esc(c['Situação']||'')}</span></b>
+      <small>Código ${esc(c.Vendedor||'')} · ${esc(c.Cargo||'')} · ${esc(c.Loja||'')} · CPF ${esc(c.CPF||'')}</small>
+      <div class="acts">${x.editar&&ativo?`<button class="btn sm" data-ed="${i}">Mudar loja ou cargo</button>`:''}${f?`<button class="btn sm ${f.handler==='Inativar'?'perigo':'ghost'}" data-st="${i}">${f.handler==='Inativar'?'Inativar':'Ativar'}</button>`:''}</div></div>`}).join('')
+    :'<p class="empty">Nenhum vendedor encontrado.</p>';
+}
+$('#eqBox').addEventListener('click',async e=>{
+  const ed=e.target.closest('[data-ed]'),st=e.target.closest('[data-st]');
+  if(ed){const x=EQ.lin[+ed.dataset.ed];eqMudar(x)}
+  if(st){const x=EQ.lin[+st.dataset.st],f=x.forms.find(f=>/Ativar|Inativar/.test(f.handler)),nome=x.cel.Nome;
+    const inat=f.handler==='Inativar';
+    if(!await eqPergunta(inat?'Inativar vendedor':'Ativar vendedor',`${inat?'Inativar':'Ativar'} <b>${esc(nome)}</b> (código ${esc(x.cel.Vendedor)}) na loja ${esc(x.cel.Loja)}?${inat?' Ele(a) deixa de poder vender no Linx.':''}`,inat?'Inativar':'Ativar',inat))return;
+    if(await eqFaz(inat?'Inativando…':'Ativando…',()=>eqApi('scSituacao',{handler:f.handler,vendedor:f.campos.vendedor,nome})))$('#eqProcurar')?.click()}
+});
+async function eqMudar(x){
+  const f=eqEspera('Abrindo o cadastro…');let j;try{j=await eqApi('scEditar',{editar:x.editar})}catch(err){f();return eqPergunta('Não abriu',esc(err.message),'Entendi')}f();
+  const op=(a,v)=>a.map(o=>`<option value="${esc(o.v)}"${o.v===v?' selected':''}>${esc(o.t)}</option>`).join('');
+  const d=eqDlg(`<h3>Mudar loja ou cargo</h3><p><b>${esc(x.cel.Nome)}</b><br><small>Código ${esc(x.cel.Vendedor)} · hoje em ${esc(x.cel.Loja)} como ${esc(x.cel.Cargo)}</small></p>
+    ${j.aviso?`<p class="note">${esc(j.aviso)}</p>`:''}
+    <label class="f">Nova loja<select class="inp" id="mLoja">${op(j.filiais,j.campos.FilialAtual)}</select></label>
+    <label class="f" style="margin-top:8px">Cargo<select class="inp" id="mCargo">${op(j.cargos,j.cargo)}</select></label>
+    ${j.espelhar?`<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input type="checkbox" id="mEsp" style="margin-top:3px"> <span>${esc(j.espelhar)}</span></label>`:''}
+    <div class="acts"><button class="btn ghost" data-r="0">Cancelar</button><button class="btn" data-r="1">Salvar alteração</button></div>`);
+  d.addEventListener('click',async e=>{const b=e.target.closest('[data-r]');if(!b&&e.target!==d)return;if(!b||b.dataset.r==='0'){d.remove();return}
+    const loja=$('#mLoja',d)?.value??d.querySelector('#mLoja').value,cargo=d.querySelector('#mCargo').value,esp=d.querySelector('#mEsp')?.checked;
+    if(loja===j.campos.FilialAtual&&cargo===j.cargo){toast('Nada mudou.');return}
+    const tl=d.querySelector('#mLoja').selectedOptions[0].text;d.remove();
+    if(!await eqPergunta('Confirmar alteração',`<b>${esc(x.cel.Nome)}</b> vai para <b>${esc(tl)}</b> como <b>${esc(cargo)}</b>${esp?' e o Alterdata acompanha':''}. Confirma?`,'Salvar'))return;
+    if(await eqFaz('Salvando no Sistema Corporativo…',()=>eqApi('scSalvarEdicao',{editar:x.editar,campos:j.campos,filial:loja,cargo,espelhar:!!esp,nome:x.cel.Nome})))$('#eqProcurar')?.click()});
+}
+
+/* --- aba Planilha de Metas --- */
+async function eqMetas(){
+  const box=$('#eqBox'),l=eqLoja();
+  if(!l.meta){box.innerHTML='<p class="empty">Esta loja não tem Planilha de Metas no sistema.</p>';return}
+  box.innerHTML=`<div class="panel"><div class="eqbar"><label class="f">Mês<select class="inp" id="mMes">${EQ_MESES.slice(1).map((m,i)=>`<option value="${i+1}"${EQ.mes===i+1?' selected':''}>${m}</option>`).join('')}</select></label>
+    <label class="f" style="max-width:110px">Ano<select class="inp" id="mAno">${[EQ.ano-1,EQ.ano,EQ.ano+1].map(a=>`<option${a===EQ.ano?' selected':''}>${a}</option>`).join('')}</select></label></div>
+    <div class="acts" style="justify-content:flex-start;flex-wrap:wrap">
+      <button class="btn sm perigo" data-m="retirar-vendedor">Retirar vendedor da meta</button><button class="btn sm ghost" data-m="retirar-dia">Retirar dia da meta</button>
+      <button class="btn sm ghost" data-m="definir-gerente">Definir como gerente</button><button class="btn sm ghost" data-m="remover-gerente">Remover gerente</button><button class="btn sm ghost" data-m="redefinir">Redefinir metas</button></div></div>
+    <div id="mGrade"><p class="empty">Carregando a planilha de metas…</p></div>`;
+  $('#mMes').onchange=e=>{EQ.mes=+e.target.value;eqMetas()};$('#mAno').onchange=e=>{EQ.ano=+e.target.value;eqMetas()};
+  try{const j=await eqApi('scMetasGrade',{loja:l.meta,mes:EQ.mes,ano:EQ.ano});EQ.grade=j.grade;eqGrade()}catch(err){$('#mGrade').innerHTML=`<p class="empty">${esc(err.message)}</p>`}
+}
+function eqGrade(){
+  const g=EQ.grade;if(!g||!g.linhas?.length){$('#mGrade').innerHTML='<p class="empty">Sem metas lançadas para esta loja neste mês.</p>';return}
+  const n=v=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  $('#mGrade').innerHTML=`<p class="note">Meta da loja <b>R$ ${n(g.metaLojaTotal)}</b> · soma dos vendedores <b>R$ ${n(g.somaVendedores)}</b> · <span style="background:#1f6b3d;padding:0 6px">verde</span> = gerente no dia · entre parênteses, o perfil.</p>
+    <div class="eqmeta"><table><thead><tr>${g.colunas.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>`+
+    g.linhas.map((r,i)=>`<tr>${r.map((c,k)=>`<td class="${k&&g.celulasVerde?.[i]?.[k]?'v':''}">${esc(c)}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
+}
+$('#eqBox').addEventListener('click',async e=>{const b=e.target.closest('[data-m]');if(!b)return;eqMetaAcao(b.dataset.m)});
+async function eqMetaAcao(tipo){
+  const g=EQ.grade,l=eqLoja();if(!g){toast('Carregue a planilha primeiro.');return}
+  const ini=`${EQ.ano}-${String(EQ.mes).padStart(2,'0')}-01`,fim=new Date(EQ.ano,EQ.mes,0).toISOString().slice(0,10),rot=`${EQ_MESES[EQ.mes].toLowerCase()}/${EQ.ano}`;
+  const base={loja:l.meta,mes:EQ.mes,ano:EQ.ano},nomeL=`${l.num} ${l.nome}`;
+  if(tipo==='redefinir'){if(!await eqPergunta('Redefinir metas',`Recalcular todas as metas dos vendedores de <b>${esc(nomeL)}</b> em ${rot}? Pode levar alguns minutos.`,'Redefinir',true))return;
+    if(await eqFaz('Redefinindo as metas… não feche o app.',()=>eqApi('scMetasAcao',{tipo,corpo:base,nome:nomeL})))eqMetas();return}
+  if(tipo==='retirar-dia'){const d=eqDlg(`<h3>Retirar dia da meta</h3><p>A meta do dia escolhido fica zerada para todos os vendedores de ${esc(nomeL)}.</p><label class="f">Dia<input class="inp" type="date" id="xDia" min="${ini}" max="${fim}" value="${ini}"></label><div class="acts"><button class="btn ghost" data-r="0">Cancelar</button><button class="btn perigo" data-r="1">Retirar dia</button></div>`);
+    d.addEventListener('click',async e=>{const b=e.target.closest('[data-r]');if(!b)return;const dia=d.querySelector('#xDia').value;d.remove();if(b.dataset.r!=='1'||!dia)return;
+      if(!await eqPergunta('Confirmar',`Retirar <b>${dia.split('-').reverse().join('/')}</b> da meta de ${esc(nomeL)}? A meta desse dia é zerada para todos.`,'Retirar',true))return;
+      if(await eqFaz('Retirando o dia da meta…',()=>eqApi('scMetasAcao',{tipo,corpo:{...base,dia},nome:nomeL})))eqMetas()});return}
+  const ger=tipo==='remover-gerente',lista=(g.vendedores||[]).filter((v,i)=>!ger||(g.celulasVerde?.[i]||[]).some(Boolean));
+  if(!lista.length){toast(ger?'Não há gerente marcado nesta planilha.':'Não há vendedores nesta planilha.');return}
+  const txt={'retirar-vendedor':['Retirar vendedor da meta','Zera a meta do vendedor entre as datas escolhidas (ex.: saiu da loja, férias, afastamento).','Retirar'],
+    'definir-gerente':['Definir como gerente','Marca o funcionário como gerente no período (fica verde na planilha). Se tiver meta lançada, ela é zerada.','Continuar'],
+    'remover-gerente':['Remover gerente','Tira a marca de gerente no período. A meta não volta sozinha: depois use Redefinir metas se precisar.','Remover']}[tipo];
+  const d=eqDlg(`<h3>${txt[0]}</h3><p>${txt[1]}</p><label class="f">Funcionário<select class="inp" id="xV">${lista.map(v=>`<option value="${v.codigo}">${esc(v.nome)}</option>`).join('')}</select></label>
+    <div class="grid2" style="margin-top:8px"><label class="f">De<input class="inp" type="date" id="xDe" min="${ini}" max="${fim}" value="${ini}"></label><label class="f">Até<input class="inp" type="date" id="xAte" min="${ini}" max="${fim}" value="${fim}"></label></div>
+    <div class="acts"><button class="btn ghost" data-r="0">Cancelar</button><button class="btn${tipo==='retirar-vendedor'?' perigo':''}" data-r="1">${txt[2]}</button></div>`);
+  d.addEventListener('click',async e=>{const b=e.target.closest('[data-r]');if(!b)return;
+    const v=d.querySelector('#xV').value,nome=d.querySelector('#xV').selectedOptions[0].text,de=d.querySelector('#xDe').value,ate=d.querySelector('#xAte').value;d.remove();if(b.dataset.r!=='1')return;
+    if(!de||!ate||de>ate){toast('Confira as datas.');return}
+    const corpo={...base,vendedorId:+v,dataInicio:de,dataFim:ate},br=x=>x.split('-').reverse().join('/');
+    if(tipo==='definir-gerente'){try{const t=await eqApi('scTemMeta',{corpo});if(t.tem||t.temMeta){if(!await eqPergunta('Funcionário tem meta no período',`${esc(nome)} tem meta lançada nesse período. Zerar a meta e promover a gerente?`,'Zerar e promover',true))return}}catch{}}
+    else if(!await eqPergunta(txt[0],`<b>${esc(nome)}</b> de ${br(de)} a ${br(ate)} em ${esc(nomeL)}. Confirma?`,txt[2],tipo==='retirar-vendedor'))return;
+    if(await eqFaz('Gravando na Planilha de Metas…',()=>eqApi('scMetasAcao',{tipo,corpo,nome:nome+' · '+nomeL})))eqMetas()});
+}
+
+/* --- aba Pendências: conferência Linx × Alterdata --- */
+async function eqPend(){
+  const box=$('#eqBox'),l=eqLoja();
+  box.innerHTML=`<div class="panel"><div class="eqbar"><label class="f">Período de venda<select class="inp" id="pDias">${[['15','Últimos 15 dias'],['30','Últimos 30 dias'],['60','Últimos 60 dias']].map(([v,t])=>`<option value="${v}"${EQ.dias===v?' selected':''}>${t}</option>`).join('')}</select></label></div>
+    <p class="note" style="margin:6px 0 0">Conferência entre o Linx (quem vende) e o Alterdata (folha do DP) da loja ${esc(l.num+' '+l.nome)}. Sem o vínculo, a venda não entra na folha nem nas metas.</p></div><div id="pLista"><p class="empty">Conferindo…</p></div>`;
+  $('#pDias').onchange=e=>{EQ.dias=e.target.value;eqPend()};
+  try{const j=await eqApi('scConferencia',{filial:l.filial,dias:EQ.dias});EQ.conf=j.listas;eqPendLista()}catch(err){$('#pLista').innerHTML=`<p class="empty">${esc(err.message)}</p>`}
+}
+function eqPendLista(){
+  const C=EQ.conf||[];let h='';
+  C.forEach((c,ci)=>{const lim=EQ.ver[ci]?c.linhas.length:Math.min(c.linhas.length,30);
+    h+=`<div class="sec">${esc(c.titulo||c.l)} · ${c.total}</div>${c.sub?`<p class="note">${esc(c.sub)}</p>`:''}`+
+      (c.grupo||[]).filter(f=>f.handler).map((f,fi)=>`<div class="acts" style="justify-content:flex-start"><button class="btn sm${f.perigoso?' perigo':''}" data-pg="${ci}.${fi}">${esc(f.ok||f.botao||f.titulo)}${f.texto?' · '+esc(f.texto):''}</button></div>`).join('')+
+      (c.linhas.length?`<div class="eqv">${c.linhas.slice(0,lim).map((x,i)=>{const cel=Object.entries(x.cel),nome=cel[0]?.[1]||'';
+        return `<div class="eqc"><b>${esc(nome)}</b>${cel.slice(1).map(([k,v])=>v?`<small><i style="opacity:.6;font-style:normal">${esc(k)}:</i> ${esc(v)}</small>`:'').join('')}
+          <div class="acts">${x.forms.filter(f=>f.handler).map((f,fi)=>`<button class="btn sm${f.perigoso?' perigo':''}" data-pa="${ci}.${i}.${fi}">${esc(f.ok||f.botao||f.titulo)}</button>`).join('')}</div></div>`}).join('')}</div>`
+        +(c.linhas.length>lim?`<div class="acts"><button class="btn ghost sm" data-pv="${ci}">Mostrar todos (${c.linhas.length})</button></div>`:''):'<p class="empty">Nada pendente aqui.</p>');
+  });
+  $('#pLista').innerHTML=h||'<p class="empty">Nenhuma pendência nesta loja.</p>';
+}
+$('#eqBox').addEventListener('click',async e=>{
+  const pv=e.target.closest('[data-pv]');if(pv){EQ.ver[pv.dataset.pv]=1;eqPendLista();return}
+  const pa=e.target.closest('[data-pa]'),pg=e.target.closest('[data-pg]');if(!pa&&!pg)return;
+  let f,nome;
+  if(pa){const [ci,i,fi]=pa.dataset.pa.split('.').map(Number),x=EQ.conf[ci].linhas[i];f=x.forms.filter(f=>f.handler)[fi];nome=Object.values(x.cel)[0]||''}
+  else{const [ci,fi]=pg.dataset.pg.split('.').map(Number);f=EQ.conf[ci].grupo.filter(f=>f.handler)[fi];nome=EQ.conf[ci].titulo}
+  const campos={...f.campos};let extra='';
+  for(const [k,ops] of Object.entries(f.opcoes||{}))if(ops.length>1)extra+=`<label class="f" style="margin-top:8px">Escolha<select class="inp" data-op="${esc(k)}">${ops.map(o=>`<option value="${esc(o.v)}"${o.marcado?' selected':''}>${esc(o.t||o.v)}</option>`).join('')}</select></label>`;else if(ops[0])campos[k]=ops[0].v;
+  const d=eqDlg(`<h3>${esc(f.titulo||f.ok)}</h3><p><b>${esc(nome)}</b>${f.texto?`<br><small>${esc(f.texto)}</small>`:''}</p>${extra}<div class="acts"><button class="btn ghost" data-r="0">Cancelar</button><button class="btn${f.perigoso?' perigo':''}" data-r="1">${esc(f.ok||'Confirmar')}</button></div>`);
+  d.addEventListener('click',async ev=>{const b=ev.target.closest('[data-r]');if(!b)return;d.querySelectorAll('[data-op]').forEach(s=>campos[s.dataset.op]=s.value);d.remove();if(b.dataset.r!=='1')return;
+    if(await eqFaz('Gravando no Sistema Corporativo…',()=>eqApi('scConfAcao',{handler:f.handler,campos,nome})))eqPend()});
+});
+
 /* ---------- navegação ---------- */
-const VIEWS=['inicio','painel','pilar','check','revisao','demandas'];
-function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas'].includes(v))||(!S.perfil?.master&&v==='check'&&S.checkHab!==true))v='inicio';
+const VIEWS=['inicio','painel','pilar','check','revisao','demandas','equipe'];
+function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas'].includes(v))||(v==='equipe'&&!S.perfil?.equipe)||(!S.perfil?.master&&v==='check'&&S.checkHab!==true))v='inicio';
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
-  if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}}
+  if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}if(v==='equipe')eqAbrir()}
 // ESTOQUE abre o app da Central de Giro (página própria, mesmo PIN)
 $('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v==='giro'){location.href='giro.html';return}ir(a.dataset.v)});
 try{history.scrollRestoration='manual'}catch{}
