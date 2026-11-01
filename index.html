@@ -232,6 +232,15 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 #dock a.on,#dock a.on:nth-child(even){color:#5dff3c;text-shadow:0 0 3px #5dff3c,0 0 9px #39ff14,0 0 18px #39ff14aa;
   box-shadow:0 0 0 1.5px var(--groove),inset 0 0 0 60px #0000007a,inset 0 0 8px #39ff1455,0 0 10px #39ff1440}
 #dock a:active{filter:brightness(.9)}
+/* alerta de parcial/fechamento para os gerentes: popup que pisca + alarme */
+.alerta{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:18px;background:#000c;animation:alPisca .7s steps(2,end) infinite}
+@keyframes alPisca{0%{background:#3a0006e6}100%{background:#000d}}
+.alerta>div{width:min(420px,100%);text-align:center;padding:22px 18px;border-radius:10px;background:linear-gradient(160deg,#2a0507,#120203);border:3px solid #ff2a3a;box-shadow:0 0 0 2px #000,0 0 30px #ff2a3acc,inset 0 0 24px #ff2a3a55;animation:alBorda .7s ease-in-out infinite alternate}
+@keyframes alBorda{to{border-color:#ffd25a;box-shadow:0 0 0 2px #000,0 0 46px #ffd25acc,inset 0 0 24px #ffd25a55}}
+.alerta .sir{font-size:56px;line-height:1;animation:alGira .5s linear infinite alternate}@keyframes alGira{from{transform:rotate(-12deg) scale(1)}to{transform:rotate(12deg) scale(1.12)}}
+.alerta h2{font-family:var(--f-disp);font-size:30px;letter-spacing:.05em;color:#ffd25a;margin:10px 0 6px;text-shadow:0 0 12px #ff2a3a}
+.alerta p{margin:0 0 16px;line-height:1.45;color:var(--cream);font-size:16px}
+.alerta .btn{width:100%;font-size:20px;padding:14px}.alerta .depois{background:none;border:0;color:var(--sand);margin-top:10px;font-size:14px;text-decoration:underline}
 /* contagiros digital da rede, pequeno, embaixo do reator (só nas visões de regional) */
 .tacho{display:flex;flex-direction:column;align-items:center;margin:-6px auto 4px;width:168px}
 .tacho svg{width:168px;height:96px;overflow:visible}
@@ -1113,6 +1122,7 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
   rReator(V,LS,RA,ESC[E]);rInicio();
   $('#atualizado').textContent=`Painel com dias fechados até ${V.ate} · enviado ao app ${S.atualizado?new Date(S.atualizado).toLocaleString('pt-BR').slice(0,16):''}`;
   ir(location.hash.slice(1)||'inicio');
+  setTimeout(()=>{try{alVerifica()}catch{}},1500);
 }
 
 function rankDia(itens,titulo,destaque){
@@ -2055,6 +2065,37 @@ $('#eqBox').addEventListener('click',async e=>{
   d.addEventListener('click',async ev=>{const b=ev.target.closest('[data-r]');if(!b)return;d.querySelectorAll('[data-op]').forEach(s=>campos[s.dataset.op]=s.value);d.remove();if(b.dataset.r!=='1')return;
     if(await eqFaz('Gravando no Sistema Corporativo…',()=>eqApi('scConfAcao',{handler:f.handler,campos,nome})))eqPend()});
 });
+
+/* ---------- alerta de parcial e fechamento (gerentes) ----------
+   14h e 18h: parcial · 19h50: fechamento das lojas de rua · 21h50: fechamento das lojas de shopping.
+   Popup que pisca, alarme "PÊÊÊ" e vibração até o gerente tocar em "Já enviei". Vale com o app aberto; se abrir depois, aparece na hora (até 90 min). */
+const ALERTAS=[{h:'14:00',fech:false},{h:'18:00',fech:false},{h:'19:50',fech:true,tipo:'RUA'},{h:'21:50',fech:true,tipo:'SH'}];
+let alAudio=null,alSom=null,alAberto=null;
+addEventListener('pointerdown',()=>{try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();if(alAudio.state==='suspended')alAudio.resume()}catch{}},{passive:true});
+function alPee(){try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();alAudio.resume?.();const a=alAudio,t0=a.currentTime;
+  for(const [ini,dur] of [[0,.55],[.7,.55],[1.4,.9]]){const o=a.createOscillator(),g=a.createGain();o.type='square';o.frequency.setValueAtTime(880,t0+ini);o.frequency.linearRampToValueAtTime(1040,t0+ini+dur);
+    g.gain.setValueAtTime(0,t0+ini);g.gain.linearRampToValueAtTime(.35,t0+ini+.02);g.gain.setValueAtTime(.35,t0+ini+dur-.04);g.gain.linearRampToValueAtTime(0,t0+ini+dur);o.connect(g).connect(a.destination);o.start(t0+ini);o.stop(t0+ini+dur)}}catch{}
+  try{navigator.vibrate?.([700,250,700,250,1000])}catch{}}
+const agoraSP=()=>{const f=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());return {dia:f.slice(0,10),min:+f.slice(11,13)*60+ +f.slice(14,16)}};
+const alChave=(d,a)=>'jarbas_alerta_'+d+'_'+a.h;
+function alMostra(a,dia){
+  if(alAberto)return;const parcial=!a.fech,hora=a.h.replace(':00','h').replace(':','h');
+  const d=document.createElement('div');d.className='alerta';d.setAttribute('role','alertdialog');
+  d.innerHTML=`<div><div class="sir">🚨</div><h2>${parcial?'HORA DA PARCIAL':'HORA DO FECHAMENTO'}</h2>
+    <p>${parcial?`São ${hora}. Envie agora a <b>parcial das ${hora}</b> da loja.`:`São ${hora}. Envie agora o <b>fechamento do dia</b> da loja.`}</p>
+    <button class="btn" type="button" data-a="ok">✓ JÁ ENVIEI</button><button class="depois" type="button" data-a="adia">Lembrar em 5 minutos</button></div>`;
+  document.body.append(d);alAberto=d;alPee();alSom=setInterval(alPee,3000);
+  d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;clearInterval(alSom);alSom=null;d.remove();alAberto=null;try{navigator.vibrate?.(0)}catch{}
+    if(b.dataset.a==='ok')guarda.set(alChave(dia,a),'ok');else guarda.set(alChave(dia,a),'adia:'+(agoraSP().min+5))});
+}
+function alVerifica(){
+  if(!S.perfil||S.perfil.master||!S.D)return;
+  const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
+  for(const a of ALERTAS){if(a.tipo&&a.tipo!==tipo)continue;const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||min>m+90)continue;
+    const k=guarda.get(alChave(dia,a));if(k==='ok')continue;if(k&&k.startsWith('adia:')&&min<+k.slice(5))continue;alMostra(a,dia);break}
+}
+setInterval(alVerifica,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(alVerifica,800)});
+if(location.hash==='#testealerta')setTimeout(()=>alMostra({h:'14:00',fech:false},'teste'),1500);
 
 /* ---------- navegação ---------- */
 const VIEWS=['inicio','painel','pilar','check','revisao','demandas','equipe'];
