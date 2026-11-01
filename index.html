@@ -1127,8 +1127,8 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const rks=[
     P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome,v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
       :`<div class="panel rankdia"><h3>Ranking de hoje</h3><p class="note" style="margin:0">Aparece quando chegar a primeira carga da parcial do dia.</p></div>`,
-    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),`Ranking de ontem · ${esc(V.ate)}`,S.cod),
-    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.venda,m:x.meta_periodo,a:x.atend})),`Ranking acumulado · meta até ${esc(V.ate)}`,S.cod)];
+    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),`Ranking de ontem · ${esc(V.ate)}`,S.cod)||`<div class="panel rankdia"><h3>Ranking de ontem</h3><p class="note" style="margin:0">Ainda sem dia fechado neste mês: aparece com o painel de amanhã.</p></div>`,
+    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.venda,m:x.meta_periodo,a:x.atend})),`Ranking acumulado · meta até ${esc(V.ate)}`,S.cod)||`<div class="panel rankdia"><h3>Ranking acumulado</h3><p class="note" style="margin:0">Ainda sem dia fechado neste mês: aparece com o painel de amanhã.</p></div>`];
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   car.dataset.i=0;car._rk=rks;$('#rankDia').innerHTML=rks[0];
   if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));
