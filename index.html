@@ -113,6 +113,18 @@ h2.t{font-family:var(--f-num);font-weight:500;font-size:30px;letter-spacing:.06e
 .row.eu{outline:2px solid var(--gold);outline-offset:1px}
 .rankdia{margin-top:12px}
 .rows{display:grid;gap:6px}
+/* mapa da mina: mapa de calor (cada célula colorida pela distância da meta) */
+.heatw{overflow-x:auto;margin-top:10px;border:1px solid #ffffff14;background:#00000033}
+.heat{border-collapse:separate;border-spacing:3px;width:100%;font-size:12px}
+.heat th{font:600 10px/1.2 var(--f-mono,monospace);letter-spacing:.06em;color:var(--sand);text-transform:uppercase;padding:4px 2px;text-align:center;white-space:nowrap}
+.heat th small{display:block;font-size:9px;opacity:.7;letter-spacing:0;text-transform:none}
+.heat td{padding:6px 3px;text-align:center;border-radius:4px;font-weight:700;color:#fff;white-space:nowrap;text-shadow:0 1px 1px #0008}
+.heat td.nm,.heat th.nm{position:sticky;left:0;z-index:1;background:#2a0507}
+.heat td.nm{text-align:left;font-weight:600;color:var(--cream);max-width:110px;overflow:hidden;text-overflow:ellipsis;text-shadow:none}
+.heat td.nm i{font-style:normal;opacity:.6;margin-left:4px;font-size:10px}
+.heat td.vz{background:#ffffff10;color:#ffffff55;text-shadow:none;font-weight:400}
+.heatleg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sand);margin:8px 2px 0}
+.heatleg b{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(0 75% 42%),hsl(40 75% 42%),hsl(80 75% 42%) 85%,hsl(140 62% 32%) 85%)}
 .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:8px 10px;background:#00000033;border:1px solid #ffffff14;border-left:3px solid var(--c,var(--gold))}
 .row .nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .nm i{font-style:normal;font-family:var(--f-mono);font-size:10px;color:var(--sand);margin-left:4px}
@@ -979,9 +991,21 @@ function rPainel(){
         return `<div class="row" style="--c:${cor(vk==='mes'?pct(l.venda,l.meta_periodo):p)}"><span class="nm">${esc(l.nome)}<i>${esc(l.n2)}</i></span><span class="pc">${p1(p)}</span><span class="bar"><i style="width:${Math.min(p,100)}%"></i>${alvo!=null?`<u style="left:${alvo}%"></u>`:''}</span><span class="det">${det}</span></div>`}).join('')+
       `</div><p class="note">Ritmo = venda do mês sobre a meta acumulada até ontem. Na visão "Meta do mês", a linha branca marca onde a loja deveria estar hoje.</p>`;
   }else if(pk==='mapa'){
-    box.innerHTML=eseg+`<div class="sec">${eNome}</div><div class="rows" style="margin-top:10px">`+[...L].sort((a,b)=>(b.pa||0)-(a.pa||0)).map(l=>{const vm=l.atend?l.venda/l.atend:0,as=l.assoc!=null?l.assoc*100:null;
-      return `<div class="row" style="--c:${(l.pa||0)>=1.6?'var(--ok)':(l.pa||0)>=1.5?'var(--gold)':'var(--red)'}"><span class="nm">${esc(l.nome)}<i>${esc(l.n2)}</i></span><span class="pc">${num(l.pa)}</span><span class="det"><span>${l.atend} atend.</span><span>V.M. ${brl(vm)}</span><span>${l.bolsas??'—'} bolsas</span><span>${l.acess??'—'} acess.</span><span style="color:${as==null?'inherit':as>=90?'var(--ok)':'#ff8b95'}">assoc. ${as!=null?p1(as):'—'}</span></span></div>`}).join('')+
-      `</div><p class="note">Mapa da mina do mês, ordenado por P.A. Cor do P.A.: verde na meta da regional (1,60), dourado perto da meta (1,50 a 1,59), vermelho abaixo. Associação: meta 90%.</p>`;
+    // mapa de calor: % da meta de cada indicador (80% ou menos = vermelho, 100% ou mais = verde)
+    const fundo=r=>r>=1?'hsl(140 62% 32%)':`hsl(${(Math.max(0,Math.min(1,(r-.8)/.2))*80).toFixed(0)} 75% 42%)`, prop=l=>l.meta_mes?l.meta_periodo/l.meta_mes:0;
+    const C=[
+      ['Venda','ritmo',l=>l.meta_periodo?[l.venda/l.meta_periodo,p1(pct(l.venda,l.meta_periodo))]:null],
+      ['Atend.','ritmo',l=>l.mm?.atend&&prop(l)?[l.atend/(l.mm.atend*prop(l)),String(l.atend)]:null],
+      ['P.A.',l=>'meta '+num(l.mm?.pa||1.6),l=>l.pa?[l.pa/(l.mm?.pa||1.6),num(l.pa)]:null],
+      ['V.M.',l=>'meta '+Math.round(l.mm?.vm||180),l=>l.atend?[l.venda/l.atend/(l.mm?.vm||180),'R$ '+Math.round(l.venda/l.atend)]:null],
+      ['Bolsas','10% atend.',l=>l.atend&&l.bolsas!=null?[l.bolsas/l.atend/.1,p1(l.bolsas/l.atend*100)]:null],
+      ['Assoc.','meta 90%',l=>l.assoc!=null?[l.assoc/.9,p1(l.assoc*100)]:null]];
+    const lin=[...L].map(l=>{const c=C.map(x=>x[2](l)),ok=c.filter(Boolean);return {l,c,m:ok.length?ok.reduce((a,x)=>a+Math.min(x[0],1.2),0)/ok.length:-1}}).sort((a,b)=>b.m-a.m);
+    const sub=x=>typeof x[1]==='function'?(L.length&&L.every(l=>!l.mm)?x[1](L[0]):'da loja'):x[1];
+    box.innerHTML=eseg+`<div class="sec">${eNome} · mapa da mina</div><div class="heatw"><table class="heat"><thead><tr><th class="nm" style="text-align:left">Loja</th>${C.map(x=>`<th>${x[0]}<small>${sub(x)}</small></th>`).join('')}</tr></thead><tbody>`+
+      lin.map(({l,c})=>`<tr><td class="nm">${esc(l.nome)}<i>${esc(l.n2)}</i></td>${c.map((x,k)=>x?`<td style="background:${fundo(x[0])}" title="${C[k][0]}: ${Math.round(x[0]*100)}% da meta">${x[1]}</td>`:'<td class="vz">—</td>').join('')}</tr>`).join('')+
+      `</tbody></table></div><div class="heatleg"><span>longe da meta</span><b></b><span>na meta</span></div>`+
+      `<p class="note">Cada célula mostra o resultado do mês e a cor diz quanto falta: vermelho até 80% da meta, laranja e amarelo chegando, verde-escuro na meta. Venda e atendimentos contra a meta até ontem; P.A. e V.M. contra a meta de cada loja no mapa da mina do mês${L.some(l=>l.mm)?'':' (1,60 e R$ 180 quando a loja não tem meta própria)'}; bolsas = 10% dos atendimentos; associação 90%. Lojas em ordem do melhor para o pior conjunto.</p>`;
   }else{
     const nomesReg={R:'Ramon',T:'Tuanne',M:'Mandu'},rede=Object.values(V.regs).reduce((a,r)=>{for(const k in r)a[k]=(a[k]||0)+r[k];return a},{});
     const top=[...V.rede].filter(l=>l.meta_ontem).sort((a,b)=>pct(b.ontem,b.meta_ontem)-pct(a.ontem,a.meta_ontem));
