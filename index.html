@@ -353,7 +353,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <section class="view on" id="tela-inicio">
         <div id="selLojaBox" class="panel" hidden><label class="f">Ver a rede, a regional ou a loja<select class="inp" id="selLoja"></select></label></div>
         <div class="car" id="car" aria-label="Reator: deslize para trocar entre meta proporcional e dia"></div>
-        <div class="dots" id="dots"><button class="on" aria-label="Meta proporcional"></button><button aria-label="Dia"></button><span>deslize ›</span></div>
+        <div class="dots" id="dots"><button class="on" aria-label="Venda de hoje"></button><button aria-label="Venda de ontem"></button><button aria-label="Venda acumulada"></button><span>deslize ›</span></div>
         <div id="rankDia"></div>
         <div class="tiles" id="tiles"></div>
         <div class="list"><button class="li pd" data-go="painel"><span>Painel diário<small id="pdSub"></small></span><em class="tag">ABRIR ›</em></button></div>
@@ -1117,18 +1117,23 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   if(hj)hj.m=a.meta_hoje; // meta do dia sempre do painel diário (a da parcial não vale)
   const hora=P?String(P.carga||'').slice(11,16):'';
   const sl=(v,lab,big,sub,cap)=>`<div class="sl"><div class="sock"><div class="core" style="--v:${Math.min(v,100).toFixed(1)}"><div><small>${lab}</small><b>${big}</b><small>${sub}</small></div></div></div><div class="cap">${cap}</div></div>`;
-  // com a parcial de hoje, o reator abre na venda em tempo real (% da meta do dia); a meta proporcional vem depois
-  const sProp=sl(pProp,'META PROPORCIONAL',Math.round(pProp)+'%',mil(a.venda),`${esc(nome)} · meta até ${esc(V.ate)} <b>${mil(a.meta_periodo)}</b><br>${a.venda>=a.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(a.meta_periodo-a.venda))}</b> · meta do mês ${p1(pct(a.venda,a.meta_mes))}`);
-  $('#car').innerHTML=hj&&hj.m?sl(pct(hj.v,hj.m),'VENDA DE HOJE',Math.round(pct(hj.v,hj.m))+'%',brl(hj.v),`Até a carga das <b>${esc(hora)}</b> · meta do dia ${brl(hj.m)}<br>Faltam <b>${brl(Math.max(hj.m-hj.v,0))}</b>${hj.a?` · P.A. ${hj.p?num(hj.p/hj.a):'—'} · ${hj.a} atend.`:''}`)+sProp
-    :sProp+sl(pDia,'VENDA DO DIA',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`);
-  $$('#dots button').forEach((d,k)=>d.setAttribute('aria-label',(hj&&hj.m?['Venda de hoje','Meta proporcional']:['Meta proporcional','Dia'])[k]));
+  // reator em 3 telas, cada uma com o seu ranking embaixo: hoje (parcial ao vivo) → ontem (dia fechado) → acumulado do mês
+  const capAcum=`${esc(nome)} · meta até ${esc(V.ate)} <b>${mil(a.meta_periodo)}</b><br>${a.venda>=a.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(a.meta_periodo-a.venda))}</b> · meta do mês ${p1(pct(a.venda,a.meta_mes))}`;
+  const sHoje=hj&&hj.m?sl(pct(hj.v,hj.m),'VENDA DE HOJE',Math.round(pct(hj.v,hj.m))+'%',brl(hj.v),`Até a carga das <b>${esc(hora)}</b> · meta do dia ${brl(hj.m)}<br>Faltam <b>${brl(Math.max(hj.m-hj.v,0))}</b>${hj.a?` · P.A. ${hj.p?num(hj.p/hj.a):'—'} · ${hj.a} atend.`:''}`)
+    :sl(0,'VENDA DE HOJE','—','aguardando',`A venda de hoje aparece com a primeira carga da parcial<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`);
+  const sOntem=sl(pDia,'VENDA DE ONTEM',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>${a.ontem>=a.meta_ontem?'Acima em':'Faltaram'} <b>${brl(Math.abs(a.meta_ontem-a.ontem))}</b>`);
+  const sAcum=sl(pProp,'VENDA ACUMULADA',Math.round(pProp)+'%',mil(a.venda),capAcum);
+  $('#car').innerHTML=sHoje+sOntem+sAcum;
+  const rks=[
+    P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome,v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
+      :`<div class="panel rankdia"><h3>Ranking de hoje</h3><p class="note" style="margin:0">Aparece quando chegar a primeira carga da parcial do dia.</p></div>`,
+    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),`Ranking de ontem · ${esc(V.ate)}`,S.cod),
+    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.venda,m:x.meta_periodo,a:x.atend})),`Ranking acumulado · meta até ${esc(V.ate)}`,S.cod)];
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
-  car.dataset.i=0;
-  if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i])}}));
+  car.dataset.i=0;car._rk=rks;$('#rankDia').innerHTML=rks[0];
+  if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));
+      if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i]);if(car._rk?.[i])$('#rankDia').innerHTML=car._rk[i]}}));
     dots.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})))}
-  // ranking das lojas da regional no dia: parcial de hoje (se já chegou) ou o último dia fechado
-  $('#rankDia').innerHTML=P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome,v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
-    :rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),`Ranking do dia fechado ${esc(V.ate)}`,S.cod);
   const rk=[...L].sort((x,y)=>pct(y.venda,y.meta_periodo)-pct(x.venda,x.meta_periodo));
   const tile=(k,v,s)=>`<div class="plate"><small>${k}</small><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
   if(l)$('#tiles').innerHTML=tile('P.A.',num(l.pa),'meta 1,60')+tile('Ticket',Math.round(l.atend?l.venda/l.atend:0),'R$ por atend.')+tile('Ranking',(rk.indexOf(l)+1)+'º','de '+L.length+' no ritmo');
