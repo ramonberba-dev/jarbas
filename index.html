@@ -246,6 +246,9 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .tacho svg{width:168px;height:96px;overflow:visible}
 .tacho .lcd{margin-top:-30px;font-family:var(--f-mono,monospace);font-size:20px;font-weight:700;letter-spacing:.06em;color:#5dff3c;text-shadow:0 0 4px #5dff3c,0 0 10px #39ff1488;background:#020a03;border:1px solid #2b4a2e;border-radius:4px;padding:1px 8px;box-shadow:inset 0 0 8px #000}
 .tacho small{font-family:var(--f-mono,monospace);font-size:10px;letter-spacing:.14em;color:var(--sand);margin-top:3px;text-transform:uppercase}
+.tachos{display:flex;justify-content:center;gap:4px;margin:-4px auto 4px}
+.tachos .tacho{width:112px;margin:0}.tachos .tacho svg{width:112px;height:64px}
+.tachos .tacho .lcd{margin-top:-22px;font-size:15px;padding:0 6px}.tachos .tacho small{font-size:9px;letter-spacing:.08em}
 .tacho .agulha{transition:transform .8s cubic-bezier(.3,1.4,.5,1);transform-origin:84px 84px}
 /* painel de comando curvo: topo em arco e os botões seguindo a curva (--y desce e --r inclina nas pontas, calculados no JS) */
 #dockBox.dock{border-radius:50% 50% 0 0/34px 34px 0 0;padding-top:12px;border-top-width:3px;
@@ -368,7 +371,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <section class="view on" id="tela-inicio">
         <div id="selLojaBox" class="panel" hidden><label class="f">Ver a rede, a regional ou a loja<select class="inp" id="selLoja"></select></label></div>
         <div class="car" id="car" aria-label="Reator: deslize para trocar entre meta proporcional e dia"></div>
-        <div class="tacho" id="tacho" hidden></div>
+        <div id="tacho" hidden></div>
         <div class="dots" id="dots"><button class="on" aria-label="Venda de hoje"></button><button aria-label="Venda de ontem"></button><button aria-label="Venda acumulada"></button><span>deslize ›</span></div>
         <div id="rankDia"></div>
         <div class="tiles" id="tiles"></div>
@@ -1138,8 +1141,9 @@ function tacho(p,lab){
   const g=-90+Math.min(Math.max(p,0),120)*1.5,ok=isFinite(p)&&p>0;
   return `<svg viewBox="0 0 168 96" aria-hidden="true"><path d="M8 84 A76 76 0 0 1 160 84" fill="#0b0203" stroke="#6b450f" stroke-width="2"/>${arco(0,85,72,'#c8202f',6)}${arco(85,100,72,'#e3b04b',6)}${arco(100,120,72,'#3ecf7a',6)}${marcas}
     <g class="agulha" style="transform:rotate(${ok?g:-90}deg)"><line x1="84" y1="84" x2="84" y2="22" stroke="#5dff3c" stroke-width="2.5" stroke-linecap="round" style="filter:drop-shadow(0 0 3px #39ff14)"/></g><circle cx="84" cy="84" r="6" fill="#2b3138" stroke="#e3b04b" stroke-width="1.5"/></svg>
-    <div class="lcd">${ok?Math.round(p)+'%':'--'}</div><small>Rede · ${lab}</small>`;
+    <div class="lcd">${ok?Math.round(p)+'%':'--'}</div><small>${lab}</small>`;
 }
+const tachoUm=(p,lab)=>`<div class="tacho">${tacho(p,lab)}</div>`;
 function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:nomeVisao;
   const pProp=pct(a.venda,a.meta_periodo), pDia=pct(a.ontem,a.meta_ontem);
@@ -1163,12 +1167,18 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   // rede para o contagiros: hoje (parcial de todas as lojas), ontem e acumulado
   const RD=Object.values(V.regs||{}).reduce((s,g)=>{for(const k of ['venda','meta_periodo','ontem','meta_ontem','meta_hoje'])s[k]=(s[k]||0)+(g[k]||0);return s},{});
   const vHoje=P?Object.values(P.lojas).reduce((s,x)=>s+(+x.venda||0),0):0;
-  const tc=[[P?pct(vHoje,RD.meta_hoje):NaN,'hoje'],[pct(RD.ontem,RD.meta_ontem),'ontem'],[pct(RD.venda,RD.meta_periodo),'acumulado']];
-  const mostraT=!l&&nomeVisao!=='Rede';$('#tacho').hidden=!mostraT;if(mostraT)$('#tacho').innerHTML=tacho(...tc[0]);
+  // regionais: um contagiros com a rede · rede: três contagiros, um por regional (Ramon, Tuanne, Mandu)
+  const PER=['hoje','ontem','acumulado'],NREG={R:'Ramon',T:'Tuanne',M:'Mandu'},TD=V.todas||[];
+  const hojeReg=k=>P?TD.filter(x=>x.reg===k).reduce((s,x)=>s+(+P.lojas[x.cod]?.venda||0),0):0;
+  const pReg=(g,k,i)=>!g?NaN:i===0?(P?pct(hojeReg(k),g.meta_hoje):NaN):i===1?pct(g.ontem,g.meta_ontem):pct(g.venda,g.meta_periodo);
+  const pRede=[P?pct(vHoje,RD.meta_hoje):NaN,pct(RD.ontem,RD.meta_ontem),pct(RD.venda,RD.meta_periodo)];
+  const rede=!l&&nomeVisao==='Rede',mostraT=!l&&(rede?TD.length>0:true);
+  const tc=PER.map((per,i)=>rede?`<div class="tachos">${['R','T','M'].map(k=>tachoUm(pReg(V.regs?.[k],k,i),NREG[k]+' · '+per)).join('')}</div>`:tachoUm(pRede[i],'Rede · '+per));
+  $('#tacho').hidden=!mostraT;if(mostraT)$('#tacho').innerHTML=tc[0];
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   car.dataset.i=0;car._rk=rks;car._tc=mostraT?tc:null;$('#rankDia').innerHTML=rks[0];
   if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));
-      if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i]);if(car._rk?.[i])$('#rankDia').innerHTML=car._rk[i];if(car._tc?.[i])$('#tacho').innerHTML=tacho(...car._tc[i])}}));
+      if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i]);if(car._rk?.[i])$('#rankDia').innerHTML=car._rk[i];if(car._tc?.[i])$('#tacho').innerHTML=car._tc[i]}}));
     dots.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})))}
   const rk=[...L].sort((x,y)=>pct(y.venda,y.meta_periodo)-pct(x.venda,x.meta_periodo));
   const tile=(k,v,s)=>`<div class="plate"><small>${k}</small><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
