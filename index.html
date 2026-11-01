@@ -221,12 +221,20 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .li.pd span{font-family:var(--f-num);font-size:22px;letter-spacing:.06em;color:var(--gold)}
 .li.pd small{font-family:var(--f-mono);font-size:10.5px;letter-spacing:0;color:var(--sand)}
 
+/* abas como botões escovados, alternando amarelo e aço; a selecionada acende as letras em verde fluorescente */
+#dock{gap:6px;padding:7px 8px 6px}
+#dock a{margin:0;padding:10px 0 8px;border-radius:3px 10px 3px 10px;font-weight:600;letter-spacing:.04em;color:var(--ink);transition:color .15s,text-shadow .15s,box-shadow .15s;
+  background:repeating-linear-gradient(90deg,#ffffff1c 0 1px,transparent 1px 3px,#00000012 3px 4px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));
+  box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f}
+#dock a:nth-child(even):not([data-v="giro"]){color:#1d2329;text-shadow:0 1px 0 #ffffff66;
+  background:repeating-linear-gradient(90deg,#ffffff2e 0 1px,transparent 1px 3px,#0000001a 3px 4px),linear-gradient(160deg,#f1f4f6,#a9b2ba 55%,#66707a);
+  box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fffc,inset -1px -2px 0 #3c444c}
+#dock a.on,#dock a.on:nth-child(even){color:#5dff3c;text-shadow:0 0 3px #5dff3c,0 0 9px #39ff14,0 0 18px #39ff14aa;
+  box-shadow:0 0 0 1.5px var(--groove),inset 0 0 0 60px #0000007a,inset 0 0 8px #39ff1455,0 0 10px #39ff1440}
+#dock a:active{filter:brightness(.9)}
 #dock[style*="repeat(6"] a{font-size:15px;letter-spacing:.02em}
-/* ESTOQUE em destaque: botão dourado escovado dentro da barra */
-#dock a[data-v="giro"]{margin:6px 2px;padding:7px 0 4px;align-self:center;border-radius:3px 10px 3px 10px;color:var(--ink);font-weight:600;background:repeating-linear-gradient(90deg,#ffffff1c 0 1px,transparent 1px 3px,#00000012 3px 4px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f,0 0 12px #e8b54a55}
-#dock a[data-v="giro"]:active{filter:brightness(.9)}
 /* supervisão com EQUIPE: duas fileiras, letras do tamanho normal; ESTOQUE ocupa duas casas na fileira de baixo */
-#dock.duas{grid-template-columns:repeat(4,1fr)!important}#dock.duas a{font-size:17px;padding:11px 0 9px}#dock.duas a[data-v="giro"]{grid-column:span 2;margin:5px 6px;padding:7px 0 5px}
+#dock.duas{grid-template-columns:repeat(4,1fr)!important}#dock.duas a{font-size:17px;padding:10px 0 8px}#dock.duas a[data-v="giro"]{grid-column:span 2}
 .app.duas{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))}
 /* EQUIPE: vendedores e Planilha de Metas do Sistema Corporativo */
 .eqv{display:grid;gap:8px;margin-top:10px}

@@ -1026,7 +1026,7 @@ aplicaId('jarbas'); render();
   const api=o=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({pin},o)),redirect:'follow'}).then(r=>r.json());
   api({acao:'giro'}).then(r=>{
     if(!r.ok){$('#eMsg').innerHTML=(r.msg||'Não deu certo.')+'<br><br><a class="voltaJ" href="index.html">‹ VOLTAR AO JARBAS</a>';return}
-    window.PLAT={DATA:r.dados,nome:'Supervisão',emails:r.emails||{},
+    window.PLAT={DATA:r.dados,nome:'Supervisão',emails:r.emails||{},regs:r.regs||undefined,
       salvaEmails:e=>api({acao:'salvarEmailsGiro',emails:e}).catch(()=>{}),
       enviar:async m=>{try{return await api(Object.assign({acao:'enviarGiro'},m))}catch(e){return {ok:false,msg:'Sem conexão com o servidor. Confira se o e-mail saiu antes de tentar de novo.'}}},
       pedir:(texto,ctx)=>api({acao:'pedidoGiro',texto,ctx}).catch(()=>({ok:false,msg:'Sem conexão com o servidor.'}))};
