@@ -222,7 +222,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .li.pd small{font-family:var(--f-mono);font-size:10.5px;letter-spacing:0;color:var(--sand)}
 
 /* abas como botões escovados, alternando amarelo e aço; a selecionada acende as letras em verde fluorescente */
-#dock{gap:6px;padding:7px 8px 6px}
+#dock{gap:6px 7px;padding:6px 14px 16px}
 #dock a{margin:0;padding:10px 0 8px;border-radius:3px 10px 3px 10px;font-weight:600;letter-spacing:.04em;color:var(--ink);transition:color .15s,text-shadow .15s,box-shadow .15s;
   background:repeating-linear-gradient(90deg,#ffffff1c 0 1px,transparent 1px 3px,#00000012 3px 4px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));
   box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f}
@@ -232,10 +232,16 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 #dock a.on,#dock a.on:nth-child(even){color:#5dff3c;text-shadow:0 0 3px #5dff3c,0 0 9px #39ff14,0 0 18px #39ff14aa;
   box-shadow:0 0 0 1.5px var(--groove),inset 0 0 0 60px #0000007a,inset 0 0 8px #39ff1455,0 0 10px #39ff1440}
 #dock a:active{filter:brightness(.9)}
+/* painel de comando curvo: topo em arco e os botões seguindo a curva (--y desce e --r inclina nas pontas, calculados no JS) */
+#dockBox.dock{border-radius:50% 50% 0 0/34px 34px 0 0;padding-top:12px;border-top-width:3px;
+  background:radial-gradient(120% 90% at 50% 0,#3a0c11 0,#1a0406 60%,#0d0203),repeating-linear-gradient(90deg,#ffffff08 0 1px,transparent 1px 3px);
+  box-shadow:0 -8px 18px -6px #000d,inset 0 2px 0 #ffffff22,inset 0 10px 18px -10px #e3b04b55}
+#dock{perspective:700px}
+#dock a{transform:translateY(calc(var(--y,0) * 1px)) rotate(calc(var(--r,0) * 1deg));transform-origin:50% 50%}
 #dock[style*="repeat(6"] a{font-size:15px;letter-spacing:.02em}
 /* supervisão com EQUIPE: duas fileiras, letras do tamanho normal; ESTOQUE ocupa duas casas na fileira de baixo */
 #dock.duas{grid-template-columns:repeat(4,1fr)!important}#dock.duas a{font-size:17px;padding:10px 0 8px}#dock.duas a[data-v="giro"]{grid-column:span 2}
-.app.duas{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))}
+.app.duas{padding-bottom:calc(160px + env(safe-area-inset-bottom,0px))}
 /* EQUIPE: vendedores e Planilha de Metas do Sistema Corporativo */
 .eqv{display:grid;gap:8px;margin-top:10px}
 .eqc{background:#00000040;border:1px solid #ffffff18;border-left:3px solid var(--c,var(--gold));padding:10px 12px;border-radius:4px}
@@ -1086,6 +1092,10 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
   $('#dock').innerHTML=(duas?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['revisao','REVISÃO'],['demandas','DEMANDAS'],['equipe','EQUIPE'],['giro','ESTOQUE']]:S.perfil.master?[['inicio','INÍCIO'],['painel','PAINEL'],['check','CHECK'],['giro','ESTOQUE'],['revisao','REVISÃO'],['demandas','DEMANDAS']]:[['inicio','INÍCIO'],['painel','PAINEL']].concat(S.checkHab===true?[['check','CHECK']]:[]))
     .map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');
   $('#dock').style.gridTemplateColumns=`repeat(${S.perfil.master?6:S.checkHab===true?3:2},1fr)`;
+  // arco do painel: cada botão desce e inclina conforme a distância do centro da sua fileira
+  {const cols=duas?4:(S.perfil.master?6:S.checkHab===true?3:2);let c=0;
+   $$('#dock a').forEach(a=>{const span=duas&&a.dataset.v==='giro'?2:1;if(c+span>cols)c=0;const x=((c+(span-1)/2)-(cols-1)/2)/((cols-1)/2||1);
+     a.style.setProperty('--y',(x*x*7).toFixed(1));a.style.setProperty('--r',(x*6).toFixed(1));c=(c+span)%cols})}
   $('#selLojaBox').hidden=!S.perfil.master;
   if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML=`<optgroup label="Visão">${V.todas?'<option value="reg:U">Rede (todas as lojas)</option>':''}<option value="">Regional Ramon (todas)</option>${V.todas?'<option value="reg:T">Regional Tuanne</option><option value="reg:M">Regional Mandu</option>':''}</optgroup>`+
       `<optgroup label="Lojas da Regional Ramon">${L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('')}</optgroup>`;
