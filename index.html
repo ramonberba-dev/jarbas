@@ -376,6 +376,11 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div id="rankDia"></div>
         <div class="tiles" id="tiles"></div>
         <div class="list"><button class="li pd" data-go="painel"><span>Painel diário<small id="pdSub"></small></span><em class="tag">ABRIR ›</em></button></div>
+        <div class="panel" id="pushBox" hidden style="border-color:#ff2a3a;text-align:center">
+          <b style="display:block;margin-bottom:4px">🚨 Alertas de parcial e fechamento</b>
+          <small class="note" style="display:block;margin-bottom:8px">Ative para o celular avisar às 14h, 18h e no fechamento, mesmo com o app fechado.</small>
+          <button class="btn" type="button" id="bPush">Ativar alertas no celular</button>
+        </div>
         <div id="inicioLoja">
           <div class="sec">Demandas da supervisão</div>
           <div class="list" id="listaDem"></div>
@@ -1126,6 +1131,7 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
   $('#atualizado').textContent=`Painel com dias fechados até ${V.ate} · enviado ao app ${S.atualizado?new Date(S.atualizado).toLocaleString('pt-BR').slice(0,16):''}`;
   ir(location.hash.slice(1)||'inicio');
   setTimeout(()=>{try{alVerifica()}catch{}},1500);
+  pushBotao();alDaNotificacao();
 }
 
 function rankDia(itens,titulo,destaque){
@@ -2106,6 +2112,25 @@ function alVerifica(){
 }
 setInterval(alVerifica,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(alVerifica,800)});
 if(location.hash==='#testealerta')setTimeout(()=>alMostra({h:'14:00',fech:false},'teste'),1500);
+
+// inscrição do celular para os alertas com o app fechado (Web Push). No iPhone, só com o app instalado na tela inicial.
+const VAPID='BPHEOsDmewK-Ak2wZYc0SfLtLW4YFICE1-DndBpjUMsrq1_DHt7J-eDTNpLhl4JX0pIBKJHRl-PKX4VbPDLhx1o';
+const b64u=s=>{const p='='.repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+const pushPode=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window&&VAPID&&!VAPID.startsWith('__');
+async function pushInscreve(pedir){
+  if(!pushPode()||!S.perfil)return false;
+  if(Notification.permission!=='granted'){if(!pedir)return false;if(await Notification.requestPermission()!=='granted'){toast('Sem permissão, o celular não consegue avisar.');return false}}
+  const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID)});
+  const l=(S.D?.vendas?.lojas||[]).find(x=>x.cod===S.cod);
+  await api('pushInscrever',{sub:sub.toJSON(),tipo:l?.tipo||''});return true;
+}
+function pushBotao(){const b=$('#pushBox');if(!b)return;const mostra=pushPode()&&S.perfil&&Notification.permission!=='granted';b.hidden=!mostra;
+  if(!mostra&&pushPode()&&S.perfil&&Notification.permission==='granted')pushInscreve(false).catch(()=>{})}
+$('#bPush').onclick=async()=>{const b=$('#bPush');b.disabled=true;try{if(await pushInscreve(true)){toast('Alertas ligados neste celular ✓');$('#pushBox').hidden=true}}catch(err){toast('Não deu: '+err.message)}finally{b.disabled=false}};
+// tocou na notificação: abre direto o popup com o alarme daquele horário
+const HASH0=location.hash; // guardado antes da navegação trocar o endereço
+function alDaNotificacao(){const m=HASH0.match(/^#alerta-(\d{2})(\d{2})$/);if(!m||alDaNotificacao.feito)return;alDaNotificacao.feito=1;const a=ALERTAS.find(x=>x.h===m[1]+':'+m[2]);if(a)setTimeout(()=>alMostra(a,agoraSP().dia),600)}
 
 /* ---------- navegação ---------- */
 const VIEWS=['inicio','painel','pilar','check','revisao','demandas','equipe'];
