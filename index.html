@@ -2085,7 +2085,8 @@ $('#eqBox').addEventListener('click',async e=>{
 /* ---------- alerta de parcial e fechamento (gerentes) ----------
    14h e 18h: parcial · 19h50: fechamento das lojas de rua · 21h50: fechamento das lojas de shopping.
    Popup que pisca até o gerente tocar em "Já enviei"; o alarme "PÊÊÊ" toca duas vezes e repete depois de 10 s. Vale com o app aberto; se abrir depois, aparece na hora (até 90 min). */
-const ALERTAS=[{h:'14:00',fech:false},{h:'18:00',fech:false},{h:'19:50',fech:true,tipo:'RUA'},{h:'21:50',fech:true,tipo:'SH'}];
+// pid = demanda da rotina que o gerente precisa enviar para o alerta sair (Parcial das 14h, das 18h, Fechamento do dia)
+const ALERTAS=[{h:'14:00',fech:false,pid:'p14'},{h:'18:00',fech:false,pid:'p18'},{h:'19:50',fech:true,tipo:'RUA',pid:'fecha'},{h:'21:50',fech:true,tipo:'SH',pid:'fecha'}];
 let alAudio=null,alSom=null,alAberto=null;
 addEventListener('pointerdown',()=>{try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();if(alAudio.state==='suspended')alAudio.resume()}catch{}},{passive:true});
 function alPee(){try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();alAudio.resume?.();const a=alAudio,t0=a.currentTime;
@@ -2099,17 +2100,22 @@ function alMostra(a,dia){
   const d=document.createElement('div');d.className='alerta';d.setAttribute('role','alertdialog');
   d.innerHTML=`<div><div class="sir">🚨</div><h2>${parcial?'HORA DA PARCIAL':'HORA DO FECHAMENTO'}</h2>
     <p>${sup?`São ${hora}. <b>Cobre os gerentes</b>: todas as lojas precisam mandar a <b>parcial das ${hora}</b>.`:parcial?`São ${hora}. Envie agora a <b>parcial das ${hora}</b> da loja.`:`São ${hora}. Envie agora o <b>fechamento do dia</b> da loja.`}</p>
-    <button class="btn" type="button" data-a="ok">${sup?'✓ OK, VOU COBRAR':'✓ JÁ ENVIEI'}</button><button class="depois" type="button" data-a="adia">Lembrar em 5 minutos</button></div>`;
+    ${sup?'<button class="btn" type="button" data-a="ok">✓ OK, VOU COBRAR</button><button class="depois" type="button" data-a="adia">Lembrar em 5 minutos</button>'
+      :`<button class="btn" type="button" data-a="ir">ENVIAR ${parcial?'A PARCIAL':'O FECHAMENTO'} AGORA ›</button><small class="note" style="display:block;margin-top:10px">O aviso só sai depois que ${parcial?'a parcial for enviada':'o fechamento for enviado'} aqui no app.</small>`}</div>`;
   // dois toques agora e mais dois depois de 10 segundos; depois disso só o popup fica na tela
   document.body.append(d);alAberto=d;alPee();alSom=setTimeout(()=>{if(alAberto===d)alPee()},10000);
   d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;clearTimeout(alSom);alSom=null;d.remove();alAberto=null;try{navigator.vibrate?.(0)}catch{}
+    if(b.dataset.a==='ir'){abrirPilar(a.pid);return} // gerente: vai direto para a demanda; o alerta volta se sair sem enviar
     if(b.dataset.a==='ok')guarda.set(alChave(dia,a),'ok');else guarda.set(alChave(dia,a),'adia:'+(agoraSP().min+5))});
 }
 function alVerifica(){
   if(!S.perfil||!S.D)return;const sup=!!S.perfil.master;
   const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.perfil.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
   for(const a of ALERTAS){if(sup?a.fech:(a.tipo&&a.tipo!==tipo))continue; // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
-    const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||min>m+90)continue;
+    const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||(sup&&min>m+90))continue;
+    if(!sup){if(reg(a.pid))continue; // gerente: o alerta só sai quando a demanda do horário foi enviada
+      if(location.hash==='#pilar'&&S.pilar?.id===a.pid)break; // está preenchendo agora
+      alMostra(a,dia);break}
     const k=guarda.get(alChave(dia,a));if(k==='ok')continue;if(k&&k.startsWith('adia:')&&min<+k.slice(5))continue;alMostra(a,dia);break}
 }
 setInterval(alVerifica,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(alVerifica,800)});
