@@ -2084,14 +2084,14 @@ $('#eqBox').addEventListener('click',async e=>{
 
 /* ---------- alerta de parcial e fechamento (gerentes) ----------
    14h e 18h: parcial · 19h50: fechamento das lojas de rua · 21h50: fechamento das lojas de shopping.
-   Popup que pisca, alarme "PÊÊÊ" e vibração até o gerente tocar em "Já enviei". Vale com o app aberto; se abrir depois, aparece na hora (até 90 min). */
+   Popup que pisca até o gerente tocar em "Já enviei"; o alarme "PÊÊÊ" toca duas vezes e repete depois de 10 s. Vale com o app aberto; se abrir depois, aparece na hora (até 90 min). */
 const ALERTAS=[{h:'14:00',fech:false},{h:'18:00',fech:false},{h:'19:50',fech:true,tipo:'RUA'},{h:'21:50',fech:true,tipo:'SH'}];
 let alAudio=null,alSom=null,alAberto=null;
 addEventListener('pointerdown',()=>{try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();if(alAudio.state==='suspended')alAudio.resume()}catch{}},{passive:true});
 function alPee(){try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();alAudio.resume?.();const a=alAudio,t0=a.currentTime;
-  for(const [ini,dur] of [[0,.55],[.7,.55],[1.4,.9]]){const o=a.createOscillator(),g=a.createGain();o.type='square';o.frequency.setValueAtTime(880,t0+ini);o.frequency.linearRampToValueAtTime(1040,t0+ini+dur);
+  for(const [ini,dur] of [[0,.9],[1.15,.9]]){ // dois toques PÊÊÊconst o=a.createOscillator(),g=a.createGain();o.type='square';o.frequency.setValueAtTime(880,t0+ini);o.frequency.linearRampToValueAtTime(1040,t0+ini+dur);
     g.gain.setValueAtTime(0,t0+ini);g.gain.linearRampToValueAtTime(.35,t0+ini+.02);g.gain.setValueAtTime(.35,t0+ini+dur-.04);g.gain.linearRampToValueAtTime(0,t0+ini+dur);o.connect(g).connect(a.destination);o.start(t0+ini);o.stop(t0+ini+dur)}}catch{}
-  try{navigator.vibrate?.([700,250,700,250,1000])}catch{}}
+  try{navigator.vibrate?.([900,250,900])}catch{}}
 const agoraSP=()=>{const f=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());return {dia:f.slice(0,10),min:+f.slice(11,13)*60+ +f.slice(14,16)}};
 const alChave=(d,a)=>'jarbas_alerta_'+d+'_'+a.h;
 function alMostra(a,dia){
@@ -2100,8 +2100,9 @@ function alMostra(a,dia){
   d.innerHTML=`<div><div class="sir">🚨</div><h2>${parcial?'HORA DA PARCIAL':'HORA DO FECHAMENTO'}</h2>
     <p>${sup?`São ${hora}. <b>Cobre os gerentes</b>: todas as lojas precisam mandar a <b>parcial das ${hora}</b>.`:parcial?`São ${hora}. Envie agora a <b>parcial das ${hora}</b> da loja.`:`São ${hora}. Envie agora o <b>fechamento do dia</b> da loja.`}</p>
     <button class="btn" type="button" data-a="ok">${sup?'✓ OK, VOU COBRAR':'✓ JÁ ENVIEI'}</button><button class="depois" type="button" data-a="adia">Lembrar em 5 minutos</button></div>`;
-  document.body.append(d);alAberto=d;alPee();alSom=setInterval(alPee,3000);
-  d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;clearInterval(alSom);alSom=null;d.remove();alAberto=null;try{navigator.vibrate?.(0)}catch{}
+  // dois toques agora e mais dois depois de 10 segundos; depois disso só o popup fica na tela
+  document.body.append(d);alAberto=d;alPee();alSom=setTimeout(()=>{if(alAberto===d)alPee()},10000);
+  d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;clearTimeout(alSom);alSom=null;d.remove();alAberto=null;try{navigator.vibrate?.(0)}catch{}
     if(b.dataset.a==='ok')guarda.set(alChave(dia,a),'ok');else guarda.set(alChave(dia,a),'adia:'+(agoraSP().min+5))});
 }
 function alVerifica(){
