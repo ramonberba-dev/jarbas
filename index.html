@@ -1125,8 +1125,8 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
   $('#selLojaBox').hidden=!S.perfil.master;
   if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML=`<optgroup label="Visão">${V.todas?'<option value="reg:U">Rede (todas as lojas)</option>':''}<option value="">Regional Ramon (todas)</option>${V.todas?'<option value="reg:T">Regional Tuanne</option><option value="reg:M">Regional Mandu</option>':''}</optgroup>`+
       `<optgroup label="Lojas da Regional Ramon">${L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('')}</optgroup>`;
-    if(E!=='R'&&!S.cod)$('#selLoja').value='reg:'+E;
     $('#selLoja').onchange=async e=>{const v=e.target.value;S.esc=v.startsWith('reg:')?v.slice(4):'R';if(v.startsWith('reg:')&&!S.cod){iniciar();return}S.cod=v.startsWith('reg:')?'':v;try{await carregar()}catch(err){toast(err.message)}}}
+  if(S.perfil.master)$('#selLoja').value=S.cod||(E==='R'?'':'reg:'+E); // o seletor sempre mostra a visão atual
   rReator(V,LS,RA,ESC[E]);rInicio();
   $('#atualizado').textContent=`Painel com dias fechados até ${V.ate} · enviado ao app ${S.atualizado?new Date(S.atualizado).toLocaleString('pt-BR').slice(0,16):''}`;
   ir(location.hash.slice(1)||'inicio');
