@@ -1360,6 +1360,8 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
 /* ---------- rotina do gerente ---------- */
 // passagem de bastão: o gerente chega (rua 12h, shopping 14h) e confere se o responsável do horário entregou a venda que o ritmo da loja pede até esse horário
 const horaBastao=l=>l?.tipo==='RUA'?'12:00':'14:00';
+// domingo e feriado não têm passagem de bastão
+const temBastao=dia=>new Date(dia+'T12:00:00').getDay()!==0&&!(RITMO?.feriados||[]).includes(dia);
 const valBR=x=>{let t=String(x??'').replace(/[^\d.,]/g,'');if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');else if(!/\.\d{1,2}$/.test(t))t=t.replace(/\./g,'');return +t||0};
 function bastao(l,venda,dia=S.hoje){if(!l||!(l.meta_hoje>0))return null;const f=fracDia(l.cod,l.tipo,dia,horaBastao(l));if(f==null)return null;const pede=l.meta_hoje*f;return {pede,v:venda,p:pede>0?venda/pede*100:NaN,ok:venda>=pede}}
 const tagBastao=b=>b&&isFinite(b.p)?(b.ok?`<em class="tag ok">ENTREGOU · ${Math.round(b.p)}%</em>`:`<em class="tag r">NÃO ENTREGOU · ${Math.round(b.p)}%</em>`):'';
@@ -1373,7 +1375,7 @@ function rInicio(){
   $('#inicioLoja').hidden=!loja;$('#inicioMaster').hidden=!S.perfil.master;
   if(loja){
     // obrigações do dia primeiro (em destaque); parciais e fechamento num bloco separado, com o horário de cada uma
-    const PAR=['bastao','p14','p18','fecha'],ob=ROTINA.filter(p=>!PAR.includes(p.id)),pa=ROTINA.filter(p=>PAR.includes(p.id));
+    const PAR=['bastao','p14','p18','fecha'],ob=ROTINA.filter(p=>!PAR.includes(p.id)),pa=ROTINA.filter(p=>PAR.includes(p.id)&&(p.id!=='bastao'||temBastao(S.hoje)));
     const fixos=ob.filter(p=>!p.semanal),feitos=fixos.filter(p=>reg(p.id)).length;
     $('#rotProg').textContent=`${feitos} de ${fixos.length} enviadas`;
     $('#listaRot').innerHTML=ob.map((p,i)=>`<button class="li" data-pil="${p.id}"><span>${i+1}. ${esc(p.titulo)}<small>${esc(p.momento)}${p.semanal?' · vale a semana toda':''}</small></span>${tagSt(reg(p.id))}</button>`).join('');
@@ -1485,13 +1487,14 @@ function entregasHoje(){
   const med=(l,pid,campo,hm)=>{const r=rot.find(x=>x.cod===l.cod&&x.pilar===pid),venceu=agora>=(hm||(l.tipo==='SH'?'21:50':'19:50'));
     if(!r)return {hora:hm||'fechamento',enviou:false,venceu};const v=valBR(r.respostas?.[campo]),f=hm?fracDia(l.cod,l.tipo,dia,hm):1,pede=Math.round(l.meta_hoje*(f??1));
     return {hora:hm||'fechamento',enviou:true,venda:v,ritmo_pede:pede,pct:pede>0?Math.round(v/pede*100):null}};
-  return TD.filter(l=>l.meta_hoje>0).map(l=>({l,b:med(l,'bastao','bastao1',horaBastao(l)),p14:med(l,'p14','p181','14:00'),p18:med(l,'p18','p181','18:00'),fe:med(l,'fecha','fecha1',null)}));
+  const tb=temBastao(dia);
+  return TD.filter(l=>l.meta_hoje>0).map(l=>({l,b:tb?med(l,'bastao','bastao1',horaBastao(l)):{folga:true},p14:med(l,'p14','p181','14:00'),p18:med(l,'p18','p181','18:00'),fe:med(l,'fecha','fecha1',null)}));
 }
 function rEntregas(){
   const E=entregasHoje(),NREG={R:'Ramon',T:'Tuanne',M:'Mandu'};
-  const cel=m=>!m.enviou?`<span style="color:${m.venceu?'#ff8b95':'var(--sand)'}">${m.venceu?'não enviou':'·'}</span>`:m.pct==null?'enviado':`<span style="color:${m.pct>=100?'var(--ok)':m.pct>=90?'var(--gold)':'#ff8b95'}">${m.pct>=100?'✓':'✗'} ${m.pct}%</span>`;
-  const kb=m=>!m.enviou?(m.venceu?-1:1e9):m.pct??1e8,ord=[...E].sort((a,b)=>kb(a.b)-kb(b.b));
-  return `<div class="panel" id="entregas"><h3>Entregas de hoje · ritmo e passagem de bastão</h3><p class="note" style="margin:0 0 8px">% = venda enviada pela loja ÷ venda que o ritmo da loja pede até aquele horário (fechamento: ÷ meta do dia). Bastão às 12h na rua e às 14h no shopping.</p>
+  const cel=m=>m.folga?'<span style="color:var(--sand)">—</span>':!m.enviou?`<span style="color:${m.venceu?'#ff8b95':'var(--sand)'}">${m.venceu?'não enviou':'·'}</span>`:m.pct==null?'enviado':`<span style="color:${m.pct>=100?'var(--ok)':m.pct>=90?'var(--gold)':'#ff8b95'}">${m.pct>=100?'✓':'✗'} ${m.pct}%</span>`;
+  const kb=m=>m.folga?1e9:!m.enviou?(m.venceu?-1:1e9):m.pct??1e8,ord=[...E].sort((a,b)=>kb(a.b)-kb(b.b));
+  return `<div class="panel" id="entregas"><h3>Entregas de hoje · ritmo e passagem de bastão</h3><p class="note" style="margin:0 0 8px">% = venda enviada pela loja ÷ venda que o ritmo da loja pede até aquele horário (fechamento: ÷ meta do dia). Bastão às 12h na rua e às 14h no shopping (não tem no domingo e no feriado).</p>
    <div style="overflow-x:auto"><div class="grade" style="grid-template-columns:minmax(110px,1fr) repeat(4,auto);min-width:330px"><b>LOJA</b><b>BASTÃO</b><b>14H</b><b>18H</b><b>FECH.</b>${ord.map(x=>`<span>${esc(x.l.nome)}${x.l.reg?` <small class="note">${NREG[x.l.reg]||''}</small>`:''}</span><span>${cel(x.b)}</span><span>${cel(x.p14)}</span><span>${cel(x.p18)}</span><span>${cel(x.fe)}</span>`).join('')}</div></div>
    <button class="btn" type="button" id="bAnalisa" style="margin-top:10px">🤖 Jarbas, analise as entregas</button><div id="analise"></div></div>`;
 }
@@ -2341,7 +2344,7 @@ function alMostra(a,dia){
 function alVerifica(){
   if(!S.perfil||!S.D)return;const sup=!!S.perfil.master;
   const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.perfil.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
-  for(const a of ALERTAS){if(sup?(a.fech||a.bastao):(a.tipo&&a.tipo!==tipo))continue; // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
+  for(const a of ALERTAS){if(sup?(a.fech||a.bastao):(a.tipo&&a.tipo!==tipo))continue;if(a.bastao&&!temBastao(dia))continue; // sem bastão no domingo e no feriado // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
     const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||(sup&&min>m+90))continue;
     if(!sup){if(reg(a.pid))continue; // gerente: o alerta só sai quando a demanda do horário foi enviada
       if(location.hash==='#pilar'&&S.pilar?.id===a.pid)break; // está preenchendo agora
