@@ -2095,19 +2095,20 @@ function alPee(){try{alAudio=alAudio||new (window.AudioContext||window.webkitAud
 const agoraSP=()=>{const f=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());return {dia:f.slice(0,10),min:+f.slice(11,13)*60+ +f.slice(14,16)}};
 const alChave=(d,a)=>'jarbas_alerta_'+d+'_'+a.h;
 function alMostra(a,dia){
-  if(alAberto)return;const parcial=!a.fech,hora=a.h.replace(':00','h').replace(':','h');
+  if(alAberto)return;const parcial=!a.fech,hora=a.h.replace(':00','h').replace(':','h'),sup=!!S.perfil?.master;
   const d=document.createElement('div');d.className='alerta';d.setAttribute('role','alertdialog');
   d.innerHTML=`<div><div class="sir">🚨</div><h2>${parcial?'HORA DA PARCIAL':'HORA DO FECHAMENTO'}</h2>
-    <p>${parcial?`São ${hora}. Envie agora a <b>parcial das ${hora}</b> da loja.`:`São ${hora}. Envie agora o <b>fechamento do dia</b> da loja.`}</p>
-    <button class="btn" type="button" data-a="ok">✓ JÁ ENVIEI</button><button class="depois" type="button" data-a="adia">Lembrar em 5 minutos</button></div>`;
+    <p>${sup?`São ${hora}. <b>Cobre os gerentes</b>: todas as lojas precisam mandar a <b>parcial das ${hora}</b>.`:parcial?`São ${hora}. Envie agora a <b>parcial das ${hora}</b> da loja.`:`São ${hora}. Envie agora o <b>fechamento do dia</b> da loja.`}</p>
+    <button class="btn" type="button" data-a="ok">${sup?'✓ OK, VOU COBRAR':'✓ JÁ ENVIEI'}</button><button class="depois" type="button" data-a="adia">Lembrar em 5 minutos</button></div>`;
   document.body.append(d);alAberto=d;alPee();alSom=setInterval(alPee,3000);
   d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;clearInterval(alSom);alSom=null;d.remove();alAberto=null;try{navigator.vibrate?.(0)}catch{}
     if(b.dataset.a==='ok')guarda.set(alChave(dia,a),'ok');else guarda.set(alChave(dia,a),'adia:'+(agoraSP().min+5))});
 }
 function alVerifica(){
-  if(!S.perfil||S.perfil.master||!S.D)return;
-  const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
-  for(const a of ALERTAS){if(a.tipo&&a.tipo!==tipo)continue;const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||min>m+90)continue;
+  if(!S.perfil||!S.D)return;const sup=!!S.perfil.master;
+  const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.perfil.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
+  for(const a of ALERTAS){if(sup?a.fech:(a.tipo&&a.tipo!==tipo))continue; // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
+    const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||min>m+90)continue;
     const k=guarda.get(alChave(dia,a));if(k==='ok')continue;if(k&&k.startsWith('adia:')&&min<+k.slice(5))continue;alMostra(a,dia);break}
 }
 setInterval(alVerifica,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(alVerifica,800)});
