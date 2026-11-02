@@ -232,6 +232,9 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 #dock a.on,#dock a.on:nth-child(even){color:#5dff3c;text-shadow:0 0 3px #5dff3c,0 0 9px #39ff14,0 0 18px #39ff14aa;
   box-shadow:0 0 0 1.5px var(--groove),inset 0 0 0 60px #0000007a,inset 0 0 8px #39ff1455,0 0 10px #39ff1440}
 #dock a:active{filter:brightness(.9)}
+/* obrigações do dia em destaque na tela do gerente (parciais e fechamento ficam num bloco à parte) */
+.obrig{border:2px solid var(--gold);box-shadow:0 0 18px #e3b04b44,inset 0 0 0 1px #00000055;margin-top:14px}
+.obrig .sec{margin-top:0;color:var(--gold-l)}
 /* alerta de parcial/fechamento para os gerentes: popup que pisca + alarme */
 .alerta{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:18px;background:#000c;animation:alPisca .7s steps(2,end) infinite}
 @keyframes alPisca{0%{background:#3a0006e6}100%{background:#000d}}
@@ -384,10 +387,11 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
           <button class="btn" type="button" id="bPush">Ativar alertas no celular</button>
         </div>
         <div id="inicioLoja">
+          <div class="panel obrig"><div class="sec">★ Obrigações do dia · <span id="rotProg"></span></div><div class="list" id="listaRot"></div></div>
+          <div class="sec">⏱ Parciais e fechamento · <span id="parProg"></span></div>
+          <div class="list" id="listaPar"></div>
           <div class="sec">Demandas da supervisão</div>
           <div class="list" id="listaDem"></div>
-          <div class="sec">Rotina de hoje · <span id="rotProg"></span></div>
-          <div class="list" id="listaRot"></div>
         </div>
         <div id="inicioMaster" hidden>
           <div class="sec">Rotina das lojas hoje</div>
@@ -1174,6 +1178,8 @@ function tacho(p,lab){
     <div class="lcd">${ok?Math.round(p)+'%':'--'}</div><small>${lab}</small>`;
 }
 const tachoUm=(p,lab)=>`<div class="tacho">${tacho(p,lab)}</div>`;
+// loja com diária (meta do dia) e sem venda espelhada: aviso em cima do ranking, até o TI resolver
+const avisoTI=nomes=>nomes.length?`<div class="panel" style="border-color:#ff8b95;background:#3a070bcc;margin-bottom:10px"><b style="color:#ff8b95">⚠ Falta a venda da ${nomes.map(n=>'loja '+esc(n)).join(', ').replace(/, ([^,]*)$/,' e $1')}</b><small style="display:block;opacity:.85;margin-top:3px">Aguardando atuação do TI.</small></div>`:'';
 function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:nomeVisao;
   const pProp=pct(a.venda,a.meta_periodo), pDia=pct(a.ontem,a.meta_ontem);
@@ -1205,6 +1211,9 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const rede=!l&&nomeVisao==='Rede',mostraT=!l&&(rede?TD.length>0:true);
   const tc=PER.map((per,i)=>rede?`<div class="tachos">${['R','T','M'].map(k=>tachoUm(pReg(V.regs?.[k],k,i),NREG[k]+' · '+per)).join('')}</div>`:tachoUm(pRede[i],'Rede · '+per));
   $('#tacho').hidden=!mostraT;if(mostraT)$('#tacho').innerHTML=tc[0];
+  // hoje: só depois das 12h (de manhã a loja pode não ter vendido ainda); ontem: dia fechado com meta e venda zero
+  const semHoje=P&&+hora.slice(0,2)>=12?L.filter(x=>x.meta_hoje>0&&!(+P.lojas[x.cod]?.venda>0)).map(x=>x.nome):[],semOntem=L.filter(x=>x.meta_ontem>0&&!(x.ontem>0)).map(x=>x.nome);
+  rks[0]=avisoTI(semHoje)+rks[0];rks[1]=avisoTI(semOntem)+rks[1];
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   car.dataset.i=0;car._rk=rks;car._tc=mostraT?tc:null;$('#rankDia').innerHTML=rks[0];
   if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));
@@ -1225,9 +1234,14 @@ function rInicio(){
   const loja=!!S.cod&&!S.perfil.master;
   $('#inicioLoja').hidden=!loja;$('#inicioMaster').hidden=!S.perfil.master;
   if(loja){
-    const fixos=ROTINA.filter(p=>!p.semanal),feitos=fixos.filter(p=>reg(p.id)).length;
-    $('#rotProg').textContent=`${feitos} de ${fixos.length} tópicos enviados`;
-    $('#listaRot').innerHTML=ROTINA.map(p=>`<button class="li" data-pil="${p.id}"><span>${esc(p.n)}. ${esc(p.titulo)}<small>${esc(p.momento)}${p.semanal?' · vale a semana toda':''}</small></span>${tagSt(reg(p.id))}</button>`).join('');
+    // obrigações do dia primeiro (em destaque); parciais e fechamento num bloco separado, com o horário de cada uma
+    const PAR=['p14','p18','fecha'],ob=ROTINA.filter(p=>!PAR.includes(p.id)),pa=ROTINA.filter(p=>PAR.includes(p.id));
+    const fixos=ob.filter(p=>!p.semanal),feitos=fixos.filter(p=>reg(p.id)).length;
+    $('#rotProg').textContent=`${feitos} de ${fixos.length} enviadas`;
+    $('#listaRot').innerHTML=ob.map((p,i)=>`<button class="li" data-pil="${p.id}"><span>${i+1}. ${esc(p.titulo)}<small>${esc(p.momento)}${p.semanal?' · vale a semana toda':''}</small></span>${tagSt(reg(p.id))}</button>`).join('');
+    const tipo=((window.__V?.lojas||[]).find(x=>x.cod===S.cod)||{}).tipo,hora={p14:'14h',p18:'18h',fecha:tipo==='SH'?'21h50':'19h50'};
+    $('#parProg').textContent=`${pa.filter(p=>reg(p.id)).length} de ${pa.length} enviadas`;
+    $('#listaPar').innerHTML=pa.map(p=>`<button class="li" data-pil="${p.id}"><span>${esc(p.titulo)}<small>até as ${hora[p.id]} · o alarme toca no horário</small></span>${tagSt(reg(p.id))}</button>`).join('');
     $('#listaDem').innerHTML=S.demandas.length?S.demandas.map(d=>`<button class="li dem" data-pil="dem:${esc(d.id)}"><span>${esc(d.titulo)}<small>${d.ate&&d.ate!==d.data?'até '+dataBR(d.ate):'hoje'}${d.foto||d.tipo==='foto'?' · com foto':''}</small></span>${tagSt(S.rotina.find(r=>r.pilar==='dem:'+d.id))}</button>`).join('')
       :'<p class="empty">Nenhuma demanda extra da supervisão hoje.</p>';
   }
