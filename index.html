@@ -288,16 +288,18 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .login .box{width:100%;max-width:380px;display:grid;gap:14px;text-align:center}
 /* reator da tela de entrada: acende devagar, pisca como lâmpada fluorescente e fica com a luz forte */
 .arc{position:relative;width:min(56vw,210px);aspect-ratio:1;margin:0 auto 6px}
-.arc svg{position:relative;width:100%;height:100%;filter:brightness(.03);animation:arcLiga 4.6s ease-in forwards}
-.arcHalo{position:absolute;inset:-22%;border-radius:50%;background:radial-gradient(circle,#7ff3ffcc 0 22%,#2fd3ff55 42%,transparent 68%);opacity:0;animation:arcHalo 4.6s ease-in forwards,arcRespira 3.2s ease-in-out 4.6s infinite}
-@keyframes arcLiga{0%{filter:brightness(.03)}46%{filter:brightness(.45)}50%{filter:brightness(.08)}52%{filter:brightness(1.15)}55%{filter:brightness(.12)}58%{filter:brightness(.95)}60%{filter:brightness(.22)}64%{filter:brightness(1.05)}67%{filter:brightness(.5)}71%{filter:brightness(1)}
+.arc svg{position:relative;width:100%;height:100%;filter:brightness(.22)}
+.arc.liga svg{animation:arcLiga 7.6s ease-in forwards}
+.arcHalo{position:absolute;inset:-22%;border-radius:50%;background:radial-gradient(circle,#7ff3ffcc 0 22%,#2fd3ff55 42%,transparent 68%);opacity:0}
+.arc.liga .arcHalo{animation:arcHalo 7.6s ease-in forwards,arcRespira 3.2s ease-in-out 7.6s infinite}
+@keyframes arcLiga{0%{filter:brightness(.22)}10%{filter:brightness(.05)}46%{filter:brightness(.45)}50%{filter:brightness(.08)}52%{filter:brightness(1.15)}55%{filter:brightness(.12)}58%{filter:brightness(.95)}60%{filter:brightness(.22)}64%{filter:brightness(1.05)}67%{filter:brightness(.5)}71%{filter:brightness(1)}
   84%{filter:brightness(1.05) drop-shadow(0 0 6px #6ff)}100%{filter:brightness(1.3) drop-shadow(0 0 14px #8ff) drop-shadow(0 0 34px #2cd5ff)}}
 @keyframes arcHalo{0%,70%{opacity:0}100%{opacity:1}}
 @keyframes arcRespira{50%{opacity:.7;transform:scale(.96)}}
-@media (prefers-reduced-motion:reduce){.arc svg{animation:none;filter:brightness(1.2) drop-shadow(0 0 14px #8ff)}.arcHalo{animation:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.arc.liga svg{animation:none;filter:brightness(1.2) drop-shadow(0 0 14px #8ff)}.arc.liga .arcHalo{animation:none;opacity:1}}
 /* assinatura sutil, flutuando devagar no pé da tela de entrada */
 .assin{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-mono);font-size:12px;letter-spacing:.18em;color:#f3d08a;opacity:0;pointer-events:none;
-  text-shadow:0 0 10px #f3d08a55;animation:assinVem 1.6s ease 4.6s forwards,assinFlutua 6s ease-in-out 4.6s infinite}
+  text-shadow:0 0 10px #f3d08a55;animation:assinVem 1.6s ease 1s forwards,assinFlutua 6s ease-in-out 1s infinite}
 @keyframes assinVem{to{opacity:.45}}
 @keyframes assinFlutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){.assin{animation:none;opacity:.45}}
@@ -989,15 +991,36 @@ const S={pin:guarda.get('jarbas_pin'),perfil:null,D:null,rotina:[],demandas:[],c
 const PIL={};ROTINA.forEach(p=>PIL[p.id]=p);
 
 /* ---------- login ---------- */
-$('#fLogin').addEventListener('submit',async e=>{e.preventDefault();S.pin=$('#pin').value.trim();$('#bEntrar').disabled=true;$('#erroLogin').textContent='';
-  try{await carregar();guarda.set('jarbas_pin',S.pin)}catch(err){$('#erroLogin').textContent=err.message;S.pin=null}finally{$('#bEntrar').disabled=false}});
+/* entrada: ao colocar a senha, o reator acende devagar com som de turbina; o app só abre com ele aceso (7,6 s) */
+const LIGA_MS=7600;
+function turbina(){
+  try{const A=new (window.AudioContext||window.webkitAudioContext)(),t=A.currentTime,T=LIGA_MS/1000,out=A.createGain();
+    out.gain.setValueAtTime(0,t);out.gain.linearRampToValueAtTime(.55,t+1.2);out.gain.setValueAtTime(.55,t+T-.9);out.gain.linearRampToValueAtTime(.85,t+T-.2);out.gain.exponentialRampToValueAtTime(.001,t+T+1);out.connect(A.destination);
+    // ar entrando na turbina: ruído com filtro subindo
+    const buf=A.createBuffer(1,A.sampleRate*(T+1.2),A.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const ns=A.createBufferSource(),bp=A.createBiquadFilter(),ng=A.createGain();ns.buffer=buf;bp.type='bandpass';bp.Q.value=1.2;bp.frequency.setValueAtTime(180,t);bp.frequency.exponentialRampToValueAtTime(3200,t+T);ng.gain.value=.5;
+    ns.connect(bp).connect(ng).connect(out);ns.start(t);ns.stop(t+T+1.2);
+    // rotor girando cada vez mais rápido
+    const o=A.createOscillator(),lp=A.createBiquadFilter(),og=A.createGain();o.type='sawtooth';o.frequency.setValueAtTime(45,t);o.frequency.exponentialRampToValueAtTime(330,t+T);
+    lp.type='lowpass';lp.frequency.setValueAtTime(300,t);lp.frequency.exponentialRampToValueAtTime(2400,t+T);og.gain.value=.18;o.connect(lp).connect(og).connect(out);o.start(t);o.stop(t+T+1.2);
+    // apito agudo da turbina
+    const w=A.createOscillator(),wg=A.createGain();w.type='sine';w.frequency.setValueAtTime(700,t);w.frequency.exponentialRampToValueAtTime(4200,t+T);wg.gain.setValueAtTime(0,t);wg.gain.linearRampToValueAtTime(.07,t+T*.6);
+    w.connect(wg).connect(out);w.start(t);w.stop(t+T+1.2);
+    return()=>{try{out.gain.cancelScheduledValues(A.currentTime);out.gain.setTargetAtTime(0,A.currentTime,.15);setTimeout(()=>A.close(),900)}catch{}}
+  }catch{return()=>{}}
+}
+let ligando=null,paraTurbina=null;
+function ligaReator(){const a=document.querySelector('.login .arc');if(a){a.classList.remove('liga');void a.offsetWidth;a.classList.add('liga')}paraTurbina=turbina();ligando=new Promise(r=>setTimeout(r,LIGA_MS))}
+function desligaReator(){document.querySelector('.login .arc')?.classList.remove('liga');paraTurbina?.();paraTurbina=null;ligando=null}
+$('#fLogin').addEventListener('submit',async e=>{e.preventDefault();S.pin=$('#pin').value.trim();$('#bEntrar').disabled=true;$('#erroLogin').textContent='';ligaReator();
+  try{await carregar();guarda.set('jarbas_pin',S.pin)}catch(err){desligaReator();$('#erroLogin').textContent=err.message;S.pin=null}finally{$('#bEntrar').disabled=false}});
 // entrar com a conta Google (opcional): o servidor confere o token e devolve uma sessão que fica no lugar do PIN
 const GID='1078229030387-h0scmaguic93j4vgp31t5kpu8iofk8re.apps.googleusercontent.com';
 if(GID&&!GID.startsWith('__')){
   const sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.async=true;
-  sc.onload=()=>{google.accounts.id.initialize({client_id:GID,callback:async r=>{$('#erroLogin').textContent='';
+  sc.onload=()=>{google.accounts.id.initialize({client_id:GID,callback:async r=>{$('#erroLogin').textContent='';ligaReator();
       try{const j=await api('google',{credential:r.credential});S.pin=j.sessao;await carregar();guarda.set('jarbas_pin',S.pin)}
-      catch(err){$('#erroLogin').textContent=err.message;S.pin=null}}});
+      catch(err){desligaReator();$('#erroLogin').textContent=err.message;S.pin=null}}});
     google.accounts.id.renderButton($('#gBtn'),{theme:'filled_black',size:'large',shape:'pill',text:'signin_with',locale:'pt-BR',width:260});
     $('#gBox').hidden=false};
   document.head.append(sc);
@@ -1013,6 +1036,7 @@ async function carregar(){
   S.perfil=j.perfil;S.D=j.painel;S.parcial=j.parcial;S.rotina=j.rotina||[];S.demandas=j.demandas||[];S.atualizado=j.atualizado;S.checkHab=j.checkHab;
   if(!S.perfil.master)S.cod=S.perfil.cod;
   if(!S.D){$('#erroLogin').textContent='O painel ainda não chegou ao servidor. Ele é enviado todo dia de manhã.';throw new Error('Sem dados do painel ainda.')}
+  if(ligando){await ligando;ligando=null;paraTurbina=null} // abre o app só com o reator da entrada aceso
   $('#telaLogin').hidden=true;$('#telaApp').hidden=false;$('#dockBox').hidden=false;
   iniciar();
 }
