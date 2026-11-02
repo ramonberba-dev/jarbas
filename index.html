@@ -797,7 +797,7 @@ const ROTINA=[
   "titulo": "Passagem de bastão",
   "momento": "12h (rua) · 14h (shopping)",
   "whats": true,
-  "nota": "O gerente chega à loja e registra o que o sub entregou até agora. O Jarbas compara com o ritmo da loja: entregou ou não entregou.",
+  "nota": "O gerente chega à loja e registra o que o responsável do horário entregou até agora. O Jarbas compara com o ritmo da loja: entregou ou não entregou.",
   "itens": [
    {
     "t": "num",
@@ -1358,7 +1358,7 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
 }
 
 /* ---------- rotina do gerente ---------- */
-// passagem de bastão: o gerente chega (rua 12h, shopping 14h) e confere se o sub entregou a venda que o ritmo da loja pede até esse horário
+// passagem de bastão: o gerente chega (rua 12h, shopping 14h) e confere se o responsável do horário entregou a venda que o ritmo da loja pede até esse horário
 const horaBastao=l=>l?.tipo==='RUA'?'12:00':'14:00';
 const valBR=x=>{let t=String(x??'').replace(/[^\d.,]/g,'');if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');else if(!/\.\d{1,2}$/.test(t))t=t.replace(/\./g,'');return +t||0};
 function bastao(l,venda,dia=S.hoje){if(!l||!(l.meta_hoje>0))return null;const f=fracDia(l.cod,l.tipo,dia,horaBastao(l));if(f==null)return null;const pede=l.meta_hoje*f;return {pede,v:venda,p:pede>0?venda/pede*100:NaN,ok:venda>=pede}}
@@ -1379,7 +1379,7 @@ function rInicio(){
     $('#listaRot').innerHTML=ob.map((p,i)=>`<button class="li" data-pil="${p.id}"><span>${i+1}. ${esc(p.titulo)}<small>${esc(p.momento)}${p.semanal?' · vale a semana toda':''}</small></span>${tagSt(reg(p.id))}</button>`).join('');
     const tipo=((window.__V?.lojas||[]).find(x=>x.cod===S.cod)||{}).tipo,hora={bastao:tipo==='RUA'?'12h':'14h',p14:'14h',p18:'18h',fecha:tipo==='SH'?'21h50':'19h50'};
     $('#parProg').textContent=`${pa.filter(p=>reg(p.id)).length} de ${pa.length} enviadas`;
-    $('#listaPar').innerHTML=pa.map(p=>`<button class="li" data-pil="${p.id}"><span>${esc(p.titulo)}<small>até as ${hora[p.id]} · ${p.id==='bastao'?'o sub entregou o resultado do ritmo?':'o alarme toca no horário'}</small></span>${p.id==='bastao'&&reg(p.id)?tagBastao(bastao((window.__V?.lojas||[]).find(x=>x.cod===S.cod),valBR(reg(p.id).respostas?.bastao1)))||tagSt(reg(p.id)):tagSt(reg(p.id))}</button>`).join('');
+    $('#listaPar').innerHTML=pa.map(p=>`<button class="li" data-pil="${p.id}"><span>${esc(p.titulo)}<small>até as ${hora[p.id]} · ${p.id==='bastao'?'o responsável do horário entregou o ritmo?':'o alarme toca no horário'}</small></span>${p.id==='bastao'&&reg(p.id)?tagBastao(bastao((window.__V?.lojas||[]).find(x=>x.cod===S.cod),valBR(reg(p.id).respostas?.bastao1)))||tagSt(reg(p.id)):tagSt(reg(p.id))}</button>`).join('');
     $('#listaDem').innerHTML=S.demandas.length?S.demandas.map(d=>`<button class="li dem" data-pil="dem:${esc(d.id)}"><span>${esc(d.titulo)}<small>${d.ate&&d.ate!==d.data?'até '+dataBR(d.ate):'hoje'}${d.foto||d.tipo==='foto'?' · com foto':''}</small></span>${tagSt(S.rotina.find(r=>r.pilar==='dem:'+d.id))}</button>`).join('')
       :'<p class="empty">Nenhuma demanda extra da supervisão hoje.</p>';
   }
@@ -1402,7 +1402,7 @@ function abrirPilar(pid){
   $('#pilTitulo').textContent=p.titulo;$('#pilMomento').textContent=p.momento;$('#pilNota').textContent=p.nota||'';
   $('#pilParecer').hidden=!(r&&r.parecer);$('#pilParecer').textContent=r?.parecer?'Supervisão: '+r.parecer:'';
   const l=window.__V.lojas.find(x=>x.cod===S.cod);
-  $('#pilAuto').innerHTML=pid==='bastao'&&l?`<div class="autoinfo"><div class="plate"><small>Meta de hoje</small><b>${mil(l.meta_hoje)}</b></div><div class="plate"><small>Ritmo pede até ${horaBastao(l).slice(0,2)}h</small><b>${(b=>b?brl(b.pede):'—')(bastao(l,0))}</b></div><div class="plate"><small>Sub entregou?</small><b id="bastaoOk">—</b></div></div>`
+  $('#pilAuto').innerHTML=pid==='bastao'&&l?`<div class="autoinfo"><div class="plate"><small>Meta de hoje</small><b>${mil(l.meta_hoje)}</b></div><div class="plate"><small>Ritmo pede até ${horaBastao(l).slice(0,2)}h</small><b>${(b=>b?brl(b.pede):'—')(bastao(l,0))}</b></div><div class="plate"><small>Responsável do horário entregou?</small><b id="bastaoOk">—</b></div></div>`
     :pid==='abertura'&&l?`<div class="autoinfo"><div class="plate"><small>Meta de hoje</small><b>${mil(l.meta_hoje)}</b></div><div class="plate"><small>Ritmo do mês</small><b>${p1(pct(l.venda,l.meta_periodo))}</b></div><div class="plate"><small>Por vendedor</small><b id="porVend">—</b></div></div>`:'';
   $('#bEnviar').textContent=p.whats?'Enviar e mandar no WhatsApp':r?'Enviar de novo':'Enviar para a supervisão';
   rItens();ir('pilar');
@@ -1434,7 +1434,7 @@ function bastaoPopup(txtWhats){
   const it=[];
   if(b&&isFinite(b.p)){
     const hb=horaBastao(l).slice(0,2)+'h',f=b.pede/l.meta_hoje,falta=Math.max(l.meta_hoje-v,0),proj=f>0?v/f:0;
-    it.push(`Até as ${hb} o ritmo da loja pedia <b>${brl(b.pede)}</b>. O sub entregou <b>${brl(v)}</b> (${b.ok?'sobra de ':'faltaram '}${brl(Math.abs(v-b.pede))}).`);
+    it.push(`Até as ${hb} o ritmo da loja pedia <b>${brl(b.pede)}</b>. O responsável do horário entregou <b>${brl(v)}</b> (${b.ok?'sobra de ':'faltaram '}${brl(Math.abs(v-b.pede))}).`);
     it.push(`Da meta do dia (${brl(l.meta_hoje)}) já saíram <b>${Math.round(v/l.meta_hoje*100)}%</b>. Normalmente a loja tem ${Math.round(f*100)}% do dia às ${hb}.`);
     if(falta>0){const fim=l.tipo==='RUA'?19*60+50:21*60+50,ag=agoraSP().min,h=Math.max((fim-ag)/60,1);
       it.push(`Faltam <b>${brl(falta)}</b> para a diária: cerca de <b>${brl(falta/h)} por hora</b> até o fechamento.`)}
@@ -1444,7 +1444,7 @@ function bastaoPopup(txtWhats){
   if(pa>0)it.push(pa>=1.6?`P.A. <b>${String(pa).replace('.',',')}</b>, acima da meta de 1,60. Mantenha a venda casada.`:`P.A. <b>${String(pa).replace('.',',')}</b>, abaixo da meta de 1,60. Puxe acessório e bolsa em cada atendimento.`);
   it.push(ct>0?`<b>${ct}</b> ${ct>1?'cartões aprovados':'cartão aprovado'} até agora.`:'<b>Nenhum cartão</b> aprovado até agora: ofereça o cartão Sonho em todo atendimento.');
   const d=document.createElement('div');d.className='alerta calmo';d.setAttribute('role','dialog');
-  d.innerHTML=`<div><div class="sir">${!b||!isFinite(b.p)?'📊':b.ok?'✅':'⚠️'}</div><h2>${!b||!isFinite(b.p)?'PASSAGEM DE BASTÃO':b.ok?'O SUB ENTREGOU':'O SUB NÃO ENTREGOU'}${b&&isFinite(b.p)?' · '+Math.round(b.p)+'%':''}</h2>
+  d.innerHTML=`<div><div class="sir">${!b||!isFinite(b.p)?'📊':b.ok?'✅':'⚠️'}</div><h2>${!b||!isFinite(b.p)?'PASSAGEM DE BASTÃO':b.ok?'O RESPONSÁVEL DO HORÁRIO ENTREGOU':'O RESPONSÁVEL DO HORÁRIO NÃO ENTREGOU'}${b&&isFinite(b.p)?' · '+Math.round(b.p)+'%':''}</h2>
     <ul class="ana">${it.map(x=>`<li>${x}</li>`).join('')}</ul><button class="btn" type="button">OK${txtWhats?' · MANDAR NO WHATSAPP':''}</button></div>`;
   document.body.append(d);
   d.querySelector('button').onclick=()=>{d.remove();if(txtWhats)location.href='https://wa.me/?text='+encodeURIComponent(txtWhats)};
@@ -2324,7 +2324,7 @@ function alMostra(a,dia){
   if(alAberto)return;const parcial=!a.fech,hora=a.h.replace(':00','h').replace(':','h'),sup=!!S.perfil?.master;
   const d=document.createElement('div');d.className='alerta'+(a.bastao?' calmo':'');d.setAttribute('role','alertdialog');
   if(a.bastao){ // passagem de bastão: sem alarme, mas a tela fica travada até o envio
-    d.innerHTML=`<div><div class="sir">🏃</div><h2>PASSAGEM DE BASTÃO</h2><p>São ${hora}. Registre o que o sub entregou até agora: <b>venda, P.A. e cartões</b>. O Jarbas compara com o ritmo da loja.</p>
+    d.innerHTML=`<div><div class="sir">🏃</div><h2>PASSAGEM DE BASTÃO</h2><p>São ${hora}. Registre o que o responsável do horário entregou até agora: <b>venda, P.A. e cartões</b>. O Jarbas compara com o ritmo da loja.</p>
       <button class="btn" type="button" data-a="ir">FAZER A PASSAGEM DE BASTÃO ›</button><small class="note" style="display:block;margin-top:10px">A tela só libera depois do envio para a supervisão.</small></div>`;
     document.body.append(d);alAberto=d;
     d.addEventListener('click',e=>{if(!e.target.closest('[data-a]'))return;d.remove();alAberto=null;abrirPilar(a.pid)});return}
