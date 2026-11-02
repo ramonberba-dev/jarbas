@@ -412,6 +412,9 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .fotos .th{position:relative}.fotos img{width:58px;height:58px;object-fit:cover;border-radius:3px}
 .fotos .x{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:var(--red);color:#fff;cursor:pointer;line-height:1}
 .addfoto{border:1px dashed #ffffff40;padding:8px 10px;border-radius:3px;font-size:12.5px;cursor:pointer;color:var(--sand)}
+/* conta-giros dos consultores: 5 não cabem numa linha no celular, quebram em duas */
+#tacho .tachos{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 6px;overflow:visible;margin:-4px auto 6px}
+#tacho .tachos .tacho{width:30%;max-width:112px}#tacho .tachos .tacho svg{width:100%;height:auto}
 #espera{min-height:100vh;display:grid;place-items:center;text-align:center;font-family:var(--f-mono);color:var(--sand)}
 #espera b{display:block;font-family:var(--f-num);font-size:40px;letter-spacing:.1em;color:var(--gold)}
 </style>
@@ -429,8 +432,10 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
           <div class="grid2"><label class="f">Consultor<select class="inp" id="fCons"></select></label>
             <label class="f">Franqueado<select class="inp" id="fFran"></select></label></div>
         </div>
+        <div class="car" id="car" aria-label="Reator: deslize para trocar entre ontem e o acumulado do mês"></div>
+        <div id="tacho" hidden></div>
+        <div class="dots" id="dots"><button class="on" aria-label="Venda de ontem"></button><button aria-label="Venda acumulada"></button><span>deslize ›</span></div>
         <div id="resumo"></div>
-        <div class="seg" id="rkSeg"><button class="on" data-k="dia">Ontem</button><button data-k="mes">Mês</button><button data-k="aa">x Ano anterior</button></div>
         <div id="ranking"></div>
         <div id="porCons"></div>
         <div id="minhasDem"></div>
@@ -579,7 +584,7 @@ function iniciar(){
     const cons=[...new Set(S.L.map(l=>l.supervisao).filter(Boolean))].sort();
     $('#fCons').innerHTML=`<option value="">Todos (${S.L.length} lojas)</option>`+cons.map(c=>`<option value="${esc(c)}">${esc(titulo(c))} (${S.L.filter(l=>l.supervisao===c).length})</option>`).join('');
     $('#filtros').hidden=false;$('#fCons').closest('label').hidden=!!C;rFran();
-  }else{$('#rkSeg').hidden=true}
+  }
   rInicio();
   $('#atualizado').textContent=S.D.ontem?`Venda das franquias com dias fechados até ${S.D.ontem.split('-').reverse().join('/')} (Power BI, sem parcial do dia) · enviado ao app ${S.atualizado?new Date(S.atualizado).toLocaleString('pt-BR').slice(0,16):''}`:'A venda das franquias ainda não chegou ao servidor. Ela é enviada todo dia de manhã.';
   ir(location.hash.slice(1)||'inicio');
@@ -591,29 +596,39 @@ $('#fFran').onchange=e=>{S.fran=e.target.value;rInicio()};
 const visiveis=()=>S.L.filter(l=>(!S.cons||l.supervisao===S.cons)&&(!S.fran||l.franqueado===S.fran));
 const soma=(L,p,k)=>L.reduce((s,l)=>s+((l[p]||{})[k]||0),0);
 
-/* ---------- início ---------- */
-// quadro de resumo: conta-giros do mês e do dia + números do mês (A = somas de venda, meta, ano anterior, atendimentos e peças)
-function quadro(tit,A){
-  const pa=A.at?A.qt/A.at:null,ticket=A.at?A.vm/A.at:null,var_=A.aa?(A.vm/A.aa-1)*100:null,ont=S.D.ontem?S.D.ontem.slice(8,10)+'/'+S.D.ontem.slice(5,7):'ontem';
-  return `<div class="panel">${tit?`<div class="sec" style="margin-top:0">${tit}</div>`:''}<div class="fqg"><div class="tacho">${tacho(pct(A.vm,A.mm),'MÊS · % DA META')}</div><div class="tacho">${tacho(pct(A.vd,A.md),'DIA '+ont+' · % DA META')}</div></div>
-    <div class="fqk"><div><b>${mil(A.vm)}</b><small>Venda do mês</small></div><div><b>${mil(A.mm)}</b><small>Meta até ${ont}</small></div><div><b style="color:${var_==null?'':var_>=0?'var(--ok)':'#ff8b95'}">${var_==null?'—':(var_>=0?'+':'')+p1(var_)}</b><small>x ano anterior</small></div>
-    <div><b>${brl(A.vd)}</b><small>Venda ${ont}</small></div><div><b>${pa?pa.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</b><small>P.A. do mês</small></div><div><b>${ticket?brl(ticket):'—'}</b><small>Ticket médio</small></div></div></div>`}
-const somas=L=>({vm:soma(L,'mes','venda'),mm:soma(L,'mes','meta'),vd:soma(L,'dia','venda'),md:soma(L,'dia','meta'),aa:soma(L,'mes','venda_aa'),at:soma(L,'mes','atend'),qt:soma(L,'mes','qtde')});
+/* ---------- início: reator como o das próprias (franquia não tem parcial: telas de ontem e do acumulado do mês) ---------- */
+const tachoUm=(p,lab)=>`<div class="tacho">${tacho(p,lab)}</div>`;
+const somas=L=>({vm:soma(L,'mes','venda'),mm:soma(L,'mes','meta'),mt:soma(L,'mes','meta_mes'),vd:soma(L,'dia','venda'),md:soma(L,'dia','meta'),aa:soma(L,'mes','venda_aa'),at:soma(L,'mes','atend'),qt:soma(L,'mes','qtde')});
+function numeros(A){
+  const pa=A.at?A.qt/A.at:null,ticket=A.at?A.vm/A.at:null,var_=A.aa?(A.vm/A.aa-1)*100:null;
+  return `<div class="fqk"><div><b>${pa?pa.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</b><small>P.A. do mês</small></div><div><b>${ticket?brl(ticket):'—'}</b><small>Ticket médio</small></div>
+    <div><b style="color:${var_==null?'':var_>=0?'var(--ok)':'#ff8b95'}">${var_==null?'—':(var_>=0?'+':'')+p1(var_)}</b><small>x ano anterior</small></div></div>`}
 function rInicio(){
-  const L=S.perfil.franquia?S.L:visiveis(),ont=S.D.ontem?S.D.ontem.slice(8,10)+'/'+S.D.ontem.slice(5,7):'ontem',R=S.D.rede;
-  // consultor de campo: a rede de franquias (só o total) e a região dele
-  $('#resumo').innerHTML=S.perfil.consultor&&R?quadro(`Rede de franquias · ${R.lojas} lojas`,{vm:R.mes.venda,mm:R.mes.meta,vd:R.dia.venda,md:R.dia.meta,aa:R.mes.venda_aa,at:R.mes.atend,qt:R.mes.qtde})+quadro(`Minha região · ${L.length} lojas`,somas(L))
-    :quadro('',somas(L));
-  if(S.perfil.franquia){$('#ranking').innerHTML='';$('#porCons').innerHTML='';rMinhas();return}
-  // ranking das lojas na visão escolhida
-  const k=S.rk,itens=L.map(l=>k==='aa'?{cod:l.cod,nome:nomeLoja(l),v:M_(l).venda||0,m:M_(l).venda_aa||0,a:null}:{cod:l.cod,nome:nomeLoja(l),v:(l[k]||{}).venda||0,m:(l[k]||{}).meta||0,a:(l[k]||{}).atend});
-  const tit=k==='dia'?'Ranking de '+ont:k==='mes'?'Ranking do mês':'Mês contra o ano anterior (100% = igual)';
-  $('#ranking').innerHTML=rankDia(itens,tit);
-  // resumo por consultor (sempre a rede de franquias inteira)
-  const cons=[...new Set(S.L.map(l=>l.supervisao))].sort();
-  $('#porCons').innerHTML=S.cons||S.perfil.consultor?'':rankDia(cons.map(c=>{const X=S.L.filter(l=>l.supervisao===c);return {cod:c,nome:titulo(c)+` · ${X.length} lojas`,v:soma(X,'mes','venda'),m:soma(X,'mes','meta'),a:null}}),'Consultores no mês');
+  const F=!!S.perfil.franquia,C=S.perfil.consultor,L=F?S.L:visiveis(),A=somas(L),R=S.D.rede,ont=S.D.ontem?S.D.ontem.slice(8,10)+'/'+S.D.ontem.slice(5,7):'ontem';
+  const nome=F?nomeLoja(L[0]||{nome:S.perfil.nome}):C?'Minha região · '+L.length+' lojas':S.fran?fran({franqueado:S.fran}):S.cons?titulo(S.cons):'Franquias · '+L.length+' lojas';
+  const sl=(v,lab,big,sub,cap)=>`<div class="sl"><div class="sock"><div class="core" style="--v:${Math.min(v,100).toFixed(1)}"><div><small>${lab}</small><b>${big}</b><small>${sub}</small></div></div></div><div class="cap">${cap}</div></div>`;
+  const pD=pct(A.vd,A.md),pM=pct(A.vm,A.mm);
+  $('#car').innerHTML=sl(pD,'VENDA DE ONTEM',A.md?Math.round(pD)+'%':'—',brl(A.vd),`${esc(nome)} · dia fechado <b>${ont}</b> · meta ${brl(A.md)}<br>${A.vd>=A.md?'Acima em':'Faltaram'} <b>${brl(Math.abs(A.md-A.vd))}</b>`)
+    +sl(pM,'VENDA ACUMULADA',A.mm?Math.round(pM)+'%':'—',mil(A.vm),`${esc(nome)} · meta até ${ont} <b>${mil(A.mm)}</b><br>${A.vm>=A.mm?'Acima em':'Faltam'} <b>${mil(Math.abs(A.mm-A.vm))}</b> · meta do mês ${p1(pct(A.vm,A.mt))}`);
+  $('#resumo').innerHTML=numeros(A);
+  // conta-giros embaixo do reator: na visão geral, um por consultor; com consultor escolhido (ou na tela do consultor), a rede de franquias
+  const cons=[...new Set(S.L.map(l=>l.supervisao))].sort(),RT=C&&R?{vd:R.dia.venda,md:R.dia.meta,vm:R.mes.venda,mm:R.mes.meta}:somas(S.L);
+  const tc=F?null:[0,1].map(i=>{const per=i?'mês':'ontem',pp=X=>i?pct(X.vm,X.mm):pct(X.vd,X.md);
+    return !C&&!S.cons&&!S.fran?`<div class="tachos">${cons.map(c=>tachoUm(pp(somas(S.L.filter(l=>l.supervisao===c))),titulo(c).split(' ')[0]+' · '+per)).join('')}</div>`:tachoUm(pp(RT),'Rede de franquias · '+per)});
+  $('#tacho').hidden=!tc;
+  // ranking acompanha a tela do reator: ontem → ranking do dia; acumulado → ranking do mês
+  const rk=F?['','']:[rankDia(L.map(l=>({cod:l.cod,nome:nomeLoja(l),v:D_(l).venda||0,m:D_(l).meta||0,a:D_(l).atend})),'Ranking de '+ont)||'<div class="panel rankdia"><h3>Ranking de ontem</h3><p class="note" style="margin:0">Sem dia fechado ainda.</p></div>',
+    rankDia(L.map(l=>({cod:l.cod,nome:nomeLoja(l),v:M_(l).venda||0,m:M_(l).meta||0,a:M_(l).atend})),'Ranking acumulado · meta até '+ont)];
+  const car=$('#car'),dots=$$('#dots button'),i0=+(car.dataset.i||0);
+  car._rk=rk;car._tc=tc;$('#ranking').innerHTML=rk[i0];if(tc)$('#tacho').innerHTML=tc[i0];
+  requestAnimationFrame(()=>{car.scrollLeft=i0*car.clientWidth});dots.forEach((d,k)=>d.classList.toggle('on',k===i0));
+  if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));
+      if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i]);$('#ranking').innerHTML=car._rk[i]||'';if(car._tc)$('#tacho').innerHTML=car._tc[i]}}));
+    dots.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})))}
+  if(F){$('#porCons').innerHTML='';rMinhas();return}
+  // consultores no mês (visão geral)
+  $('#porCons').innerHTML=S.cons||S.fran||C?'':rankDia(cons.map(c=>{const X=S.L.filter(l=>l.supervisao===c);return {cod:c,nome:titulo(c)+` · ${X.length} lojas`,v:soma(X,'mes','venda'),m:soma(X,'mes','meta'),a:null}}),'Consultores no mês');
 }
-$('#rkSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.rk=b.dataset.k;$$('#rkSeg button').forEach(x=>x.classList.toggle('on',x===b));rInicio()};
 
 /* ---------- franqueado: demandas do dia ---------- */
 function rMinhas(){
