@@ -280,6 +280,9 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .termo1{display:flex;gap:14px;align-items:center;margin-top:10px}
 .termo1 svg{width:58px;flex:none}
 .termo1 p{margin:0;font-size:14px;line-height:1.45}
+.rv summary{list-style:none;cursor:pointer;text-align:center;margin-top:10px;padding:11px 14px;border-radius:8px;font-family:var(--f-disp);font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:#1a1204;background:linear-gradient(180deg,#f3d27a,#c99a3a);box-shadow:inset 0 1px 0 #fff8,0 2px 0 #6b4a12}
+.rv summary::-webkit-details-marker{display:none}
+.rv summary::after{content:' ▾'}.rv[open] summary::after{content:' ▴'}
 .it .aviso{display:block;color:#ffd27a;background:#3a2a07;border:1px solid #e3b04b;border-radius:6px;padding:6px 8px;margin-top:5px;font-weight:600;font-size:12.5px}
 @media (prefers-reduced-motion:reduce){.cg .ag,.termo .hg{animation:none}}
 /* painel de comando curvo: topo em arco e os botões seguindo a curva (--y desce e --r inclina nas pontas, calculados no JS) */
@@ -1303,7 +1306,8 @@ function rRitmo(L,l,nomeVisao,rede,TD,P,hora){
     corpo=`<div class="termo1">${termo(r?r.p:NaN)}<p>${r?`Até as <b>${esc(hora)}</b> a ${esc(l.nome)} costuma ter <b>${Math.round(f*100)}%</b> da venda do dia. Com a meta de ${brl(l.meta_hoje)}, o ritmo pede <b>${brl(r.e)}</b>; a loja tem <b>${brl(r.v)}</b>.<br><b style="color:${r.p>=100?'#3ecf7a':r.p>=90?'#e3b04b':'#ff8b95'}">${r.p>=100?'Acima':'Abaixo'} do ritmo: ${Math.round(r.p)}%</b>`:'Ainda cedo para medir o ritmo da loja.'}</p></div>`}
   else{const it=(rede?TD:L).map(x=>({x,r:ritmoDe([x],P,hora)})).filter(o=>o.x.meta_hoje>0).sort((a,b)=>(b.r?.p??-1)-(a.r?.p??-1));
     corpo=`<div class="termos">${it.map(o=>`<div class="termo" title="${esc(o.x.nome)}: tem ${brl(o.r?.v||0)}; o ritmo pede ${brl(o.r?.e||0)}">${termo(o.r?o.r.p:NaN)}<b style="color:${!o.r?'#888':o.r.p>=100?'#3ecf7a':o.r.p>=90?'#e3b04b':'#ff8b95'}">${o.r?Math.round(o.r.p)+'%':'--'}</b><span>${esc(o.x.nome)}</span></div>`).join('')}</div>`}
-  box.innerHTML=`<div class="panel ritmo"><h3>Ritmo de hoje · parcial das ${esc(hora)}</h3><p class="note" style="margin:0">100% = a venda que a loja costuma ter até esta hora para bater a meta do dia (curva de cada loja, por dia da semana).</p><div class="cgs">${cgs.join('')}</div>${corpo}</div>`;
+  box.innerHTML=`<div class="panel ritmo"><h3>Ritmo de hoje · parcial das ${esc(hora)}</h3><p class="note" style="margin:0">100% = a venda que a loja costuma ter até esta hora para bater a meta do dia (curva de cada loja, por dia da semana).</p><div class="cgs">${cgs.join('')}</div><details class="rv"${S.rvAberto?' open':''}><summary>🌡 Ritmo de venda ${l?'da loja':'por loja'}</summary>${corpo}</details></div>`;
+  box.querySelector('.rv').addEventListener('toggle',e=>{S.rvAberto=e.target.open}); // termômetros escondidos até tocar no botão
 }
 function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:nomeVisao;
