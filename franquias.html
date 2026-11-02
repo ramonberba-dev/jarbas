@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5a0910">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jarbas">
+<meta name="robots" content="noindex,nofollow">
+<title>Jarbas · Franquias</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Teko:wght@500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>[hidden]{display:none!important}html,body{margin:0}</style>
+</head>
+<body>
+<style>
+
+
+/* Jarbas · armadura vermelha e dourada em metal escovado, emendas em relevo; app de uma coluna com barra fixa embaixo */
+:root{
+  --red:#c8202f; --red-d:#8e1520; --red-dd:#2a0507; --gold:#e3b04b; --gold-l:#f4cf7a; --gold-d:#a8751f;
+  --ink:#2a0a0c; --cream:#fff5e6; --sand:#f3d6a0; --groove:#140103; --white:#ffffff; --ok:#3ecf7a; --warn:#f2b33d;
+  --f-disp:"Chakra Petch","Segoe UI",sans-serif; --f-num:"Teko","Chakra Petch",sans-serif;
+  --f-body:"Barlow","Segoe UI",system-ui,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;color:var(--cream);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  background:
+    repeating-linear-gradient(90deg,#ffffff0d 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(90deg,#0000001f 0 1px,transparent 1px 5px),
+    linear-gradient(100deg,#ffffff00 20%,#ffffff14 45%,#ffffff00 70%),
+    linear-gradient(170deg,#8e1520 0%,#5a0910 50%,#2a0507 100%) fixed;
+  background-color:var(--red-dd)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:#5a0910}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.app{max-width:520px;margin:0 auto;min-height:100%;position:relative;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+/* emendas da armadura (só no fundo da tela inicial) */
+.seams{position:absolute;inset:0 0 auto;height:760px;pointer-events:none;z-index:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 760' preserveAspectRatio='xMidYMin slice'%3E%3Cg fill='none'%3E%3Cg stroke='%23ffb0a0' stroke-opacity='.28' stroke-width='1.2' transform='translate(1.4 1.4)'%3E%3Cpath d='M0 140 L72 186 M400 140 L328 186 M0 438 L112 378 M400 438 L288 378 M0 590 L130 576 L270 576 L400 590 M24 610 L24 740 M376 610 L376 740'/%3E%3C/g%3E%3Cg stroke='%23140103' stroke-opacity='.85' stroke-width='2.2'%3E%3Cpath d='M0 140 L72 186 M400 140 L328 186 M0 438 L112 378 M400 438 L288 378 M0 590 L130 576 L270 576 L400 590 M24 610 L24 740 M376 610 L376 740'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23140103'%3E%3Ccircle cx='72' cy='186' r='3.4'/%3E%3Ccircle cx='328' cy='186' r='3.4'/%3E%3Ccircle cx='112' cy='378' r='3.4'/%3E%3Ccircle cx='288' cy='378' r='3.4'/%3E%3C/g%3E%3Cg fill='%23e3b04b'%3E%3Ccircle cx='71.4' cy='185.4' r='2.3'/%3E%3Ccircle cx='327.4' cy='185.4' r='2.3'/%3E%3Ccircle cx='111.4' cy='377.4' r='2.3'/%3E%3Ccircle cx='287.4' cy='377.4' r='2.3'/%3E%3C/g%3E%3C/svg%3E") top center/100% auto no-repeat}
+.wrap{position:relative;z-index:1;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+/* topo */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;justify-content:space-between;align-items:end;gap:10px;
+  padding:12px max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));
+  border-bottom:2px solid var(--gold);box-shadow:0 1px 0 #ffffff33,0 6px 10px -4px #000b;
+  background:repeating-linear-gradient(90deg,#ffffff0d 0 1px,transparent 1px 3px),linear-gradient(180deg,#7a1019,#5a0910)}
+.logo{font-family:var(--f-num);font-size:38px;line-height:.8;letter-spacing:.08em;
+  background:linear-gradient(180deg,#fff1c9,var(--gold) 50%,var(--gold-d));-webkit-background-clip:text;background-clip:text;color:transparent}
+.top small{font-family:var(--f-mono);font-size:10px;color:var(--sand);text-align:right;line-height:1.5}
+/* telas */
+.view{display:none;padding-top:8px}
+.view.on{display:block}
+h2.t{font-family:var(--f-num);font-weight:500;font-size:30px;letter-spacing:.06em;color:var(--gold);margin:10px 0 2px;line-height:1}
+.sub{font-family:var(--f-mono);font-size:10.5px;color:var(--sand);opacity:.85}
+/* reator */
+.car{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x pan-y}
+.car::-webkit-scrollbar{display:none}
+.sl{flex:0 0 100%;scroll-snap-align:center;display:grid;justify-items:center;padding-top:14px}
+.sock{position:relative;width:min(64%,250px);aspect-ratio:1;border-radius:50%;padding:8px;
+  background:repeating-conic-gradient(#ffffff14 0 1deg,transparent 1deg 3deg),conic-gradient(from 20deg,var(--gold-d),#fbe3a4,#b8862c,var(--gold-l),#9c6b1a,#fbe3a4,var(--gold-d));
+  box-shadow:0 0 0 3px var(--groove),0 0 0 4.5px #ffb0a044,0 8px 20px #000c,inset 1px 2px 1px #fff6,inset -1px -3px 2px #0008}
+.sock::before{content:"";position:absolute;inset:-17px;border-radius:50%;border:2.2px solid var(--groove);box-shadow:1.4px 1.4px 0 #ffb0a047,inset 1.4px 1.4px 0 #ffb0a047;pointer-events:none}
+.core{position:relative;width:100%;height:100%;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--white) 0 calc(var(--v)*1%),#2a2f36 0 100%);box-shadow:0 0 34px -4px #ffffffcc}
+.core::before{content:"";position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle,#1a1e24 0 55%,#121519 56%);border:1px dashed #ffffff55}
+.core::after{content:"";position:absolute;inset:22%;border-radius:50%;border:2px solid #ffffff44}
+.core div{position:relative;z-index:1;text-align:center;display:grid;gap:2px}
+.core b{font-family:var(--f-disp);font-size:clamp(36px,11vw,48px);line-height:1;color:#fff;text-shadow:0 0 16px #ffffffaa;font-variant-numeric:tabular-nums}
+.core small{font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;color:#d9dde3}
+.cap{position:relative;z-index:2;text-align:center;font-family:var(--f-mono);font-size:11px;line-height:1.6;color:var(--sand);margin:22px 8px 0;padding:8px 12px;
+  background:linear-gradient(180deg,#2a0507f2,#1a0305f2);border-radius:3px 12px 3px 12px;box-shadow:0 0 0 1.5px var(--groove),inset 0 1px 0 #ffb0a040,0 4px 8px -2px #000b}
+.cap b{color:#fff}
+#pdots{margin-top:12px}
+@keyframes fluor{0%{filter:brightness(.12)}6%{filter:brightness(1.25)}10%{filter:brightness(.18)}17%{filter:brightness(.95)}21%{filter:brightness(.25)}
+  30%{filter:brightness(1.1)}34%{filter:brightness(.45)}46%{filter:brightness(1)}50%{filter:brightness(.7)}62%,100%{filter:brightness(1)}}
+.car.mini .sock{width:min(50%,196px)}
+.car.mini .core b{font-size:clamp(30px,9vw,40px)}
+.car.mini .cap{margin-top:18px}
+.dots{display:flex;justify-content:center;align-items:center;gap:7px;padding-top:8px}
+.dots button{width:8px;height:8px;padding:0;border-radius:50%;border:0;background:#f3d6a055;cursor:pointer}
+.dots button.on{width:20px;border-radius:4px;background:var(--gold)}
+.dots span{font-family:var(--f-mono);font-size:9.5px;color:#f3d6a099;margin-left:4px}
+/* todo reator acende piscando como lâmpada fluorescente ao aparecer (abrir o app, trocar de tela) e ao trocar de slide */
+@media (prefers-reduced-motion:no-preference){.core{animation:fluor .95s steps(1,end) both,pulse 3.5s ease-in-out .95s infinite}@keyframes pulse{50%{box-shadow:0 0 52px 2px #ffffffee}}}
+/* placas douradas */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.plate{padding:9px 10px;border-radius:3px 12px 3px 12px;color:var(--ink);
+  background:repeating-linear-gradient(90deg,#ffffff38 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,#00000012 0 1px,transparent 1px 4px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));
+  box-shadow:0 0 0 2px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f,0 5px 8px -1px #000c}
+.plate small{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;display:block;color:#4a1a0e}
+.plate b{font-family:var(--f-num);font-size:30px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.plate span{display:block;font-size:11px;color:#4a1a0e}
+/* painéis vermelhos */
+.list{display:grid;gap:8px;margin-top:14px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;border-left:3px solid var(--gold);padding:10px 12px;font-size:14px;width:100%;text-align:left;cursor:pointer;
+  background:repeating-linear-gradient(90deg,#ffffff0a 0 1px,transparent 1px 3px),linear-gradient(180deg,#3a0a10e6,#1f0508e6);border-top:0;border-right:0;border-bottom:0;
+  box-shadow:0 0 0 1.5px var(--groove),inset 0 1px 0 #ffb0a040,inset 0 -2px 0 #0008,0 4px 6px -2px #000b}
+.li span{min-width:0}
+.li small{display:block;color:var(--sand);font-size:11.5px;opacity:.85}
+.tag{flex:none;font-style:normal;font-family:var(--f-mono);font-size:10.5px;padding:3px 7px;border-radius:2px;background:var(--gold);color:var(--ink);font-weight:700;white-space:nowrap}
+.tag.r{background:var(--red);color:#fff}.tag.ok{background:var(--ok);color:#06210f}.tag.n{background:#ffffff22;color:var(--cream)}
+.panel{margin-top:12px;padding:12px;background:repeating-linear-gradient(90deg,#ffffff08 0 1px,transparent 1px 3px),linear-gradient(180deg,#3a0a10e6,#1f0508e6);
+  box-shadow:0 0 0 1.5px var(--groove),inset 0 1px 0 #ffb0a040,inset 0 -2px 0 #0008,0 4px 8px -2px #000b;border-radius:2px 12px 2px 12px}
+.panel h3{margin:0 0 8px;font-family:var(--f-disp);font-size:15px;letter-spacing:.04em;color:var(--gold)}
+.sec{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--sand);margin:18px 2px 0}
+/* tabela de lojas */
+.row.eu{outline:2px solid var(--gold);outline-offset:1px}
+.rankdia{margin-top:12px}
+.rows{display:grid;gap:6px}
+/* mapa da mina: mapa de calor (cada célula colorida pela distância da meta) */
+.heatw{overflow-x:auto;margin-top:10px;border:1px solid #ffffff14;background:#00000033}
+.heat{border-collapse:separate;border-spacing:3px;width:100%;font-size:12px}
+.heat th{font:600 10px/1.2 var(--f-mono,monospace);letter-spacing:.06em;color:var(--sand);text-transform:uppercase;padding:4px 2px;text-align:center;white-space:nowrap}
+.heat th small{display:block;font-size:9px;opacity:.7;letter-spacing:0;text-transform:none}
+.heat td{padding:6px 3px;text-align:center;border-radius:4px;font-weight:700;color:#fff;white-space:nowrap;text-shadow:0 1px 1px #0008}
+.heat td.nm,.heat th.nm{position:sticky;left:0;z-index:1;background:#2a0507}
+.heat td.nm{text-align:left;font-weight:600;color:var(--cream);max-width:110px;overflow:hidden;text-overflow:ellipsis;text-shadow:none}
+.heat td.nm i{font-style:normal;opacity:.6;margin-left:4px;font-size:10px}
+.heat td.vz{background:#ffffff10;color:#ffffff55;text-shadow:none;font-weight:400}
+.heatleg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sand);margin:8px 2px 0}
+.heatleg b{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(0 75% 42%),hsl(40 75% 42%),hsl(80 75% 42%) 85%,hsl(140 62% 32%) 85%)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:8px 10px;background:#00000033;border:1px solid #ffffff14;border-left:3px solid var(--c,var(--gold))}
+.row .nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .nm i{font-style:normal;font-family:var(--f-mono);font-size:10px;color:var(--sand);margin-left:4px}
+.row .pc{font-family:var(--f-num);font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
+.row .bar{grid-column:1/-1;height:6px;background:#00000066;border-radius:3px;overflow:hidden;position:relative}
+.row .bar i{position:absolute;inset:0 auto 0 0;background:var(--c,var(--gold))}
+.row .bar u{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff;opacity:.8}
+.row .det{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--f-mono);font-size:10.5px;color:var(--sand)}
+.seg{display:flex;gap:4px;margin-top:10px;background:#00000040;padding:3px;border-radius:3px}
+.seg button{flex:1;border:0;background:none;padding:7px 4px;font-family:var(--f-mono);font-size:11px;color:var(--sand);cursor:pointer;border-radius:2px}
+.seg button.on{background:var(--gold);color:var(--ink);font-weight:700}
+/* formulários */
+.btn{border:0;cursor:pointer;font-family:var(--f-num);font-size:19px;letter-spacing:.08em;padding:9px 16px 6px;border-radius:3px 10px 3px 10px;color:var(--ink);
+  background:linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));box-shadow:0 0 0 2px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f}
+.btn.ghost{background:#00000040;color:var(--sand);box-shadow:0 0 0 1.5px #ffffff30}
+.btn.red{background:var(--red);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+label.f{display:grid;gap:4px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sand)}
+.inp{width:100%;background:#00000055;border:1px solid #ffffff2a;border-radius:3px;padding:9px 10px;color:var(--cream);font-family:var(--f-body);font-size:15px;text-transform:none;letter-spacing:0}
+select.inp option{background:#2a0507;color:var(--cream)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ck{display:grid;gap:6px;padding:9px 0;border-bottom:1px solid #ffffff14}
+.ck:last-child{border-bottom:0}
+.ck .q{font-size:14px}
+.ck .op{display:flex;gap:6px}
+.ck .op button{flex:1;border:1px solid #ffffff30;background:#00000033;color:var(--sand);padding:6px 4px;border-radius:2px;cursor:pointer;font-family:var(--f-mono);font-size:11px}
+.ck .op button.on[data-v="ok"]{background:var(--ok);color:#06210f;border-color:var(--ok)}
+.ck .op button.on[data-v="aj"]{background:var(--red);color:#fff;border-color:var(--red)}
+.ck .op button.on[data-v="na"]{background:#ffffff33;color:#fff}
+.ck input{display:none}.ck.aj input{display:block}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.empty{font-size:13px;color:var(--sand);opacity:.8;padding:6px 2px}
+.note{font-size:12px;color:var(--sand);opacity:.8;margin-top:10px;line-height:1.5}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--gold);color:var(--ink);font-weight:700;padding:9px 14px;border-radius:3px 10px 3px 10px;box-shadow:0 6px 16px #000a;font-size:13px}
+/* giro */
+.sg{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;background:#00000033;border:1px solid #ffffff14}
+.sg.done{opacity:.45}
+.sg img,.sg .ph{width:56px;height:56px;object-fit:cover;border-radius:3px;background:#ffffff14}
+.sg b{font-size:13.5px;display:block;line-height:1.25}
+.sg small{display:block;font-family:var(--f-mono);font-size:10px;color:var(--sand);margin-top:3px;line-height:1.4}
+.sg .q{text-align:right;display:grid;gap:4px;justify-items:end}
+.sg .q b{font-family:var(--f-num);font-size:24px;line-height:1}
+.sg input{width:20px;height:20px;accent-color:var(--gold)}
+a.lk{color:var(--gold)}
+/* barra de baixo */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:25;border-top:2px solid var(--gold);padding-bottom:env(safe-area-inset-bottom,0px);
+  background:repeating-linear-gradient(90deg,#ffffff08 0 1px,transparent 1px 3px),linear-gradient(180deg,#2a080c,#120304);box-shadow:0 -6px 10px -4px #000c,inset 0 1px 0 #fff3}
+.dock nav{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.dock a{text-align:center;font-family:var(--f-num);font-size:17px;letter-spacing:.06em;padding:12px 0 10px;color:#d9b98a;text-decoration:none;position:relative}
+.dock a.on{background:var(--red);color:#fff}
+.dock a em{position:absolute;top:5px;right:12%;font-style:normal;font-family:var(--f-mono);font-size:9px;background:var(--gold);color:var(--ink);border-radius:8px;padding:0 4px;line-height:14px}
+
+/* visita */
+.vhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}
+.btn.sm{font-size:15px;padding:6px 12px 4px}
+.btn.mic{text-decoration:none;display:inline-block}
+.btn.foto{display:inline-block;margin-top:8px}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kv div{background:#00000040;padding:6px 8px;border-left:2px solid var(--gold)}
+.kv small{display:block;font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sand)}
+.kv b{font-family:var(--f-num);font-size:22px;line-height:1.1;font-weight:500}
+details.secao{margin-top:10px;background:linear-gradient(180deg,#3a0a10e6,#1f0508e6);box-shadow:0 0 0 1.5px var(--groove),inset 0 1px 0 #ffb0a040;border-radius:2px 12px 2px 12px}
+details.secao summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px;cursor:pointer;font-family:var(--f-disp);font-weight:600;color:var(--gold)}
+details.secao summary::-webkit-details-marker{display:none}
+details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom:0}
+.ck .q small{display:block;font-family:var(--f-mono);font-size:10px;color:var(--sand);opacity:.8;margin-top:2px}
+.ck .op button.on[data-v="at"]{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.ck .op button.on[data-v="no"]{background:var(--red);color:#fff;border-color:var(--red)}
+.ck .obs{display:none}.ck.aj .obs,.ck .obs:not(:placeholder-shown){display:block}
+.ck .chk{display:none;font-size:12px;color:var(--sand);gap:6px;align-items:center}.ck.aj .chk{display:flex}
+.ck .chk input{display:inline;width:16px;height:16px;accent-color:var(--gold)}
+.foto-mini{font-family:var(--f-mono);font-size:11px;color:var(--sand);cursor:pointer;justify-self:start;padding:3px 8px;border:1px dashed #ffffff40;border-radius:2px}
+.thumbs{display:flex;flex-wrap:wrap;gap:6px}
+.thumbs:empty{display:none}
+.th{position:relative;width:64px;height:64px}
+.th img{width:100%;height:100%;object-fit:cover;border-radius:3px;background:#ffffff14;border:1px solid #ffffff2a}
+.th .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:14px;line-height:22px;padding:0;cursor:pointer}
+.gr{margin-top:10px;display:grid;gap:4px}.gr small{font-family:var(--f-mono);font-size:10px;color:var(--sand)}
+.md{font-size:13.5px;line-height:1.5}.md h4{margin:10px 0 4px;font-family:var(--f-disp);color:var(--gold);font-size:14px}.md li{margin-left:16px}
+.planos{display:grid;gap:8px;margin-top:6px}
+.pl{display:grid;gap:6px;padding:8px;background:#00000040;border-left:3px solid var(--gold)}
+.grid3{display:grid;grid-template-columns:1fr 90px 90px;gap:6px}
+.x2{justify-self:end;border:0;background:none;color:#ff8b95;font-size:12px;cursor:pointer;padding:2px}
+.ck .op{flex-wrap:wrap}
+/* painel */
+.pcards{display:grid;gap:8px;margin-top:8px}
+.pcards .pc{padding:10px 12px;background:repeating-linear-gradient(90deg,#ffffff0a 0 1px,transparent 1px 3px),linear-gradient(180deg,#3a0a10e6,#1f0508e6);box-shadow:0 0 0 1.5px var(--groove),inset 0 1px 0 #ffb0a040;border-left:3px solid var(--gold)}
+.pcards .pc.hoje{background:repeating-linear-gradient(90deg,#ffffff38 0 1px,transparent 1px 3px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));color:var(--ink);border-left-color:var(--red)}
+.pcards small{display:block;font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.pcards b{font-family:var(--f-num);font-size:32px;line-height:1.05;font-weight:500}
+.pcards span{display:block;font-size:12.5px}
+.pcards .pc.hoje span,.pcards .pc.hoje small{color:#4a1a0e}
+.li.pd{margin-top:12px;border-left-color:var(--red)}
+.li.pd span{font-family:var(--f-num);font-size:22px;letter-spacing:.06em;color:var(--gold)}
+.li.pd small{font-family:var(--f-mono);font-size:10.5px;letter-spacing:0;color:var(--sand)}
+
+/* abas como botões escovados, alternando amarelo e aço; a selecionada acende as letras em verde fluorescente */
+#dock{gap:6px 7px;padding:6px 14px 16px}
+#dock a{margin:0;padding:10px 0 8px;border-radius:3px 10px 3px 10px;font-weight:600;letter-spacing:.04em;color:var(--ink);transition:color .15s,text-shadow .15s,box-shadow .15s;
+  background:repeating-linear-gradient(90deg,#ffffff1c 0 1px,transparent 1px 3px,#00000012 3px 4px),linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));
+  box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fff9,inset -1px -2px 0 #6b450f}
+#dock a:nth-child(even):not([data-v="giro"]){color:#1d2329;text-shadow:0 1px 0 #ffffff66;
+  background:repeating-linear-gradient(90deg,#ffffff2e 0 1px,transparent 1px 3px,#0000001a 3px 4px),linear-gradient(160deg,#f1f4f6,#a9b2ba 55%,#66707a);
+  box-shadow:0 0 0 1.5px var(--groove),inset 1px 1px 0 #fffc,inset -1px -2px 0 #3c444c}
+#dock a.on,#dock a.on:nth-child(even){color:#5dff3c;text-shadow:0 0 3px #5dff3c,0 0 9px #39ff14,0 0 18px #39ff14aa;
+  box-shadow:0 0 0 1.5px var(--groove),inset 0 0 0 60px #0000007a,inset 0 0 8px #39ff1455,0 0 10px #39ff1440}
+#dock a:active{filter:brightness(.9)}
+/* botão Próprias | Franquias no topo (Ramon e Guto) */
+.lado{position:sticky;top:calc(env(safe-area-inset-top,0px) + 54px);z-index:19;display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:520px;margin:6px auto 0;padding:3px;
+  background:#000000a0;border:1px solid #ffffff22;border-radius:4px}
+.lado a{display:block;text-align:center;padding:8px 4px 6px;font-family:var(--f-num);font-size:17px;letter-spacing:.1em;color:var(--sand);text-decoration:none;border-radius:3px;cursor:pointer}
+.lado a.on{background:linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));color:var(--ink);box-shadow:inset 0 0 0 1px #fff8}
+/* obrigações do dia em destaque na tela do gerente (parciais e fechamento ficam num bloco à parte) */
+.obrig{border:2px solid var(--gold);box-shadow:0 0 18px #e3b04b44,inset 0 0 0 1px #00000055;margin-top:14px}
+.obrig .sec{margin-top:0;color:var(--gold-l)}
+/* alerta de parcial/fechamento para os gerentes: popup que pisca + alarme */
+.alerta{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:18px;background:#000c;animation:alPisca .7s steps(2,end) infinite}
+@keyframes alPisca{0%{background:#3a0006e6}100%{background:#000d}}
+.alerta>div{width:min(420px,100%);text-align:center;padding:22px 18px;border-radius:10px;background:linear-gradient(160deg,#2a0507,#120203);border:3px solid #ff2a3a;box-shadow:0 0 0 2px #000,0 0 30px #ff2a3acc,inset 0 0 24px #ff2a3a55;animation:alBorda .7s ease-in-out infinite alternate}
+@keyframes alBorda{to{border-color:#ffd25a;box-shadow:0 0 0 2px #000,0 0 46px #ffd25acc,inset 0 0 24px #ffd25a55}}
+.alerta .sir{font-size:56px;line-height:1;animation:alGira .5s linear infinite alternate}@keyframes alGira{from{transform:rotate(-12deg) scale(1)}to{transform:rotate(12deg) scale(1.12)}}
+.alerta h2{font-family:var(--f-disp);font-size:30px;letter-spacing:.05em;color:#ffd25a;margin:10px 0 6px;text-shadow:0 0 12px #ff2a3a}
+.alerta p{margin:0 0 16px;line-height:1.45;color:var(--cream);font-size:16px}
+.alerta .btn{width:100%;font-size:20px;padding:14px}.alerta .depois{background:none;border:0;color:var(--sand);margin-top:10px;font-size:14px;text-decoration:underline}
+/* passagem de bastão: tela travada sem som (dourada, sem piscar) e a análise depois do envio */
+.alerta.calmo{animation:none;background:#000d}
+.alerta.calmo>div{border-color:#e3b04b;box-shadow:0 0 0 2px #000,0 0 30px #e3b04b99,inset 0 0 24px #e3b04b44;animation:none}
+.alerta.calmo .sir{animation:none}
+.alerta .ana{text-align:left;display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none;color:var(--cream);font-size:14.5px;line-height:1.4}
+.alerta .ana li{background:#ffffff0d;border-radius:6px;padding:7px 9px}
+.alerta .ana b{color:#ffd25a}
+/* contagiros digital da rede, pequeno, embaixo do reator (só nas visões de regional) */
+.tacho{display:flex;flex-direction:column;align-items:center;margin:-6px auto 4px;width:168px}
+.tacho svg{width:168px;height:96px;overflow:visible}
+.tacho .lcd{margin-top:-30px;font-family:var(--f-mono,monospace);font-size:20px;font-weight:700;letter-spacing:.06em;color:#5dff3c;text-shadow:0 0 4px #5dff3c,0 0 10px #39ff1488;background:#020a03;border:1px solid #2b4a2e;border-radius:4px;padding:1px 8px;box-shadow:inset 0 0 8px #000}
+.tacho small{font-family:var(--f-mono,monospace);font-size:10px;letter-spacing:.14em;color:var(--sand);margin-top:3px;text-transform:uppercase}
+.tachos{display:flex;justify-content:center;gap:4px;margin:-4px auto 4px}
+.tachos .tacho{width:112px;margin:0}.tachos .tacho svg{width:112px;height:64px}
+.tachos .tacho .lcd{margin-top:-22px;font-size:15px;padding:0 6px}.tachos .tacho small{font-size:9px;letter-spacing:.08em}
+.tacho .agulha{transition:transform .8s cubic-bezier(.3,1.4,.5,1);transform-origin:84px 84px}
+/* ritmo de hoje: conta-giros de carro (rede e regionais) e um termômetro por loja */
+.ritmo h3{margin-bottom:2px}
+.cgs{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:6px 10px;margin:8px 0 4px}
+.cg{display:flex;flex-direction:column;align-items:center;width:118px}
+.cg.g{width:210px}
+.cg svg{width:100%;height:auto;display:block;filter:drop-shadow(0 4px 8px #000a)}
+.cg small{font-family:var(--f-mono,monospace);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-top:2px;text-align:center}
+.cg .ag{transform-origin:100px 100px;animation:cgsobe 1.4s cubic-bezier(.25,1.3,.45,1)}
+@keyframes cgsobe{from{transform:rotate(0deg)}}
+.termos{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:8px 4px;margin-top:12px}
+.termo{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.termo svg{width:40px;height:auto;display:block}
+.termo b{font-family:var(--f-mono,monospace);font-size:13px;margin-top:2px}
+.termo span{font-size:10.5px;line-height:1.15;color:var(--sand);overflow-wrap:anywhere}
+.termo.eu span{color:#fff;font-weight:700}
+.termo .hg{transform-origin:0 128px;animation:hgsobe 1.2s ease-out}
+@keyframes hgsobe{from{transform:scaleY(0)}}
+.termo1{display:flex;gap:14px;align-items:center;margin-top:10px}
+.termo1 svg{width:58px;flex:none}
+.termo1 p{margin:0;font-size:14px;line-height:1.45}
+.rv summary{list-style:none;cursor:pointer;text-align:center;margin-top:10px;padding:11px 14px;border-radius:8px;font-family:var(--f-disp);font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:#1a1204;background:linear-gradient(180deg,#f3d27a,#c99a3a);box-shadow:inset 0 1px 0 #fff8,0 2px 0 #6b4a12}
+.rv summary::-webkit-details-marker{display:none}
+.rv summary::after{content:' ▾'}.rv[open] summary::after{content:' ▴'}
+.it .aviso{display:block;color:#ffd27a;background:#3a2a07;border:1px solid #e3b04b;border-radius:6px;padding:6px 8px;margin-top:5px;font-weight:600;font-size:12.5px}
+@media (prefers-reduced-motion:reduce){.cg .ag,.termo .hg{animation:none}}
+/* painel de comando curvo: topo em arco e os botões seguindo a curva (--y desce e --r inclina nas pontas, calculados no JS) */
+#dockBox.dock{border-radius:50% 50% 0 0/34px 34px 0 0;padding-top:12px;border-top-width:3px;
+  background:radial-gradient(120% 90% at 50% 0,#3a0c11 0,#1a0406 60%,#0d0203),repeating-linear-gradient(90deg,#ffffff08 0 1px,transparent 1px 3px);
+  box-shadow:0 -8px 18px -6px #000d,inset 0 2px 0 #ffffff22,inset 0 10px 18px -10px #e3b04b55}
+#dock{perspective:700px}
+#dock a{transform:translateY(calc(var(--y,0) * 1px)) rotate(calc(var(--r,0) * 1deg));transform-origin:50% 50%}
+#dock[style*="repeat(6"] a{font-size:15px;letter-spacing:.02em}
+/* supervisão com EQUIPE: duas fileiras, letras do tamanho normal; ESTOQUE ocupa duas casas na fileira de baixo */
+#dock.duas{grid-template-columns:repeat(4,1fr)!important}#dock.duas a{font-size:17px;padding:10px 0 8px}#dock.duas a[data-v="giro"]{grid-column:span 2}
+.app.duas{padding-bottom:calc(160px + env(safe-area-inset-bottom,0px))}
+/* EQUIPE: vendedores e Planilha de Metas do Sistema Corporativo */
+.eqv{display:grid;gap:8px;margin-top:10px}
+.eqc{background:#00000040;border:1px solid #ffffff18;border-left:3px solid var(--c,var(--gold));padding:10px 12px;border-radius:4px}
+.eqc b{display:block;font-size:15px}.eqc small{display:block;opacity:.75;margin-top:2px;line-height:1.4}
+.eqc .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;justify-content:flex-start}
+.eqc .acts .btn{padding:7px 10px;font-size:13px;min-height:0}
+.btn.perigo{background:#7d1018;color:#fff;border-color:#ff8b95}
+.eqbadge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:#3ecf7a33;color:#9ff0bf;margin-left:6px;vertical-align:middle}
+.eqbadge.off{background:#ffffff1a;color:#ffffffaa}
+.eqbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.eqbar .f{flex:1;min-width:140px}
+.eqmeta{overflow:auto;max-height:62vh;margin-top:10px;border:1px solid #ffffff18;background:#00000040}
+.eqmeta table{border-collapse:collapse;font-size:12px;white-space:nowrap}
+.eqmeta th,.eqmeta td{padding:5px 7px;border-bottom:1px solid #ffffff12;text-align:right}
+.eqmeta th{position:sticky;top:0;background:#3a0a0e;color:var(--sand);font-weight:600;z-index:1}
+.eqmeta td:first-child,.eqmeta th:first-child{position:sticky;left:0;background:#2a0507;text-align:left;z-index:2;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.eqmeta td.v{background:#1f6b3d;color:#fff}
+.eqdlg{position:fixed;inset:0;z-index:60;background:#000a;display:grid;place-items:center;padding:16px}
+.eqdlg>div{background:#2a0507;border:1px solid var(--gold);border-radius:6px;padding:16px;width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 12px 40px #000c}
+.eqdlg h3{margin:0 0 8px;font-family:var(--f-disp);color:var(--gold);letter-spacing:.04em}.eqdlg p{margin:0 0 10px;line-height:1.45}
+.eqdlg .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+
+/* app do gerente */
+.topdir{display:flex;align-items:center;gap:10px}
+.sair{border:1px solid var(--gold);background:#00000040;color:var(--gold);font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:6px 9px;border-radius:3px;cursor:pointer;white-space:nowrap}
+.login{min-height:100%;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));position:relative;z-index:1}
+.login .box{width:100%;max-width:380px;display:grid;gap:14px;text-align:center}
+/* reator da tela de entrada: acende devagar, pisca como lâmpada fluorescente e fica com a luz forte */
+.arc{position:relative;width:min(56vw,210px);aspect-ratio:1;margin:0 auto 6px}
+.arc svg{position:relative;width:100%;height:100%;filter:brightness(.22)}
+.arc.liga svg{animation:arcLiga 7.6s ease-in forwards}
+.arcHalo{position:absolute;inset:-22%;border-radius:50%;background:radial-gradient(circle,#7ff3ffcc 0 22%,#2fd3ff55 42%,transparent 68%);opacity:0}
+.arc.liga .arcHalo{animation:arcHalo 7.6s ease-in forwards,arcRespira 3.2s ease-in-out 7.6s infinite}
+@keyframes arcLiga{0%{filter:brightness(.22)}10%{filter:brightness(.05)}46%{filter:brightness(.45)}50%{filter:brightness(.08)}52%{filter:brightness(1.15)}55%{filter:brightness(.12)}58%{filter:brightness(.95)}60%{filter:brightness(.22)}64%{filter:brightness(1.05)}67%{filter:brightness(.5)}71%{filter:brightness(1)}
+  84%{filter:brightness(1.05) drop-shadow(0 0 6px #6ff)}100%{filter:brightness(1.3) drop-shadow(0 0 14px #8ff) drop-shadow(0 0 34px #2cd5ff)}}
+@keyframes arcHalo{0%,70%{opacity:0}100%{opacity:1}}
+@keyframes arcRespira{50%{opacity:.7;transform:scale(.96)}}
+@media (prefers-reduced-motion:reduce){.arc.liga svg{animation:none;filter:brightness(1.2) drop-shadow(0 0 14px #8ff)}.arc.liga .arcHalo{animation:none;opacity:1}}
+/* assinatura sutil, flutuando devagar no pé da tela de entrada */
+.assin{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-mono);font-size:12px;letter-spacing:.18em;color:#f3d08a;opacity:0;pointer-events:none;
+  text-shadow:0 0 10px #f3d08a55;animation:assinVem 1.6s ease 1s forwards,assinFlutua 6s ease-in-out 1s infinite}
+@keyframes assinVem{to{opacity:.45}}
+@keyframes assinFlutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.assin{animation:none;opacity:.45}}
+#gBox .ou{margin:4px 0;opacity:.7;font-size:13px}#gBtn{display:flex;justify-content:center;min-height:44px;color-scheme:light}#gBtn iframe{color-scheme:light}
+.login .logo{font-size:64px}
+.login p{margin:0;color:var(--sand);font-size:14px}
+.login .inp{text-align:center;font-size:22px;letter-spacing:.2em;font-family:var(--f-mono)}
+.erro{color:#ff8b95;font-size:13px;min-height:18px}
+.selo{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;color:var(--sand);text-transform:uppercase}
+.pil{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.it{padding:12px;border-top:1px solid #ffffff14;display:grid;gap:8px}
+.it:first-child{border-top:0}
+.it .l{font-size:15px}.it .l small{display:block;font-family:var(--f-mono);font-size:10.5px;color:var(--sand);opacity:.85;margin-top:2px}
+.sn{display:flex;gap:8px}
+.sn button{flex:1;border:1px solid #ffffff30;background:#00000033;color:var(--sand);padding:10px;border-radius:3px;cursor:pointer;font-family:var(--f-mono);font-size:13px}
+.sn button.on.bom{background:var(--ok);border-color:var(--ok);color:#06210f}
+.sn button.on.ruim{background:var(--red);border-color:var(--red);color:#fff}
+.fotos{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fotos img{width:64px;height:64px;object-fit:cover;border-radius:3px;border:1px solid #ffffff2a}
+.addfoto{font-family:var(--f-mono);font-size:12px;color:var(--cream);padding:9px 12px;border:1px dashed var(--gold);border-radius:3px;cursor:pointer}
+.req{color:#ff8b95;font-family:var(--f-mono);font-size:10.5px}
+.autoinfo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid #ffffff30;background:#00000033;color:var(--sand);padding:6px 10px;border-radius:999px;cursor:pointer;font-size:12.5px}
+.chips button.on{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.grade{display:grid;grid-template-columns:minmax(0,1fr) repeat(4,auto);gap:4px 10px;font-size:13px;align-items:center}
+.grade b{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var(--sand);font-weight:500}
+.ver img{width:100%;max-width:320px;border-radius:3px;margin-top:6px;display:block}
+.dem{border-left-color:var(--red)!important}
+.mic-box{display:flex;align-items:center;gap:16px}
+.mic{flex:none;width:84px;height:84px;border-radius:50%;border:3px solid var(--gold);background:radial-gradient(circle,#3a0a10,#1a0305);color:var(--sand);cursor:pointer;display:grid;place-items:center;
+  box-shadow:0 0 0 3px var(--groove),inset 0 2px 6px #0009;transition:background .2s,color .2s,box-shadow .2s}
+.mic.on{background:radial-gradient(circle,#ffffff 0 30%,#ffd1d6 55%,var(--red) 100%);color:var(--red);border-color:#fff;
+  box-shadow:0 0 0 3px var(--groove),0 0 26px 6px #ff4d5ecc,0 0 60px 10px #ffffff55}
+@media (prefers-reduced-motion:no-preference){.mic.on{animation:micpulse 1.2s ease-in-out infinite}@keyframes micpulse{50%{box-shadow:0 0 0 3px var(--groove),0 0 40px 12px #ff4d5eee,0 0 80px 18px #ffffff77}}}
+.mic-txt{display:grid;gap:3px}.mic-txt b{font-family:var(--f-num);font-size:24px;letter-spacing:.04em;color:var(--gold)}.mic-txt small{font-size:12.5px;color:var(--sand)}
+.secao .ck .op button{font-size:12px}
+.email{border-left:3px solid var(--gold);background:#00000040;padding:10px;display:grid;gap:6px;margin-top:8px}
+.email h4{margin:0;font-family:var(--f-disp);color:var(--gold);font-size:14px}
+
+/* lado Franquias: o mesmo visual do Jarbas, com detalhes em azul aço para nunca confundir com as próprias */
+.lado{position:sticky;top:calc(env(safe-area-inset-top,0px) + 54px);z-index:19;display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:520px;margin:6px auto 0;padding:3px;
+  background:#000000a0;border:1px solid #ffffff22;border-radius:4px}
+.lado a{display:block;text-align:center;padding:8px 4px 6px;font-family:var(--f-num);font-size:17px;letter-spacing:.1em;color:var(--sand);text-decoration:none;border-radius:3px;cursor:pointer}
+.lado a.on{background:linear-gradient(160deg,#dfe8f2,#8fa3b8 60%,#4b5d70);color:#0b1520;box-shadow:inset 0 0 0 1px #fff8}
+.lado a.on.pr{background:linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));color:var(--ink)}
+.fqk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.fqk div{background:#00000040;border:1px solid #ffffff18;border-radius:4px;padding:8px 6px;text-align:center}
+.fqk b{display:block;font-family:var(--f-num);font-size:22px;line-height:1.1;color:var(--cream)}
+.fqk small{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.06em;color:var(--sand);text-transform:uppercase}
+.fqg{display:flex;justify-content:center;gap:4px;flex-wrap:wrap;margin-top:6px}
+.fqg{flex-wrap:nowrap}.fqg .tacho{margin:0;width:50%;max-width:168px}.fqg .tacho svg{width:100%;height:auto}
+.ficha h3{margin:0 0 4px;font-size:17px}.ficha .meta{font-family:var(--f-mono);font-size:10.5px;color:var(--sand)}
+.pinbox{margin-top:10px;padding:10px;border:1px dashed #9fb3c8;border-radius:4px;background:#0b152055}
+.pinbox code{font-size:22px;letter-spacing:.12em;color:#bfe0ff}
+.dm{border-left:3px solid #9fb3c8;padding:10px 12px;background:#00000033;border-radius:3px}
+.dm h4{margin:0 0 4px;font-size:15px}.dm .meta{font-family:var(--f-mono);font-size:10.5px;color:var(--sand)}
+.dm details{margin-top:6px}.dm summary{cursor:pointer;font-size:13px;color:var(--gold-l)}
+.dm .resp{display:grid;gap:4px;margin-top:6px;font-size:13px}.dm .resp span{background:#ffffff0a;padding:5px 7px;border-radius:3px}
+.ed .it{display:grid;grid-template-columns:1fr auto;gap:6px;padding:8px 0;border-bottom:1px solid #ffffff14}
+.ed .it .tg{display:flex;gap:6px;flex-wrap:wrap;grid-column:1/-1}
+.ed .tg button{border:1px solid #ffffff30;background:#00000033;color:var(--sand);padding:5px 9px;border-radius:999px;font-size:12px;cursor:pointer}
+.ed .tg button.on{background:#9fb3c8;color:#0b1520;border-color:#9fb3c8;font-weight:700}
+.ed .x{border:0;background:#ff2a3a33;color:#ff8b95;border-radius:3px;cursor:pointer;padding:4px 9px;font-size:16px}
+.ed input.inp{padding:7px 8px;font-size:14px}
+.ck .pede{font-family:var(--f-mono);font-size:10px;color:#bfe0ff;margin-left:6px}
+.ck textarea{display:block}
+.fotos{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fotos .th{position:relative}.fotos img{width:58px;height:58px;object-fit:cover;border-radius:3px}
+.fotos .x{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:var(--red);color:#fff;cursor:pointer;line-height:1}
+.addfoto{border:1px dashed #ffffff40;padding:8px 10px;border-radius:3px;font-size:12.5px;cursor:pointer;color:var(--sand)}
+#espera{min-height:100vh;display:grid;place-items:center;text-align:center;font-family:var(--f-mono);color:var(--sand)}
+#espera b{display:block;font-family:var(--f-num);font-size:40px;letter-spacing:.1em;color:var(--gold)}
+</style>
+<div class="app" id="app">
+  <div class="seams" aria-hidden="true"></div>
+  <div id="espera"><div><b>FRANQUIAS</b><span id="eMsg">Carregando…</span></div></div>
+
+  <div id="telaApp" hidden>
+    <header class="top"><span class="logo">JARBAS</span><span class="topdir"><small id="topo"></small><button class="sair" id="bSair" type="button">Sair ⏻</button></span></header>
+    <nav class="lado" id="lado" hidden aria-label="Trocar de lado"><a href="index.html#inicio" class="pr" id="irPr">PRÓPRIAS</a><a class="on" aria-current="page">FRANQUIAS</a></nav>
+    <div class="wrap">
+      <!-- INÍCIO -->
+      <section class="view on" id="tela-inicio">
+        <div id="filtros" class="panel" hidden>
+          <div class="grid2"><label class="f">Consultor<select class="inp" id="fCons"></select></label>
+            <label class="f">Franqueado<select class="inp" id="fFran"></select></label></div>
+        </div>
+        <div id="resumo"></div>
+        <div class="seg" id="rkSeg"><button class="on" data-k="dia">Ontem</button><button data-k="mes">Mês</button><button data-k="aa">x Ano anterior</button></div>
+        <div id="ranking"></div>
+        <div id="porCons"></div>
+        <div id="minhasDem"></div>
+        <p class="note" id="atualizado"></p>
+      </section>
+
+      <!-- LOJAS -->
+      <section class="view" id="tela-lojas">
+        <h2 class="t">Lojas franqueadas</h2>
+        <div class="sub">Busque a loja para ver os números e gerar o PIN de acesso do franqueado.</div>
+        <input class="inp" id="busca" placeholder="Buscar por loja, cidade, UF ou franqueado" style="margin-top:10px">
+        <div id="ficha"></div>
+        <div class="list" id="listaLojas"></div>
+      </section>
+
+      <!-- DEMANDAS -->
+      <section class="view" id="tela-demandas">
+        <h2 class="t">Demandas das franquias</h2>
+        <div class="sub">Crie a demanda do dia para todas as franquias, para um consultor ou para lojas escolhidas.</div>
+        <form class="panel" id="fDem">
+          <label class="f">Demanda<input class="inp" id="dTitulo" maxlength="160" required placeholder="Ex.: Montar a vitrine da campanha de Natal"></label>
+          <label class="f" style="margin-top:8px">Detalhe (opcional)<textarea class="inp" id="dDetalhe" rows="2" maxlength="500"></textarea></label>
+          <div class="grid2" style="margin-top:8px">
+            <label class="f">Resposta<select class="inp" id="dTipo"><option value="check">Feito (sim/não)</option><option value="foto">Foto</option><option value="numero">Número</option><option value="texto">Texto</option></select></label>
+            <label class="f">Exigir foto<select class="inp" id="dFoto"><option value="nao">Não</option><option value="sim">Sim</option></select></label>
+          </div>
+          <div class="grid2" style="margin-top:8px">
+            <label class="f">De<input class="inp" type="date" id="dData"></label>
+            <label class="f">Até<input class="inp" type="date" id="dAte"></label>
+          </div>
+          <div class="f" style="margin-top:10px">Para quem</div>
+          <div class="chips" id="dGrupo" style="margin-top:6px"></div>
+          <input class="inp" id="dBusca" placeholder="Acrescentar loja: digite o nome" style="margin-top:8px" list="dLista"><datalist id="dLista"></datalist>
+          <div class="chips" id="dLojas" style="margin-top:6px"></div>
+          <div class="acts"><button class="btn" type="submit">Criar demanda</button></div>
+        </form>
+        <div class="sec">Acompanhamento (últimos 15 dias)</div>
+        <div class="list" id="listaDem"></div>
+      </section>
+
+      <!-- CHECKLIST -->
+      <section class="view" id="tela-check">
+        <h2 class="t">Checklist da franquia</h2>
+        <div class="seg" id="ckSeg"><button class="on" data-k="visita">Visita</button><button data-k="modelo">Montar checklist</button><button data-k="hist">Relatórios</button></div>
+        <div id="ckVisita">
+          <div class="panel">
+            <label class="f">Loja<input class="inp" id="cLoja" list="cLista" placeholder="Digite o nome da loja"></label><datalist id="cLista"></datalist>
+            <div class="grid2" style="margin-top:8px"><label class="f">Data<input class="inp" type="date" id="cData"></label>
+              <label class="f">Quem recebeu a visita<input class="inp" id="cGerente" placeholder="Franqueado / gerente"></label></div>
+            <div id="cNums"></div>
+          </div>
+          <div class="panel mic-box">
+            <button type="button" class="mic" id="bMic" aria-pressed="false" aria-label="Gravar áudio da visita">
+              <svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+            </button>
+            <div class="mic-txt"><b id="micStatus">Toque para gravar</b><small id="micDica">Fale as particularidades da visita. A fala vira texto na hora.</small></div>
+          </div>
+          <label class="f">Transcrição da visita<textarea class="inp" id="cTrans" rows="4" placeholder="O que você falar aparece aqui. Você também pode digitar."></textarea></label>
+          <div class="sec">Checklist</div>
+          <div id="cSecoes"></div>
+          <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button><button class="btn ghost sm" type="button" id="bNova">Nova visita</button></div>
+          <div id="cRel"></div>
+        </div>
+        <div id="ckModelo" hidden>
+          <div class="sub" style="margin-top:8px">Monte o checklist das franquias: renomeie, inclua ou tire itens e diga em cada um se pede foto e se pede descrição. Vale para as próximas visitas.</div>
+          <div class="acts"><button class="btn" type="button" id="bSug">Sugestão de Check-list completo</button></div>
+          <div id="sugBox" class="ed" hidden></div>
+          <div id="edBox" class="ed"></div>
+          <div class="acts"><button class="btn ghost sm" type="button" id="edSecao">+ Seção</button><button class="btn" type="button" id="edSalvar">Salvar checklist</button><button class="btn ghost sm" type="button" id="edPadrao">Voltar ao padrão</button></div>
+          <p class="note" id="edInfo"></p>
+        </div>
+        <div id="ckHist" hidden><div class="list" id="listaRel"></div></div>
+      </section>
+    </div>
+  </div>
+</div>
+<footer class="dock" id="dockBox" hidden><nav id="dock"></nav></footer>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycby74n9FlCpQT8VFXmgCVWh5Dy8xGg5o9h7xd3cp4pzFRPvkl-RRzQTba8nGwvLXcgsM/exec';
+const CHECK_PADRAO=[{"id": "imp", "t": "1. Primeira impressão da loja", "setor": "loja", "itens": [{"id": "imp1", "t": "Fachada e letreiro em perfeito estado", "setor": "loja", "foto": true}, {"id": "imp2", "t": "Vitrine forte, com novidades e produtos heróis", "ref": "Numeração completa", "setor": "loja", "foto": true}, {"id": "imp3", "t": "Comunicação da campanha atualizada (loja positivada)", "setor": "loja", "foto": true}, {"id": "imp4", "t": "Preço visível nos produtos", "setor": "loja", "foto": true}, {"id": "imp5", "t": "Limpeza impecável: salão, vidros e trilhos de LED", "setor": "loja", "foto": true}, {"id": "imp6", "t": "Organização geral, sem caixas no salão", "setor": "loja", "foto": true}, {"id": "imp7", "t": "Iluminação adequada", "setor": "loja", "foto": true}, {"id": "imp8", "t": "Música ambiente e climatização corretas", "setor": "loja"}, {"id": "imp9", "t": "TV funcionando com o vídeo da campanha", "setor": "loja", "foto": true}, {"id": "imp10", "t": "Mesa de entrada que vende", "setor": "loja", "foto": true}, {"id": "imp11", "t": "Loja viva: gerente no salão, equipe ativa, caixa girando", "setor": "loja"}]}, {"id": "ven", "t": "2. Atendimento e venda", "setor": "loja", "itens": [{"id": "ven1", "t": "Cliente recebida em até 10 segundos", "setor": "loja"}, {"id": "ven2", "t": "Abordagem na vitrine e atendimento consultivo", "setor": "loja"}, {"id": "ven3", "t": "Vendedor conhece o produto e argumenta", "ref": "Material, conforto, combinação de look", "setor": "loja"}, {"id": "ven4", "t": "MIX em todo atendimento", "ref": "Calçado, bolsa e acessório", "setor": "loja"}, {"id": "ven5", "t": "Bolsa oferecida em todos os atendimentos", "setor": "loja"}, {"id": "ven7", "t": "Caixa oferece adicional (glossy, acessório)", "setor": "loja"}, {"id": "ven8", "t": "Caixa rápido, chama a cliente pelo nome", "setor": "loja"}, {"id": "ven9", "t": "Cliente levada até a porta", "setor": "loja"}, {"id": "ven10", "t": "Venda sem dependência de promoção", "ref": "Liquidação fora da vitrine principal", "setor": "loja"}]}, {"id": "time", "t": "3. Time comercial e gestão", "setor": "loja", "itens": [{"id": "time1", "t": "Gerente domina os números e a diária de hoje", "setor": "loja"}, {"id": "time2", "t": "Gestão diária: P.A. por vendedora acompanhado no grupo", "ref": "Mini metas", "setor": "loja"}, {"id": "time3", "t": "Gerente cobra metas e dá feedback (1:1 da semana)", "setor": "loja"}, {"id": "time5", "t": "Equipe engajada, com energia e senso de urgência", "setor": "loja"}, {"id": "time6", "t": "Uniformizados no padrão", "setor": "loja"}, {"id": "time7", "t": "Quadro atual igual ao ideal", "ref": "Vagas em aberto?", "setor": "loja"}, {"id": "time8", "t": "Sem absenteísmo, faltas registradas", "setor": "loja"}, {"id": "time9", "t": "Corridas e premiações motivando", "setor": "loja"}, {"id": "time10", "t": "Auxiliar proativo e organizado (Omni)", "setor": "loja"}, {"id": "time11", "t": "Plano de ação ativo para loja abaixo de 100%", "ref": "Quem cobra, quando e como", "setor": "loja"}]}, {"id": "crm", "t": "4. Cartão Sonho, cadastro e CRM", "setor": "loja", "itens": [{"id": "crm1", "t": "Consulta do cartão em 100% dos atendimentos", "ref": "Boleta com CPF e nome antes do caixa", "setor": "loja"}, {"id": "crm2", "t": "Taxa de consulta acima de 10%", "setor": "loja"}, {"id": "crm3", "t": "Aprovou, ativa na hora", "ref": "Ativação ≥ 90%", "setor": "loja"}, {"id": "crm4", "t": "Equipe domina os benefícios do cartão", "setor": "loja"}, {"id": "crm5", "t": "Credit Line instalado e funcionando", "setor": "loja"}, {"id": "crm6", "t": "Associação de cadastro na meta", "ref": "Meta 90%", "setor": "loja"}, {"id": "crm7", "t": "Cadastro completo e CPF em todas as vendas", "ref": "E-mail, celular, aniversário e CEP", "setor": "loja"}, {"id": "crm8", "t": "CRM Sellbie em dia, mensagens humanizadas", "ref": "Sellbie", "setor": "loja"}, {"id": "crm9", "t": "Grupo VIP ativo e movimentado", "setor": "loja"}]}, {"id": "dig", "t": "5. Digital e Omni", "setor": "loja", "itens": [{"id": "dig1", "t": "Código de vendedor usado nas vendas digitais", "setor": "loja"}, {"id": "dig2", "t": "Instagram movimentado todo dia", "ref": "3 stories + 1 feed", "setor": "loja", "foto": true}, {"id": "dig3", "t": "Lives em loja acontecendo", "setor": "loja", "foto": true}, {"id": "dig4", "t": "Pedidos do e-commerce atendidos rápido", "setor": "loja"}, {"id": "dig5", "t": "Omni sem pendências (devoluções em dia)", "setor": "loja"}]}, {"id": "vm", "t": "6. VM e exposição", "setor": "loja", "itens": [{"id": "vm1", "t": "Best sellers e heróis em destaque", "setor": "loja", "foto": true}, {"id": "vm3", "t": "Expositor de bolsas de fácil acesso", "setor": "loja", "foto": true}, {"id": "vm4", "t": "Jornada clara e pontos frios aproveitados", "setor": "loja", "foto": true}]}, {"id": "est", "t": "7. Estoque e produto", "setor": "loja", "itens": [{"id": "est1", "t": "Estoque limpo, organizado e sinalizado", "setor": "loja", "foto": true}, {"id": "est2", "t": "Produtos fáceis de localizar", "setor": "loja", "foto": true}, {"id": "est3", "t": "Ocupação do estoque sob controle", "setor": "loja", "foto": true}, {"id": "est5", "t": "Excesso de produtos lentos e coleção antiga com plano de saída", "setor": "loja"}, {"id": "est6", "t": "Reposição rápida no salão", "setor": "loja"}, {"id": "est7", "t": "Sem defeitos acumulados, B.O. em dia", "setor": "loja"}, {"id": "est8", "t": "Inventário confiável, sem notas pendentes", "setor": "loja"}, {"id": "est9", "t": "Remanejamentos feitos no dia, com romaneio e conferência", "ref": "Pé trocado, mofo, sujeira; origem e destino na caixa", "setor": "loja"}]}, {"id": "manut", "t": "8. Manutenção", "setor": "loja", "itens": [{"id": "manut1", "t": "Ar-condicionado funcionando", "setor": "loja", "foto": true}, {"id": "manut2", "t": "Lâmpadas e iluminação do salão e estoque", "setor": "loja", "foto": true}, {"id": "manut3", "t": "Vidros, espelhos e acrílicos inteiros", "setor": "loja", "foto": true}, {"id": "manut4", "t": "Teto, paredes e piso sem danos", "setor": "loja", "foto": true}, {"id": "manut6", "t": "Equipamentos: TEF, impressora e computador", "setor": "loja"}, {"id": "manut7", "t": "Celular e chip de WhatsApp da loja", "setor": "loja"}]}, {"id": "fq", "t": "9. Gestão do negócio (franqueado)", "setor": "loja", "itens": [{"id": "fq1", "t": "Franqueado acompanha venda, meta e ranking da loja", "ref": "Olha o painel todo dia?", "setor": "loja"}, {"id": "fq2", "t": "Margem e markup dentro do esperado", "ref": "Markup praticado x meta", "setor": "loja"}, {"id": "fq3", "t": "Sell out acompanhado com a franqueadora", "ref": "Giro por categoria", "setor": "loja"}, {"id": "fq4", "t": "Mix revisado com o franqueado (lançamentos e heróis)", "ref": "Rupturas de produto herói?", "setor": "loja"}, {"id": "fq5", "t": "Compras e pedidos em dia, sem excesso de estoque parado", "setor": "loja"}, {"id": "fq6", "t": "Padrão da marca respeitado (preço, campanha, VM)", "setor": "loja"}, {"id": "fq7", "t": "Equipe no tamanho certo para o fluxo da loja", "ref": "Quadro x atendimento", "setor": "loja"}, {"id": "fq8", "t": "Plano de ação da última visita cumprido", "setor": "loja"}]}];
+const SUGESTAO=[{"id": "sg1", "t": "1. Antes da Visita (Preparação)", "setor": "loja", "itens": [{"id": "sg1_1", "t": "Faturamento vs meta", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_2", "t": "Crescimento vs ano anterior", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_3", "t": "Sell out por categoria", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_4", "t": "Ticket médio", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_5", "t": "Peças por atendimento (PA)", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_6", "t": "Taxa de conversão", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_7", "t": "Margem", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_8", "t": "Ruptura de estoque", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_9", "t": "Giro de produtos", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_10", "t": "Ranking da loja na rede", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_11", "t": "Desempenho no digital / omni", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_12", "t": "Quadro completo?", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_13", "t": "Turnover alto?", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_14", "t": "Absenteísmo", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_15", "t": "Performance individual vendedores", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg1_16", "t": "Corridas e comissionamento motivando?", "ref": "", "foto": false, "desc": true, "setor": "loja"}]}, {"id": "sg2", "t": "2. Primeira Impressão da Loja", "setor": "loja", "itens": [{"id": "sg2_1", "t": "Loja convidativa", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_2", "t": "Comunicação visual atualizada", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_3", "t": "Vitrine forte e comercial", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_4", "t": "Produtos campeões expostos", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_5", "t": "Preço visível nos produtos", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_6", "t": "Limpeza impecável", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_7", "t": "Organização geral", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_8", "t": "Iluminação adequada", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_9", "t": "Música ambiente correta", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_10", "t": "Climatização", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_11", "t": "Loja transmite energia de venda", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_12", "t": "Gerente no salão", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_13", "t": "Equipe ativa", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_14", "t": "Loja viva", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_15", "t": "Cliente sendo atendido", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_16", "t": "Produto certo exposto", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg2_17", "t": "Caixa girando", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg2_18", "t": "Energia comercial alta", "ref": "", "foto": false, "desc": false, "setor": "loja"}]}, {"id": "sg3", "t": "3. Sell Out (Venda Real)", "setor": "loja", "itens": [{"id": "sg3_1", "t": "Fluxo de clientes por hora", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_2", "t": "Conversão de vendas", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_3", "t": "Equipe aborda todos os clientes", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_4", "t": "Perda de vendas por demora", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_5", "t": "Ticket médio saudável", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_6", "t": "Itens por venda", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_7", "t": "Mix ofertado correto", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_8", "t": "Venda concentrada em poucos itens", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_9", "t": "Dependência de promoção", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_10", "t": "Cross sell sendo feito", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_11", "t": "Upsell sendo feito", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_12", "t": "Venda adicional no caixa", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg3_13", "t": "Produtos de baixo giro trabalhados", "ref": "", "foto": false, "desc": false, "setor": "loja"}]}, {"id": "sg4", "t": "4. Time Comercial", "setor": "loja", "itens": [{"id": "sg4_1", "t": "Gerente domina números", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_2", "t": "Faz gestão diária", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_3", "t": "Cobra metas", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_4", "t": "Motiva equipe", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_5", "t": "Dá feedback", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_6", "t": "Está no salão vendendo", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_7", "t": "Possui energia de liderança", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_8", "t": "Equipe com energia alta", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_9", "t": "Boa abordagem", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_10", "t": "Escuta cliente", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_11", "t": "Técnica de fechamento", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_12", "t": "Conhecimento de produto", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_13", "t": "Oferece adicionais", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_14", "t": "Senso de urgência", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_15", "t": "Time engajado", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg4_16", "t": "Disciplina operacional", "ref": "", "foto": false, "desc": false, "setor": "loja"}]}, {"id": "sg5", "t": "5. Estoque e Produto", "setor": "loja", "itens": [{"id": "sg5_1", "t": "Estoque organizado e sinalizado", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg5_2", "t": "Produtos fáceis de localizar", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg5_3", "t": "Ruptura itens campeões", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg5_4", "t": "Excesso produtos lentos", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg5_5", "t": "Reposição rápida salão", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg5_6", "t": "Inventário confiável", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg5_7", "t": "Produtos estratégicos disponíveis", "ref": "", "foto": false, "desc": false, "setor": "loja"}]}, {"id": "sg6", "t": "6. VM / Exposição Comercial", "setor": "loja", "itens": [{"id": "sg6_1", "t": "Mesa de entrada vende", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg6_2", "t": "Best sellers em destaque", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg6_3", "t": "Combinações prontas", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg6_4", "t": "Jornada clara do cliente", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg6_5", "t": "Preço e comunicação claros", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg6_6", "t": "Pontos frios aproveitados", "ref": "", "foto": true, "desc": false, "setor": "loja"}]}, {"id": "sg7", "t": "7. Atendimento ao Cliente", "setor": "loja", "itens": [{"id": "sg7_1", "t": "Cliente recebido em até 10 segundos", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg7_2", "t": "Abordagem na vitrine", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg7_3", "t": "Atendimento consultivo", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg7_4", "t": "Equipe sorrindo", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg7_5", "t": "Tempo de espera baixo", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg7_6", "t": "Caixa rápido", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg7_7", "t": "Cliente sai satisfeito", "ref": "", "foto": false, "desc": false, "setor": "loja"}]}, {"id": "sg8", "t": "8. Digital / Omni", "setor": "loja", "itens": [{"id": "sg8_1", "t": "Pedidos e-commerce atendidos rápido", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg8_2", "t": "Ruptura controlada", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg8_3", "t": "Retira loja funcionando", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg8_4", "t": "Time entende omni como venda", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg8_5", "t": "Equipe ativa nas mídias sociais", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg8_6", "t": "Equipe publica diariamente", "ref": "", "foto": true, "desc": false, "setor": "loja"}]}, {"id": "sg9", "t": "9. CRM / Credsystem", "setor": "loja", "itens": [{"id": "sg9_1", "t": "Equipe associa as vendas", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg9_2", "t": "Executa agendas disponibilizadas", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg9_3", "t": "Humaniza mensagens", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg9_4", "t": "Existe Grupo VIP", "ref": "", "foto": true, "desc": false, "setor": "loja"}, {"id": "sg9_5", "t": "Equipe domina informações Credsystem", "ref": "", "foto": false, "desc": false, "setor": "loja"}, {"id": "sg9_6", "t": "Oferece benefícios do cartão", "ref": "", "foto": false, "desc": false, "setor": "loja"}]}, {"id": "sg10", "t": "10. Conversa com Franqueado", "setor": "loja", "itens": [{"id": "sg10_1", "t": "Visita frequente à loja", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg10_2", "t": "Entende números", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg10_3", "t": "Conhece o time", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg10_4", "t": "Confia no time atual", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg10_5", "t": "Precisa suporte comercial", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg10_6", "t": "O que impede vender mais?", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg10_7", "t": "Onde a franqueadora pode ajudar?", "ref": "", "foto": false, "desc": true, "setor": "loja"}]}, {"id": "sg11", "t": "11. Plano de Ação", "setor": "loja", "itens": [{"id": "sg11_1", "t": "Ajustar escala", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_2", "t": "Treinar abordagem", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_3", "t": "Reforçar metas diárias", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_4", "t": "Corrigir vitrine", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_5", "t": "Transferir estoque", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_6", "t": "Ativar campanha local", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_7", "t": "Troca equipe baixa performance", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_8", "t": "Desenvolvimento da gerente", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_9", "t": "Revisão de mix", "ref": "", "foto": false, "desc": true, "setor": "loja"}, {"id": "sg11_10", "t": "Recuperação de indicadores", "ref": "", "foto": false, "desc": true, "setor": "loja"}]}]; // Checklist de Consultoria Comercial completo (Loja 211), para habilitar item a item
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl=v=>'R$ '+Math.round(v||0).toLocaleString('pt-BR');
+const mil=v=>v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+' mi':'R$ '+Math.round(v/1000).toLocaleString('pt-BR')+' mil';
+const pct=(a,b)=>b?a/b*100:0;
+// reacende o reator (animação fluor do CSS); o Painel tem a própria cópia dentro do código dele
+const piscaReator=c=>{if(!c)return;c.style.animation='none';void c.offsetWidth;c.style.animation=''};
+const p1=x=>x.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
+const cor=p=>p>=100?'var(--ok)':p>=85?'var(--gold)':'var(--red)';
+const num=x=>x==null||x===''?'—':Number(x).toLocaleString('pt-BR',{maximumFractionDigits:2});
+const hojeISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const dataBR=iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';
+function segundaISO(iso){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().slice(0,10)}
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2800)}
+const guarda={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch{}}};
+
+function rankDia(itens,titulo,destaque){
+  const r=itens.filter(x=>x.m).sort((a,b)=>b.v/b.m-a.v/a.m),bat=r.filter(x=>x.v>=x.m).length;
+  return r.length?`<div class="panel rankdia"><h3>${titulo} · ${bat} de ${r.length} na meta</h3><div class="rows">`+r.map((x,i)=>{const p=x.v/x.m*100;
+    return `<div class="row${x.cod===destaque?' eu':''}" style="--c:${cor(p)}"><span class="nm">${i+1}º ${esc(x.nome)}</span><span class="pc">${p1(p)}</span><span class="det"><span>${brl(x.v)} de ${brl(x.m)}</span>${x.a!=null?`<span>${x.a} atend.</span>`:''}</span></div>`}).join('')+`</div></div>`:''}
+// contagiros digital: arco de 0 a 120% da meta, faixas vermelha (<85), dourada (85–99) e verde (100+), agulha e visor LCD
+function tacho(p,lab){
+  const ang=v=>Math.PI*(1-Math.min(Math.max(v,0),120)/120),pt=(v,r)=>[84+r*Math.cos(ang(v)),84-r*Math.sin(ang(v))];
+  const arco=(a,b,r,c,w)=>{const[x1,y1]=pt(a,r),[x2,y2]=pt(b,r);return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${c}" stroke-width="${w}"/>`};
+  let marcas='';for(let v=0;v<=120;v+=10){const[a,b]=pt(v,v%50?62:58),[c,d]=pt(v,68);marcas+=`<line x1="${a.toFixed(1)}" y1="${b.toFixed(1)}" x2="${c.toFixed(1)}" y2="${d.toFixed(1)}" stroke="#d9b98a" stroke-width="${v%50?1:2}"/>`;
+    if(!(v%50)){const[x,y]=pt(v,48);marcas+=`<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" fill="#d9b98a" font-size="8" text-anchor="middle" font-family="monospace">${v}</text>`}}
+  const g=-90+Math.min(Math.max(p,0),120)*1.5,ok=isFinite(p)&&p>0;
+  return `<svg viewBox="0 0 168 96" aria-hidden="true"><path d="M8 84 A76 76 0 0 1 160 84" fill="#0b0203" stroke="#6b450f" stroke-width="2"/>${arco(0,85,72,'#c8202f',6)}${arco(85,100,72,'#e3b04b',6)}${arco(100,120,72,'#3ecf7a',6)}${marcas}
+    <g class="agulha" style="transform:rotate(${ok?g:-90}deg)"><line x1="84" y1="84" x2="84" y2="22" stroke="#5dff3c" stroke-width="2.5" stroke-linecap="round" style="filter:drop-shadow(0 0 3px #39ff14)"/></g><circle cx="84" cy="84" r="6" fill="#2b3138" stroke="#e3b04b" stroke-width="1.5"/></svg>
+    <div class="lcd">${ok?Math.round(p)+'%':'--'}</div><small>${lab}</small>`;
+}
+
+const S={pin:guarda.get('jarbas_pin'),perfil:null,D:null,L:[],cons:'',fran:'',rk:'dia',dem:null,comPin:new Set(),hoje:hojeISO(),modelo:null};
+if(!S.pin)location.replace('index.html');
+async function api(acao,extra={}){
+  if(!API||API.startsWith('__'))throw new Error('O servidor do app ainda não foi ligado.');
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao,pin:S.pin,...extra}),redirect:'follow'});
+  const j=await r.json();if(!j.ok)throw new Error(j.msg||'Falha no servidor');return j;
+}
+const nomeLoja=l=>String(l.nome||'').replace(/\s*\([A-Z]{2}\)$/,'');
+const titulo=s=>String(s||'').toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()).replace(/\bE\b/g,'e').replace(/\bDa\b|\bDe\b|\bDo\b|\bDos\b|\bDas\b/g,m=>m.toLowerCase());
+const fran=l=>titulo(String(l.franqueado||'').replace(/^FRANQUIA\s+/i,''));
+const M_=l=>l.mes||{},D_=l=>l.dia||{};
+
+async function carregar(){
+  let j;try{j=await api('fqDados',{data:S.hoje})}catch(e){$('#eMsg').innerHTML=esc(e.message)+'<br><br><a href="index.html" style="color:var(--gold)">‹ Voltar ao Jarbas</a>';return}
+  S.perfil=j.perfil;S.D=j.painel||{};S.atualizado=j.atualizado;S.comPin=new Set(j.comPin||[]);S.minhas=j.demandas||[];
+  if(!S.perfil.franq&&!S.perfil.franquia){location.replace('index.html');return}
+  // loja aberta no período: tem meta ou venda no mês
+  S.L=Object.values(S.D.lojas||{}).filter(l=>(M_(l).meta_mes||0)>0||(M_(l).venda||0)>0).sort((a,b)=>a.nome.localeCompare(b.nome));
+  $('#espera').remove();$('#telaApp').hidden=false;$('#dockBox').hidden=false;
+  iniciar();
+}
+function iniciar(){
+  const M=!S.perfil.franquia;
+  const C=S.perfil.consultor;
+  $('#lado').hidden=!M||!!C; // consultor de campo só tem o lado Franquias
+  $('[data-k=modelo]').hidden=!!C; // montar o checklist: só o Ramon e o Guto
+  $('#topo').innerHTML=`${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase()}<br>${C?'CONSULTOR · '+esc(C):M?'SUPERVISÃO · FRANQUIAS':esc(nomeLoja(S.L[0]||{nome:S.perfil.nome}).toUpperCase())}`;
+  const abas=M?[['inicio','INÍCIO'],['lojas','LOJAS'],['demandas','DEMANDAS'],['check','CHECK']]:[['inicio','INÍCIO']];
+  $('#dock').innerHTML=abas.map(([v,t])=>`<a href="#${v}" data-v="${v}">${t}</a>`).join('');$('#dock').style.gridTemplateColumns=`repeat(${abas.length},1fr)`;
+  if(M){
+    const cons=[...new Set(S.L.map(l=>l.supervisao).filter(Boolean))].sort();
+    $('#fCons').innerHTML=`<option value="">Todos (${S.L.length} lojas)</option>`+cons.map(c=>`<option value="${esc(c)}">${esc(titulo(c))} (${S.L.filter(l=>l.supervisao===c).length})</option>`).join('');
+    $('#filtros').hidden=false;$('#fCons').closest('label').hidden=!!C;rFran();
+  }else{$('#rkSeg').hidden=true}
+  rInicio();
+  $('#atualizado').textContent=S.D.ontem?`Venda das franquias com dias fechados até ${S.D.ontem.split('-').reverse().join('/')} (Power BI, sem parcial do dia) · enviado ao app ${S.atualizado?new Date(S.atualizado).toLocaleString('pt-BR').slice(0,16):''}`:'A venda das franquias ainda não chegou ao servidor. Ela é enviada todo dia de manhã.';
+  ir(location.hash.slice(1)||'inicio');
+}
+function rFran(){const fr=[...new Set(S.L.filter(l=>!S.cons||l.supervisao===S.cons).map(l=>l.franqueado))].sort();
+  $('#fFran').innerHTML=`<option value="">Todos (${fr.length})</option>`+fr.map(f=>`<option value="${esc(f)}">${esc(titulo(String(f).replace(/^FRANQUIA\s+/i,'')))}</option>`).join('');$('#fFran').value=fr.includes(S.fran)?S.fran:(S.fran='')}
+$('#fCons').onchange=e=>{S.cons=e.target.value;rFran();rInicio()};
+$('#fFran').onchange=e=>{S.fran=e.target.value;rInicio()};
+const visiveis=()=>S.L.filter(l=>(!S.cons||l.supervisao===S.cons)&&(!S.fran||l.franqueado===S.fran));
+const soma=(L,p,k)=>L.reduce((s,l)=>s+((l[p]||{})[k]||0),0);
+
+/* ---------- início ---------- */
+// quadro de resumo: conta-giros do mês e do dia + números do mês (A = somas de venda, meta, ano anterior, atendimentos e peças)
+function quadro(tit,A){
+  const pa=A.at?A.qt/A.at:null,ticket=A.at?A.vm/A.at:null,var_=A.aa?(A.vm/A.aa-1)*100:null,ont=S.D.ontem?S.D.ontem.slice(8,10)+'/'+S.D.ontem.slice(5,7):'ontem';
+  return `<div class="panel">${tit?`<div class="sec" style="margin-top:0">${tit}</div>`:''}<div class="fqg"><div class="tacho">${tacho(pct(A.vm,A.mm),'MÊS · % DA META')}</div><div class="tacho">${tacho(pct(A.vd,A.md),'DIA '+ont+' · % DA META')}</div></div>
+    <div class="fqk"><div><b>${mil(A.vm)}</b><small>Venda do mês</small></div><div><b>${mil(A.mm)}</b><small>Meta até ${ont}</small></div><div><b style="color:${var_==null?'':var_>=0?'var(--ok)':'#ff8b95'}">${var_==null?'—':(var_>=0?'+':'')+p1(var_)}</b><small>x ano anterior</small></div>
+    <div><b>${brl(A.vd)}</b><small>Venda ${ont}</small></div><div><b>${pa?pa.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</b><small>P.A. do mês</small></div><div><b>${ticket?brl(ticket):'—'}</b><small>Ticket médio</small></div></div></div>`}
+const somas=L=>({vm:soma(L,'mes','venda'),mm:soma(L,'mes','meta'),vd:soma(L,'dia','venda'),md:soma(L,'dia','meta'),aa:soma(L,'mes','venda_aa'),at:soma(L,'mes','atend'),qt:soma(L,'mes','qtde')});
+function rInicio(){
+  const L=S.perfil.franquia?S.L:visiveis(),ont=S.D.ontem?S.D.ontem.slice(8,10)+'/'+S.D.ontem.slice(5,7):'ontem',R=S.D.rede;
+  // consultor de campo: a rede de franquias (só o total) e a região dele
+  $('#resumo').innerHTML=S.perfil.consultor&&R?quadro(`Rede de franquias · ${R.lojas} lojas`,{vm:R.mes.venda,mm:R.mes.meta,vd:R.dia.venda,md:R.dia.meta,aa:R.mes.venda_aa,at:R.mes.atend,qt:R.mes.qtde})+quadro(`Minha região · ${L.length} lojas`,somas(L))
+    :quadro('',somas(L));
+  if(S.perfil.franquia){$('#ranking').innerHTML='';$('#porCons').innerHTML='';rMinhas();return}
+  // ranking das lojas na visão escolhida
+  const k=S.rk,itens=L.map(l=>k==='aa'?{cod:l.cod,nome:nomeLoja(l),v:M_(l).venda||0,m:M_(l).venda_aa||0,a:null}:{cod:l.cod,nome:nomeLoja(l),v:(l[k]||{}).venda||0,m:(l[k]||{}).meta||0,a:(l[k]||{}).atend});
+  const tit=k==='dia'?'Ranking de '+ont:k==='mes'?'Ranking do mês':'Mês contra o ano anterior (100% = igual)';
+  $('#ranking').innerHTML=rankDia(itens,tit);
+  // resumo por consultor (sempre a rede de franquias inteira)
+  const cons=[...new Set(S.L.map(l=>l.supervisao))].sort();
+  $('#porCons').innerHTML=S.cons||S.perfil.consultor?'':rankDia(cons.map(c=>{const X=S.L.filter(l=>l.supervisao===c);return {cod:c,nome:titulo(c)+` · ${X.length} lojas`,v:soma(X,'mes','venda'),m:soma(X,'mes','meta'),a:null}}),'Consultores no mês');
+}
+$('#rkSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.rk=b.dataset.k;$$('#rkSeg button').forEach(x=>x.classList.toggle('on',x===b));rInicio()};
+
+/* ---------- franqueado: demandas do dia ---------- */
+function rMinhas(){
+  const D=S.minhas;
+  $('#minhasDem').innerHTML=`<div class="sec">Demandas da supervisão · hoje</div>`+(D.length?`<div class="list">`+D.map(d=>{const feito=d.resposta!=null&&d.resposta!=='';
+    return `<div class="dm" data-dm="${d.id}"><h4>${esc(d.titulo)} <em class="tag ${feito?'ok':'r'}">${feito?'ENVIADO':'PENDENTE'}</em></h4>${d.detalhe?`<div class="meta">${esc(d.detalhe)}</div>`:''}
+      <div style="margin-top:8px">${d.tipo==='check'?`<select class="inp" data-r><option value="">Escolha</option><option ${d.resposta==='Sim'?'selected':''}>Sim</option><option ${d.resposta==='Não'?'selected':''}>Não</option></select>`
+        :d.tipo==='numero'?`<input class="inp" data-r inputmode="decimal" value="${esc(d.resposta||'')}">`:d.tipo==='texto'?`<textarea class="inp" data-r rows="2">${esc(d.resposta||'')}</textarea>`:''}
+      ${d.tipo==='foto'||d.foto==='sim'?`<div class="fotos" style="margin-top:6px"><span class="note" style="margin:0">${d.fotos.length} foto(s) enviada(s)</span><label class="addfoto"><input type="file" accept="image/*" capture="environment" multiple hidden data-f>📷 Foto</label></div>`:''}
+      <div class="acts"><button class="btn sm" type="button" data-env>Enviar</button></div></div></div>`}).join('')+`</div>`:`<p class="note">Nenhuma demanda para hoje.</p>`);
+}
+function reduzir(file){return new Promise((ok,no)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>{const k=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.72).split(',')[1])};im.onerror=no;im.src=u})}
+const novasFotos={};
+$('#minhasDem').addEventListener('change',async e=>{const f=e.target.closest('[data-f]');if(!f)return;const id=f.closest('[data-dm]').dataset.dm;
+  novasFotos[id]=(novasFotos[id]||[]).concat(await Promise.all([...f.files].map(reduzir)));f.closest('.fotos').querySelector('.note').textContent=`${novasFotos[id].length} foto(s) nova(s) para enviar`});
+$('#minhasDem').addEventListener('click',async e=>{const b=e.target.closest('[data-env]');if(!b)return;const box=b.closest('[data-dm]'),id=box.dataset.dm,d=S.minhas.find(x=>x.id===id);
+  const r=box.querySelector('[data-r]'),resp=r?r.value.trim():(novasFotos[id]?.length||d.fotos.length?'Foto':'');
+  if(!resp){toast('Responda antes de enviar.');return}
+  b.disabled=true;b.textContent='Enviando…';
+  try{const j=await api('fqResponder',{demanda:id,data:S.hoje,resposta:resp,fotos:d.fotos,fotosNovas:novasFotos[id]||[]});d.resposta=resp;d.fotos=j.fotos;delete novasFotos[id];toast('Enviado para a supervisão.');rMinhas()}
+  catch(err){toast(err.message);b.disabled=false;b.textContent='Enviar'}});
+
+/* ---------- lojas ---------- */
+function rLojas(){
+  const q=$('#busca').value.trim().toLowerCase(),L=visiveis().filter(l=>!q||[l.nome,l.cidade,l.uf,l.franqueado,l.supervisao].join(' ').toLowerCase().includes(q));
+  $('#listaLojas').innerHTML=L.slice(0,200).map(l=>{const p=pct(M_(l).venda,M_(l).meta);
+    return `<button class="li" data-loja="${l.cod}"><span>${esc(nomeLoja(l))}<small style="display:block;font-family:var(--f-mono);font-size:10px;color:var(--sand)">${esc(titulo(l.cidade))} · ${esc(fran(l))} · ${esc(titulo(l.supervisao))}</small></span><em class="tag ${p>=100?'ok':p>=85?'':'r'}">${M_(l).meta?p1(p):'—'}</em></button>`}).join('')||'<p class="note">Nenhuma loja encontrada.</p>';
+}
+$('#busca').oninput=rLojas;
+$('#listaLojas').onclick=e=>{const b=e.target.closest('[data-loja]');if(b)rFicha(b.dataset.loja)};
+function rFicha(cod){
+  const l=S.D.lojas[cod];if(!l){$('#ficha').innerHTML='';return}const m=M_(l),d=D_(l),ont=(S.D.ontem||'').slice(8,10)+'/'+(S.D.ontem||'').slice(5,7);
+  const lin=(a,b)=>`<div><b>${b}</b><small>${a}</small></div>`;
+  $('#ficha').innerHTML=`<div class="panel ficha"><h3>${esc(nomeLoja(l))}</h3><div class="meta">${esc(titulo(l.cidade))} (${esc(l.uf)}) · ${esc(fran(l))} · consultor ${esc(titulo(l.supervisao))} · cód. ${esc(l.cod)}</div>
+    <div class="fqk">${lin('Venda do mês',mil(m.venda||0))}${lin('% da meta',m.meta?p1(pct(m.venda,m.meta)):'—')}${lin('x ano anterior',m.venda_aa?(m.venda>=m.venda_aa?'+':'')+p1((m.venda/m.venda_aa-1)*100):'—')}
+    ${lin('Venda '+ont,brl(d.venda||0))}${lin('% meta '+ont,d.meta?p1(pct(d.venda,d.meta)):'—')}${lin('Projeção',m.projecao?mil(m.projecao):'—')}
+    ${lin('P.A.',num(m.pa))}${lin('Ticket',m.ticket?brl(m.ticket):'—')}${lin('Atendimentos',num(m.atend))}</div>
+    <div class="pinbox" id="pinBox"><b>Acesso do franqueado</b><div class="note" style="margin-top:4px">${S.comPin.has(cod)?'Esta loja já tem PIN. Gere outro se precisar trocar (o antigo para de valer).':'Gere um PIN para a loja entrar no Jarbas e responder as demandas.'}</div>
+      <div class="acts"><button class="btn sm" type="button" data-pin="${cod}">${S.comPin.has(cod)?'Trocar PIN':'Gerar PIN'}</button>${S.comPin.has(cod)?`<button class="btn ghost sm" type="button" data-tira="${cod}">Tirar acesso</button>`:''}<button class="btn ghost sm" type="button" data-ck="${cod}">Fazer checklist</button></div></div></div>`;
+  scrollTo({top:0,behavior:'smooth'});
+}
+$('#ficha').onclick=async e=>{const g=e.target.closest('[data-pin]'),t=e.target.closest('[data-tira]'),c=e.target.closest('[data-ck]');
+  if(c){V2c().cod=c.dataset.ck;salvaV();ir('check');return}
+  if(g){if(S.comPin.has(g.dataset.pin)&&!confirm('Trocar o PIN desta loja? O PIN atual para de valer.'))return;g.disabled=true;
+    try{const j=await api('fqPin',{cod:g.dataset.pin});S.comPin.add(g.dataset.pin);const l=S.D.lojas[g.dataset.pin];
+      $('#pinBox').innerHTML=`<b>PIN da ${esc(nomeLoja(l))}</b><div style="margin:8px 0"><code>${esc(j.pin)}</code></div><div class="note">Anote e mande ao franqueado agora: o PIN não aparece de novo. Ele entra em ramonberba-dev.github.io/jarbas com esse PIN.</div>
+        <div class="acts"><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent('Acesso ao Jarbas (demandas da supervisão) da loja '+nomeLoja(l)+':\nhttps://ramonberba-dev.github.io/jarbas/\nPIN: '+j.pin)}">Mandar no WhatsApp</a></div>`}
+    catch(err){toast(err.message);g.disabled=false}}
+  if(t){if(!confirm('Tirar o acesso desta loja ao Jarbas?'))return;try{await api('fqPin',{cod:t.dataset.tira,remover:true});S.comPin.delete(t.dataset.tira);rFicha(t.dataset.tira);toast('Acesso retirado.')}catch(err){toast(err.message)}}};
+
+/* ---------- demandas ---------- */
+let dSel=new Set(),dGrupo='todas';
+function rDemForm(){
+  if(!$('#dData').value){$('#dData').value=S.hoje;$('#dAte').value=S.hoje}
+  const cons=[...new Set(S.L.map(l=>l.supervisao))].sort();
+  $('#dGrupo').innerHTML=[['todas',`Todas (${S.L.length})`],...cons.map(c=>['c:'+c,titulo(c)]),['sel','Só as escolhidas']].map(([k,t])=>`<button type="button" data-g="${esc(k)}" class="${dGrupo===k?'on':''}">${esc(t)}</button>`).join('');
+  $('#dLista').innerHTML=S.L.map(l=>`<option value="${esc(nomeLoja(l))} · ${l.cod}">`).join('');
+  $('#dLojas').innerHTML=[...dSel].map(c=>`<button type="button" class="on" data-tira="${c}">${esc(nomeLoja(S.D.lojas[c]))} ×</button>`).join('');
+  $('#dBusca').hidden=dGrupo!=='sel';$('#dLojas').hidden=dGrupo!=='sel';
+}
+$('#dGrupo').onclick=e=>{const b=e.target.closest('[data-g]');if(!b)return;dGrupo=b.dataset.g;rDemForm()};
+$('#dBusca').onchange=e=>{const m=e.target.value.match(/· (\w+)$/);if(m&&S.D.lojas[m[1]])dSel.add(m[1]);e.target.value='';rDemForm()};
+$('#dLojas').onclick=e=>{const b=e.target.closest('[data-tira]');if(b){dSel.delete(b.dataset.tira);rDemForm()}};
+$('#fDem').onsubmit=async e=>{e.preventDefault();
+  const lojas=dGrupo==='todas'?'todas':dGrupo==='sel'?[...dSel]:S.L.filter(l=>l.supervisao===dGrupo.slice(2)).map(l=>l.cod);
+  if(Array.isArray(lojas)&&!lojas.length){toast('Escolha as lojas.');return}
+  const b=e.submitter||$('#fDem button[type=submit]');b.disabled=true;
+  try{await api('fqCriarDemanda',{titulo:$('#dTitulo').value,detalhe:$('#dDetalhe').value,tipo:$('#dTipo').value,foto:$('#dFoto').value==='sim',data:$('#dData').value,ate:$('#dAte').value||$('#dData').value,lojas});
+    toast('Demanda criada.');$('#dTitulo').value='';$('#dDetalhe').value='';dSel=new Set();S.dem=null;rDemandas()}catch(err){toast(err.message)}finally{b.disabled=false}};
+async function rDemandas(){
+  rDemForm();
+  if(!S.dem){$('#listaDem').innerHTML='<p class="note">Carregando…</p>';try{S.dem=await api('fqAcompanhar',{})}catch(err){$('#listaDem').innerHTML=`<p class="note">${esc(err.message)}</p>`;return}}
+  const {demandas,respostas}=S.dem;
+  $('#listaDem').innerHTML=demandas.length?demandas.map(d=>{const alvo=d.lojas==='todas'?S.L.map(l=>l.cod):String(d.lojas).split(','),R=respostas.filter(r=>r.demanda===d.id);
+    const ult=R.reduce((m,r)=>r.data>m?r.data:m,''),dia=d.ate>=S.hoje&&d.data<=S.hoje?S.hoje:(ult||d.ate),Rd=R.filter(r=>r.data===dia),ok=new Set(Rd.map(r=>r.cod)),falta=alvo.filter(c=>!ok.has(c));
+    const nm=c=>S.D.lojas[c]?nomeLoja(S.D.lojas[c]):c;
+    return `<div class="dm"><h4>${esc(d.titulo)} ${String(d.ativa)==='nao'?'<em class="tag n">ENCERRADA</em>':''}</h4><div class="meta">${dataBR(d.data)}${d.ate&&d.ate!==d.data?' a '+dataBR(d.ate):''} · ${d.lojas==='todas'?'todas as franquias':alvo.length+' loja(s)'} · resposta ${esc(d.tipo)}${d.foto==='sim'?' + foto':''}</div>
+      <div class="meta" style="margin-top:4px;color:var(--cream)">${dataBR(dia)}: <b>${ok.size} de ${alvo.length}</b> responderam</div>
+      <details><summary>Ver respostas e quem falta</summary><div class="resp">${Rd.map(r=>`<span><b>${esc(nm(r.cod))}</b>: ${esc(r.resposta)}${r.fotos.length?` · <a href="#" data-foto="${esc(r.fotos[0])}">ver foto</a>`:''}</span>`).join('')||'<span>Ninguém respondeu ainda.</span>'}
+        ${falta.length?`<span style="color:#ff8b95"><b>Faltam:</b> ${falta.map(c=>esc(nm(c))).join(', ')}</span>`:''}</div></details>
+      ${String(d.ativa)!=='nao'?`<div class="acts"><button class="btn ghost sm" type="button" data-fim="${d.id}">Encerrar</button></div>`:''}</div>`}).join(''):'<p class="note">Nenhuma demanda nos últimos 15 dias.</p>';
+}
+$('#listaDem').onclick=async e=>{const f=e.target.closest('[data-fim]'),ft=e.target.closest('[data-foto]');
+  if(ft){e.preventDefault();try{const j=await api('fqFoto',{id:ft.dataset.foto});const w=window.open();w.document.write(`<img src="data:image/jpeg;base64,${j.b64}" style="max-width:100%">`)}catch(err){toast(err.message)}}
+  if(f){if(!confirm('Encerrar esta demanda?'))return;try{await api('fqEncerrarDemanda',{id:f.dataset.fim});S.dem=null;rDemandas()}catch(err){toast(err.message)}}};
+
+/* ---------- checklist: modelo editável (Ramon e Guto) ---------- */
+const ST={ok:'OK',at:'Atenção',no:'Não',na:'N/A'};
+const modelo=()=>S.modelo||CHECK_PADRAO;
+async function carregaModelo(){if(S.modelo!==null)return;try{const j=await api('fqModelo',{});S.modelo=j.modelo||null;S.modeloInfo=j.por?`Última alteração por ${j.por} em ${new Date(j.em).toLocaleString('pt-BR').slice(0,16)}.`:'Usando o checklist padrão.'}catch{S.modelo=null}if(S.modelo===null)S.modelo=undefined}
+let ED=null;
+function rEditor(){
+  if(!ED)ED=JSON.parse(JSON.stringify(modelo()));
+  $('#edInfo').textContent=S.modeloInfo||'';
+  $('#edBox').innerHTML=ED.map((s,i)=>`<div class="panel" data-s="${i}"><div class="it" style="border:0;padding-top:0"><input class="inp" data-st="${i}" value="${esc(s.t)}" aria-label="Nome da seção"><button class="x" type="button" data-xs="${i}" aria-label="Tirar a seção">×</button></div>`+
+    s.itens.map((it,j)=>`<div class="it"><input class="inp" data-it="${i}.${j}" value="${esc(it.t)}" placeholder="Item" aria-label="Item"><button class="x" type="button" data-xi="${i}.${j}" aria-label="Tirar o item">×</button>
+      <input class="inp" data-ref="${i}.${j}" value="${esc(it.ref||'')}" placeholder="Dica para quem avalia (opcional)" style="grid-column:1/-1">
+      <div class="tg"><button type="button" data-fo="${i}.${j}" class="${it.foto?'on':''}">📷 Pede foto</button><button type="button" data-de="${i}.${j}" class="${it.desc?'on':''}">✍ Pede descrição</button></div></div>`).join('')+
+    `<div class="acts"><button class="btn ghost sm" type="button" data-ni="${i}">+ Item</button></div></div>`).join('');
+}
+const ij=s=>s.split('.').map(Number);
+$('#edBox').addEventListener('input',e=>{const t=e.target;if(t.dataset.st)ED[+t.dataset.st].t=t.value;if(t.dataset.it){const[i,j]=ij(t.dataset.it);ED[i].itens[j].t=t.value}if(t.dataset.ref){const[i,j]=ij(t.dataset.ref);ED[i].itens[j].ref=t.value}});
+$('#edBox').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+  if(d.xs!=null){if(!confirm('Tirar a seção inteira?'))return;ED.splice(+d.xs,1)}
+  if(d.xi){const[i,j]=ij(d.xi);ED[i].itens.splice(j,1)}
+  if(d.fo){const[i,j]=ij(d.fo);ED[i].itens[j].foto=!ED[i].itens[j].foto}
+  if(d.de){const[i,j]=ij(d.de);ED[i].itens[j].desc=!ED[i].itens[j].desc}
+  if(d.ni!=null){const s=ED[+d.ni];s.itens.push({id:s.id+'_'+Date.now().toString(36),t:'',ref:'',foto:false,desc:false})}
+  rEditor()});
+// sugestão completa: cada item com "Habilitar"; habilitado entra no checklist (na seção de mesmo nome, criada se faltar)
+const tem=t=>ED.some(s=>s.itens.some(i=>i.t.trim().toLowerCase()===t.trim().toLowerCase()));
+function rSug(){
+  $('#sugBox').innerHTML=`<div class="panel"><b>Sugestão de Check-list completo</b><div class="note" style="margin-top:4px">Checklist de Consultoria Comercial das franquias, completo. Use inteiro (com foto onde ela prova o que foi visto) ou habilite só o que quiser e depois toque em Salvar checklist.</div>
+    <div class="acts"><button class="btn" type="button" id="bUsaSug">Usar este checklist completo</button></div></div>`+
+    SUGESTAO.map((s,i)=>{const n=s.itens.filter(x=>tem(x.t)).length;return `<details class="panel"><summary><b>${esc(s.t)}</b> <em class="tag ${n===s.itens.length?'ok':n?'':'n'}">${n}/${s.itens.length}</em></summary>
+      <div class="acts"><button class="btn ghost sm" type="button" data-sgs="${i}">${n===s.itens.length?'Desabilitar a seção':'Habilitar a seção inteira'}</button></div>`+
+      s.itens.map((it,j)=>`<div class="it"><span>${esc(it.t)}${it.foto?' <span class="pede" style="font-family:var(--f-mono);font-size:10px;color:#bfe0ff">📷</span>':''}</span><div class="tg" style="grid-column:auto"><button type="button" data-sgi="${i}.${j}" class="${tem(it.t)?'on':''}">${tem(it.t)?'Habilitado ✓':'Habilitar'}</button></div></div>`).join('')+`</details>`}).join('');
+}
+function liga(si,it,on){
+  if(on){if(tem(it.t))return;const sec=SUGESTAO[si];let alvo=ED.find(s=>s.t.replace(/^\d+\.\s*/,'').toLowerCase()===sec.t.replace(/^\d+\.\s*/,'').toLowerCase());
+    if(!alvo){alvo={id:sec.id,t:sec.t,itens:[]};ED.push(alvo)}alvo.itens.push({...it})}
+  else ED.forEach(s=>s.itens=s.itens.filter(i=>i.t.trim().toLowerCase()!==it.t.trim().toLowerCase()));
+  ED=ED.filter(s=>s.itens.length);
+}
+$('#bSug').onclick=()=>{const b=$('#sugBox');b.hidden=!b.hidden;$('#bSug').textContent=b.hidden?'Sugestão de Check-list completo':'Fechar a sugestão';if(!b.hidden)rSug()};
+$('#sugBox').addEventListener('click',async e=>{if(e.target.closest('#bUsaSug')){
+    if(!confirm('Trocar o checklist das franquias por este completo (11 seções, 112 itens)? Vale para as próximas visitas.'))return;
+    ED=JSON.parse(JSON.stringify(SUGESTAO));rEditor();rSug();$('#edSalvar').click();return}
+  const bi=e.target.closest('[data-sgi]'),bs=e.target.closest('[data-sgs]');if(!bi&&!bs)return;
+  const ab=[...$$('#sugBox details')].map(d=>d.open);
+  if(bi){const[i,j]=ij(bi.dataset.sgi),it=SUGESTAO[i].itens[j];liga(i,it,!tem(it.t))}
+  if(bs){const i=+bs.dataset.sgs,S_=SUGESTAO[i],todos=S_.itens.every(x=>tem(x.t));S_.itens.forEach(it=>liga(i,it,!todos))}
+  rSug();$$('#sugBox details').forEach((d,k)=>d.open=ab[k]);rEditor();toast('Toque em Salvar checklist para valer.')});
+$('#edSecao').onclick=()=>{ED.push({id:'s'+Date.now().toString(36),t:(ED.length+1)+'. Nova seção',itens:[{id:'i'+Date.now().toString(36),t:'',ref:'',foto:false,desc:false}]});rEditor()};
+$('#edPadrao').onclick=()=>{if(!confirm('Voltar ao checklist padrão? Salve depois para valer.'))return;ED=JSON.parse(JSON.stringify(CHECK_PADRAO));rEditor()};
+$('#edSalvar').onclick=async()=>{const b=$('#edSalvar');b.disabled=true;
+  try{const j=await api('fqSalvarModelo',{modelo:ED});S.modelo=JSON.parse(JSON.stringify(ED.map(s=>({...s,itens:s.itens.filter(i=>i.t.trim())}))));S.modeloInfo='Salvo agora.';toast(`Checklist salvo: ${j.itens} itens.`);ED=null;rEditor()}
+  catch(err){toast(err.message)}finally{b.disabled=false}};
+
+/* ---------- checklist: visita ---------- */
+let V2=null;try{V2=JSON.parse(guarda.get('jarbas_fq_visita')||'null')}catch{}
+const V2c=()=>V2||(V2={cod:'',data:S.hoje,gerente:'',trans:'',resp:{},rel:null});
+const salvaV=()=>guarda.set('jarbas_fq_visita',JSON.stringify(V2));
+function miniatura(b64){return new Promise(ok=>{const im=new Image();im.onload=()=>{const k=160/Math.max(im.width,im.height),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.6))};im.src='data:image/jpeg;base64,'+b64})}
+function rVisita(){
+  const V=V2c();$('#cLista').innerHTML=S.L.map(l=>`<option value="${esc(nomeLoja(l))} · ${l.cod}">`).join('');
+  const l=S.D.lojas[V.cod];$('#cLoja').value=l?`${nomeLoja(l)} · ${l.cod}`:'';$('#cData').value=V.data;$('#cGerente').value=V.gerente;$('#cTrans').value=V.trans;
+  $('#cNums').innerHTML=l?`<p class="note">${esc(fran(l))} · consultor ${esc(titulo(l.supervisao))} · mês ${M_(l).meta?p1(pct(M_(l).venda,M_(l).meta)):'—'} da meta · P.A. ${num(M_(l).pa)} · ${M_(l).venda_aa?'x ano anterior '+p1((M_(l).venda/M_(l).venda_aa-1)*100):''}</p>`:'';
+  $('#cSecoes').innerHTML=modelo().map(s=>{const f=s.itens.filter(i=>V.resp[i.id]?.v).length,aj=s.itens.filter(i=>['at','no'].includes(V.resp[i.id]?.v)).length;
+    return `<details class="secao"><summary><span>${esc(s.t)}</span><em class="tag ${aj?'r':f===s.itens.length?'ok':'n'}">${aj?aj+' ajustar':f+'/'+s.itens.length}</em></summary>`+
+    s.itens.map(i=>{const r=V.resp[i.id]||{};return `<div class="ck" data-id="${i.id}"><span class="q">${esc(i.t)}${i.foto?'<span class="pede">📷 FOTO</span>':''}${i.desc?'<span class="pede">✍ DESCRIÇÃO</span>':''}${i.ref?`<small>${esc(i.ref)}</small>`:''}</span>
+      <span class="op">${Object.keys(ST).map(v=>`<button type="button" data-v="${v}" class="${r.v===v?'on':''}">${ST[v]}</button>`).join('')}</span>
+      ${i.desc||['at','no'].includes(r.v)?`<textarea class="inp" rows="2" data-obs="${i.id}" placeholder="${i.desc?'Descreva o que viu':'Observação'}">${esc(r.o||'')}</textarea>`:''}
+      ${i.foto?`<div class="fotos">${(r.fotos||[]).map((f,k)=>`<span class="th"><img src="${f.th}" alt="Foto"><button type="button" class="x" data-rmf="${i.id}" data-k="${k}" aria-label="Remover foto">×</button></span>`).join('')}<label class="addfoto"><input type="file" accept="image/*" capture="environment" multiple hidden data-cfoto="${i.id}">📷 ${(r.fotos||[]).length?'Mais foto':'Foto'}</label></div>`:''}</div>`}).join('')+`</details>`}).join('');
+  rRel();
+}
+$('#cLoja').onchange=e=>{const m=e.target.value.match(/· (\w+)$/);V2c().cod=m&&S.D.lojas[m[1]]?m[1]:'';salvaV();rVisita()};
+$('#cData').onchange=e=>{V2c().data=e.target.value;salvaV()};$('#cGerente').oninput=e=>{V2c().gerente=e.target.value;salvaV()};$('#cTrans').oninput=e=>{V2c().trans=e.target.value;salvaV()};
+$('#cSecoes').addEventListener('click',e=>{const b=e.target.closest('.op button'),rm=e.target.closest('[data-rmf]');const V=V2c();
+  if(b){const id=b.closest('.ck').dataset.id,r=V.resp[id]||={};r.v=r.v===b.dataset.v?'':b.dataset.v;salvaV();const ab=[...$$('#cSecoes details')].map(d=>d.open);rVisita();$$('#cSecoes details').forEach((d,i)=>d.open=ab[i])}
+  if(rm){const r=V.resp[rm.dataset.rmf];r.fotos.splice(+rm.dataset.k,1);salvaV();const ab=[...$$('#cSecoes details')].map(d=>d.open);rVisita();$$('#cSecoes details').forEach((d,i)=>d.open=ab[i])}});
+$('#cSecoes').addEventListener('input',e=>{const t=e.target.closest('[data-obs]');if(!t)return;const r=V2c().resp[t.dataset.obs]||={};r.o=t.value;salvaV()});
+$('#cSecoes').addEventListener('change',async e=>{const f=e.target.closest('[data-cfoto]');if(!f)return;const V=V2c();if(!V.cod){toast('Escolha a loja antes das fotos.');return}
+  const id=f.dataset.cfoto,r=V.resp[id]||={};r.fotos=r.fotos||[];const lab=f.closest('.addfoto');lab.lastChild.textContent=' Enviando…';
+  for(const file of f.files){try{const b64=await reduzir(file),j=await api('fqFotoVisita',{b64,cod:V.cod,data:V.data,item:id});r.fotos.push({id:j.id,th:await miniatura(b64)})}catch(err){toast(err.message)}}
+  salvaV();const ab=[...$$('#cSecoes details')].map(d=>d.open);rVisita();$$('#cSecoes details').forEach((d,i)=>d.open=ab[i])});
+$('#bNova').onclick=()=>{if(!confirm('Começar uma visita nova? A atual será apagada deste celular.'))return;V2=null;salvaV();rVisita()};
+// microfone: a fala vira texto (mesmo jeito do checklist das próprias)
+const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,gravando=false;
+function micUI(on){gravando=on;$('#bMic').classList.toggle('on',on);$('#bMic').setAttribute('aria-pressed',on);$('#micStatus').textContent=on?'Gravando… toque para parar':'Toque para gravar'}
+$('#bMic').onclick=()=>{
+  if(!Rec){$('#micDica').textContent='Este navegador não transcreve voz. Use o microfone do teclado para ditar no campo abaixo.';return}
+  if(gravando){if(rec){rec.__manter=false;rec.stop()}return}
+  const V=V2c();rec=new Rec();rec.lang='pt-BR';rec.continuous=true;rec.interimResults=true;
+  let base=V.trans?V.trans.replace(/\s*$/,' '):'',sessao='';
+  const juntar=lista=>{let acc='';for(const t0 of lista){const t=t0.trim();if(!t)continue;const a=acc.trim().toLowerCase(),n=t.toLowerCase();if(!a||n.startsWith(a))acc=t;else if(!a.endsWith(n)&&!a.includes(n))acc=acc.trim()+' '+t}return acc};
+  rec.onresult=ev=>{const fin=[],tmp=[];for(let i=0;i<ev.results.length;i++)(ev.results[i].isFinal?fin:tmp).push(ev.results[i][0].transcript);const f=juntar(fin),t=juntar(tmp.length?[f,...tmp]:[f]);sessao=f;$('#cTrans').value=(base+t).trim()};
+  rec.onerror=ev=>{if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){rec.__manter=false;$('#micDica').textContent='Permita o uso do microfone para o app nas configurações do navegador.'}};
+  rec.onend=()=>{if(sessao){base=(base+sessao).replace(/\s*$/,' ');sessao=''}V.trans=base.trim();salvaV();$('#cTrans').value=V.trans;if(gravando&&rec.__manter){try{rec.start();return}catch{}}micUI(false)};
+  rec.__manter=true;try{rec.start();micUI(true)}catch{toast('Não consegui ligar o microfone.')}
+};
+function textoRel(){const V=V2c(),R=V.rel||{},l=S.D.lojas[V.cod]||{},L=[];
+  L.push(`*Visita à franquia ${nomeLoja(l)}* · ${dataBR(V.data)}`,`${fran(l)} · consultor ${titulo(l.supervisao)}`,'');
+  if(R.resumo)L.push(R.resumo,'');
+  if(R.pontos_fortes?.length)L.push('*Pontos fortes*',...R.pontos_fortes.map(x=>'• '+x),'');
+  if(R.pontos_atencao?.length)L.push('*Pontos de atenção*',...R.pontos_atencao.map(x=>'• '+x),'');
+  if(R.planos?.length)L.push('*Plano de ação*',...R.planos.map(p=>`• ${p.acao} (${p.responsavel}, até ${p.prazo})`));
+  return L.join('\n')}
+function rRel(){const R=V2c().rel;if(!R){$('#cRel').innerHTML='';return}
+  $('#cRel').innerHTML=`<div class="panel"><b>Relatório</b><p style="white-space:pre-wrap;font-size:14px;line-height:1.45">${esc(textoRel())}</p>
+    <div class="acts"><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(textoRel())}">Mandar no WhatsApp</a><button class="btn ghost sm" type="button" id="bSalvaRel">${S.perfil.email==='augustobandeira@somossonho.com.br'?'Guardar no Jarbas':'Enviar ao Guto'}</button></div></div>`;
+  $('#bSalvaRel').onclick=async()=>{const V=V2c(),b=$('#bSalvaRel');b.disabled=true;
+    try{const j=await api('fqSalvarChecklist',{cod:V.cod,data:V.data,resumo:V.rel.resumo,texto:textoRel(),fotos:Object.values(V.resp).flatMap(r=>(r.fotos||[]).map(f=>f.id))});
+      toast(j.enviado?'Relatório enviado ao Guto e guardado.':'Relatório guardado.');S.hist=null;b.textContent='Enviado ✓'}catch(err){toast(err.message);b.disabled=false}}}
+$('#bRel').onclick=async()=>{const V=V2c(),l=S.D.lojas[V.cod];if(!l){toast('Escolha a loja.');return}
+  const itens=[];modelo().forEach(s=>s.itens.forEach(i=>{const r=V.resp[i.id];if(r?.v)itens.push({secao:s.t,item:i.t,status:ST[r.v],obs:r.o||'',setor:'loja'})}));
+  const falta=modelo().flatMap(s=>s.itens).filter(i=>{const r=V.resp[i.id];return r?.v&&r.v!=='na'&&((i.desc&&!(r.o||'').trim())||(i.foto&&!(r.fotos||[]).length))});
+  if(falta.length&&!confirm(`${falta.length} item(ns) pedem foto ou descrição e estão sem. Gerar assim mesmo?`))return;
+  const b=$('#bRel');b.disabled=true;b.textContent='Gerando…';
+  try{const m=M_(l);const j=await api('fqRelatorio',{loja:nomeLoja(l)+' (franquia de '+fran(l)+')',data:V.data,gerente:V.gerente,itens,transcricao:V.trans,setores:{loja:'Loja e franqueado'},
+      indicadores:`venda do mês ${brl(m.venda)} de meta ${brl(m.meta)} (${p1(pct(m.venda,m.meta))}); P.A. ${num(m.pa)}; ticket ${brl(m.ticket)}; ${m.venda_aa?'x ano anterior '+p1((m.venda/m.venda_aa-1)*100):''}`});
+    V.rel=j.relatorio;salvaV();rRel()}catch(err){toast(err.message)}finally{b.disabled=false;b.textContent='Gerar relatório'}};
+async function rHist(){if(!S.hist){$('#listaRel').innerHTML='<p class="note">Carregando…</p>';try{S.hist=(await api('fqChecklists',{})).checklists}catch(err){$('#listaRel').innerHTML=`<p class="note">${esc(err.message)}</p>`;return}}
+  $('#listaRel').innerHTML=S.hist.map(c=>`<details class="dm"><summary><b>${esc(nomeLoja(c))}</b> · ${dataBR(c.data)} · ${esc(c.autor||'')}</summary><p style="white-space:pre-wrap;font-size:13.5px">${esc(c.texto)}</p></details>`).join('')||'<p class="note">Nenhuma visita guardada ainda.</p>'}
+async function rCheck(aba){aba=aba||S.ckAba||'visita';S.ckAba=aba;$$('#ckSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===aba));
+  $('#ckVisita').hidden=aba!=='visita';$('#ckModelo').hidden=aba!=='modelo';$('#ckHist').hidden=aba!=='hist';
+  await carregaModelo();if(aba==='visita')rVisita();if(aba==='modelo')rEditor();if(aba==='hist')rHist()}
+$('#ckSeg').onclick=e=>{const b=e.target.closest('button');if(b)rCheck(b.dataset.k)};
+
+/* ---------- navegação ---------- */
+function ir(v){const M=!S.perfil.franquia;if(!['inicio','lojas','demandas','check'].includes(v)||(!M&&v!=='inicio'))v='inicio';
+  $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
+  $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
+  if(v==='lojas')rLojas();if(v==='demandas')rDemandas();if(v==='check')rCheck()}
+$('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();ir(a.dataset.v)});
+$('#irPr').onclick=()=>guarda.set('jarbas_lado',null);
+$('#bSair').onclick=()=>{if(window.google?.accounts)google.accounts.id.disableAutoSelect();guarda.set('jarbas_pin',null);location.replace('index.html')};
+try{history.scrollRestoration='manual'}catch{}
+if(S.pin)carregar();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>

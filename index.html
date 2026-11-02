@@ -232,6 +232,11 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 #dock a.on,#dock a.on:nth-child(even){color:#5dff3c;text-shadow:0 0 3px #5dff3c,0 0 9px #39ff14,0 0 18px #39ff14aa;
   box-shadow:0 0 0 1.5px var(--groove),inset 0 0 0 60px #0000007a,inset 0 0 8px #39ff1455,0 0 10px #39ff1440}
 #dock a:active{filter:brightness(.9)}
+/* botão Próprias | Franquias no topo (Ramon e Guto) */
+.lado{position:sticky;top:calc(env(safe-area-inset-top,0px) + 54px);z-index:19;display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:520px;margin:6px auto 0;padding:3px;
+  background:#000000a0;border:1px solid #ffffff22;border-radius:4px}
+.lado a{display:block;text-align:center;padding:8px 4px 6px;font-family:var(--f-num);font-size:17px;letter-spacing:.1em;color:var(--sand);text-decoration:none;border-radius:3px;cursor:pointer}
+.lado a.on{background:linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));color:var(--ink);box-shadow:inset 0 0 0 1px #fff8}
 /* obrigações do dia em destaque na tela do gerente (parciais e fechamento ficam num bloco à parte) */
 .obrig{border:2px solid var(--gold);box-shadow:0 0 18px #e3b04b44,inset 0 0 0 1px #00000055;margin-top:14px}
 .obrig .sec{margin-top:0;color:var(--gold-l)}
@@ -403,6 +408,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 
   <div id="telaApp" hidden>
     <header class="top"><span class="logo">JARBAS</span><span class="topdir"><small id="topo"></small><button class="sair" id="bSairTopo" type="button">Sair ⏻</button></span></header>
+    <nav class="lado" id="lado" hidden aria-label="Trocar de lado"><a class="on" aria-current="page">PRÓPRIAS</a><a href="franquias.html" id="irFq">FRANQUIAS</a></nav>
     <div class="wrap">
       <!-- INÍCIO -->
       <section class="view on" id="tela-inicio">
@@ -1101,6 +1107,7 @@ if(GID&&!GID.startsWith('__')){
 }
 function sair(){if(window.google?.accounts)google.accounts.id.disableAutoSelect();guarda.set('jarbas_pin',null);location.hash='';location.reload()}
 $('#bSair').onclick=sair;$('#bSairTopo').onclick=sair;
+$('#irFq').onclick=()=>guarda.set('jarbas_lado','fq');
 if(/iphone|ipad/i.test(navigator.userAgent)&&!navigator.standalone)$('#dicaIos').hidden=false;
 let pedidoInstalar=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();pedidoInstalar=e;$('#bInstalar').hidden=false});
 $('#bInstalar').onclick=()=>{pedidoInstalar?.prompt();$('#bInstalar').hidden=true};
@@ -1108,6 +1115,9 @@ $('#bInstalar').onclick=()=>{pedidoInstalar?.prompt();$('#bInstalar').hidden=tru
 async function carregar(){
   const j=await api('dados',{data:S.hoje,cod:S.cod});
   S.perfil=j.perfil;S.D=j.painel;S.parcial=j.parcial;S.rotina=j.rotina||[];S.demandas=j.demandas||[];S.atualizado=j.atualizado;S.checkHab=j.checkHab;
+  // franquia e consultor de campo só têm o lado Franquias; o Ramon e o Guto voltam para o último lado que usaram
+  if(S.perfil.franquia||S.perfil.consultor||(S.perfil.franq&&guarda.get('jarbas_lado')==='fq'&&!carregar.ficou)){guarda.set('jarbas_pin',S.pin);location.replace('franquias.html');await new Promise(()=>{})}
+  carregar.ficou=true;
   if(!S.perfil.master)S.cod=S.perfil.cod;
   if(!S.D){$('#erroLogin').textContent='O painel ainda não chegou ao servidor. Ele é enviado todo dia de manhã.';throw new Error('Sem dados do painel ainda.')}
   if(ligando){await ligando;ligando=null;paraTurbina=null} // abre o app só com o reator da entrada aceso
@@ -1221,6 +1231,7 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
    $$('#dock a').forEach(a=>{const span=duas&&a.dataset.v==='giro'?2:1;if(c+span>cols)c=0;const x=((c+(span-1)/2)-(cols-1)/2)/((cols-1)/2||1);
      a.style.setProperty('--y',(x*x*7).toFixed(1));a.style.setProperty('--r',(x*6).toFixed(1));c=(c+span)%cols})}
   $('#selLojaBox').hidden=!S.perfil.master;
+  $('#lado').hidden=!S.perfil.franq; // botão Próprias | Franquias: só o Ramon e o Guto
   if(S.perfil.master&&!$('#selLoja').options.length){$('#selLoja').innerHTML=`<optgroup label="Visão">${V.todas?'<option value="reg:U">Rede (todas as lojas)</option>':''}<option value="">Regional Ramon (todas)</option>${V.todas?'<option value="reg:T">Regional Tuanne</option><option value="reg:M">Regional Mandu</option>':''}</optgroup>`+
       `<optgroup label="Lojas da Regional Ramon">${L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('')}</optgroup>`;
     $('#selLoja').onchange=async e=>{const v=e.target.value;S.esc=v.startsWith('reg:')?v.slice(4):'R';if(v.startsWith('reg:')&&!S.cod){iniciar();return}S.cod=v.startsWith('reg:')?'':v;try{await carregar()}catch(err){toast(err.message)}}}
