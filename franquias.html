@@ -640,14 +640,14 @@ $('#minhasDem').addEventListener('click',async e=>{const b=e.target.closest('[da
 function rLojas(){
   const q=$('#busca').value.trim().toLowerCase(),L=visiveis().filter(l=>!q||[l.nome,l.cidade,l.uf,l.franqueado,l.supervisao].join(' ').toLowerCase().includes(q));
   $('#listaLojas').innerHTML=L.slice(0,200).map(l=>{const p=pct(M_(l).venda,M_(l).meta);
-    return `<button class="li" data-loja="${l.cod}"><span>${esc(nomeLoja(l))}<small style="display:block;font-family:var(--f-mono);font-size:10px;color:var(--sand)">${esc(titulo(l.cidade))} · ${esc(fran(l))} · ${esc(titulo(l.supervisao))}</small></span><em class="tag ${p>=100?'ok':p>=85?'':'r'}">${M_(l).meta?p1(p):'—'}</em></button>`}).join('')||'<p class="note">Nenhuma loja encontrada.</p>';
+    return `<button class="li" data-loja="${l.cod}"><span>${esc(nomeLoja(l))}<small style="display:block;font-family:var(--f-mono);font-size:10px;color:var(--sand)">${esc(titulo(l.cidade))} · ${esc(fran(l))} · ${esc(titulo(l.supervisao))}${l.situacao?` · <b style="color:#ff8b95">${esc(l.situacao)}</b>`:''}</small></span><em class="tag ${p>=100?'ok':p>=85?'':'r'}">${M_(l).meta?p1(p):'—'}</em></button>`}).join('')||'<p class="note">Nenhuma loja encontrada.</p>';
 }
 $('#busca').oninput=rLojas;
 $('#listaLojas').onclick=e=>{const b=e.target.closest('[data-loja]');if(b)rFicha(b.dataset.loja)};
 function rFicha(cod){
   const l=S.D.lojas[cod];if(!l){$('#ficha').innerHTML='';return}const m=M_(l),d=D_(l),ont=(S.D.ontem||'').slice(8,10)+'/'+(S.D.ontem||'').slice(5,7);
   const lin=(a,b)=>`<div><b>${b}</b><small>${a}</small></div>`;
-  $('#ficha').innerHTML=`<div class="panel ficha"><h3>${esc(nomeLoja(l))}</h3><div class="meta">${esc(titulo(l.cidade))} (${esc(l.uf)}) · ${esc(fran(l))} · consultor ${esc(titulo(l.supervisao))} · cód. ${esc(l.cod)}</div>
+  $('#ficha').innerHTML=`<div class="panel ficha"><h3>${esc(nomeLoja(l))}</h3><div class="meta">${esc(titulo(l.cidade))} (${esc(l.uf)}) · ${esc(fran(l))} · consultor ${esc(titulo(l.supervisao))} · cód. ${esc(l.cod)}${l.situacao?`<br><b style="color:#ff8b95">⚠ ${esc(l.situacao)}</b>`:''}</div>
     <div class="fqk">${lin('Venda do mês',mil(m.venda||0))}${lin('% da meta',m.meta?p1(pct(m.venda,m.meta)):'—')}${lin('x ano anterior',m.venda_aa?(m.venda>=m.venda_aa?'+':'')+p1((m.venda/m.venda_aa-1)*100):'—')}
     ${lin('Venda '+ont,brl(d.venda||0))}${lin('% meta '+ont,d.meta?p1(pct(d.venda,d.meta)):'—')}${lin('Projeção',m.projecao?mil(m.projecao):'—')}
     ${lin('P.A.',num(m.pa))}${lin('Ticket',m.ticket?brl(m.ticket):'—')}${lin('Atendimentos',num(m.atend))}</div>
