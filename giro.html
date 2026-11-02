@@ -575,7 +575,8 @@ function vReman(){
   $('#iaLimpa')?.addEventListener('click',()=>{RF.ia=null;RF.iaRasc='';vReman()});
   $('#iaOk')?.addEventListener('click',async e=>{const txt=$('#iaTxt').value.trim();if(!txt){toast('Escreva o pedido');return}
     e.target.disabled=true;e.target.textContent='Pensando…';
-    const r=await PLAT.pedir(txt,ctxPedido());
+    // no máximo 10 s esperando a IA; passou disso, o Jarbas entende o pedido pelas palavras e segue
+    const r=await Promise.race([PLAT.pedir(txt,ctxPedido()),new Promise(ok=>setTimeout(()=>ok({ok:false,demorou:true}),10000))]);
     // sem resposta da IA (sobrecarga, sem rede): o app entende o pedido pelas palavras (lojas, pontas, parado, categoria)
     const ped=r?.ok?r.pedido:interpretaLocal(txt);
     if(!ped){e.target.disabled=false;e.target.textContent='Montar sugestão';toast(r?.msg||'Não deu certo');return}
