@@ -423,6 +423,12 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .relogio .dia small{display:block;font-family:var(--f-mono,monospace);font-size:9.5px;letter-spacing:.12em;color:#8fd88a;text-transform:uppercase}
 .relogio .dia b{display:block;font-family:var(--f-mono,monospace);font-size:24px;font-weight:700;color:#5dff3c;text-shadow:0 0 4px #5dff3c,0 0 10px #39ff1488;font-variant-numeric:tabular-nums;line-height:1.15}
 @media (prefers-reduced-motion:reduce){.relogio .hora i{animation:none}}
+/* calendário: escolhe um dia fechado do mês e o reator do dia + o ranking passam a ser daquele dia */
+.diaSel{display:flex;justify-content:center;align-items:center;gap:6px;margin:8px auto 0;max-width:520px;position:relative}
+.diaSel button{border:1px solid #9fb3c8;background:#0b1520aa;color:#dfe8f2;font-family:var(--f-num);font-size:18px;letter-spacing:.08em;padding:7px 14px 4px;border-radius:4px;cursor:pointer}
+.diaSel button.on{background:linear-gradient(160deg,#dfe8f2,#8fa3b8 60%,#4b5d70);color:#0b1520}
+.diaSel .x{font-size:14px;padding:6px 10px 5px;border-color:#ffffff40;color:var(--sand)}
+.diaSel input{position:absolute;left:50%;top:0;width:1px;height:1px;opacity:0;pointer-events:none}
 #espera{min-height:100vh;display:grid;place-items:center;text-align:center;font-family:var(--f-mono);color:var(--sand)}
 #espera b{display:block;font-family:var(--f-num);font-size:40px;letter-spacing:.1em;color:var(--gold)}
 </style>
@@ -441,6 +447,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
             <label class="f">Franqueado<select class="inp" id="fFran"></select></label></div>
         </div>
         <div class="relogio" id="relogio" hidden><div class="hora" id="rHora" aria-label="Hora agora">--<i>:</i>--</div><div class="dia"><small id="rLab">Diária de hoje</small><b id="rMeta">—</b></div></div>
+        <div class="diaSel" id="diaSel"><button type="button" id="bDia">📅 ESCOLHER DIA</button><button type="button" class="x" id="bDiaX" hidden aria-label="Voltar para ontem">✕ ONTEM</button><input type="date" id="iDia" tabindex="-1" aria-hidden="true"></div>
         <div class="car" id="car" aria-label="Reator: deslize para trocar entre ontem e o acumulado do mês"></div>
         <div id="tacho" hidden></div>
         <div class="dots" id="dots"><button class="on" aria-label="Venda de ontem"></button><button aria-label="Venda acumulada"></button><span>deslize ›</span></div>
@@ -561,7 +568,7 @@ function tacho(p,lab){
     <div class="lcd">${ok?Math.round(p)+'%':'--'}</div><small>${lab}</small>`;
 }
 
-const S={pin:guarda.get('jarbas_pin'),perfil:null,D:null,L:[],cons:'',fran:'',rk:'dia',dem:null,comPin:new Set(),hoje:hojeISO(),modelo:null};
+const S={pin:guarda.get('jarbas_pin'),perfil:null,D:null,dia:null,L:[],cons:'',fran:'',rk:'dia',dem:null,comPin:new Set(),hoje:hojeISO(),modelo:null};
 if(!S.pin)location.replace('index.html');
 async function api(acao,extra={}){
   if(!API||API.startsWith('__'))throw new Error('O servidor do app ainda não foi ligado.');
@@ -571,7 +578,9 @@ async function api(acao,extra={}){
 const nomeLoja=l=>String(l.nome||'').replace(/\s*\([A-Z]{2}\)$/,'');
 const titulo=s=>String(s||'').toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()).replace(/\bE\b/g,'e').replace(/\bDa\b|\bDe\b|\bDo\b|\bDos\b|\bDas\b/g,m=>m.toLowerCase());
 const fran=l=>titulo(String(l.franqueado||'').replace(/^FRANQUIA\s+/i,''));
-const M_=l=>l.mes||{},D_=l=>l.dia||{};
+// D_ = o dia em foco: ontem, ou o dia escolhido no calendário (S.dia, aaaa-mm-dd)
+const M_=l=>l.mes||{},D_=l=>S.dia?((l.dias||{})[S.dia]||{}):l.dia||{};
+const dm_=iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';
 
 async function carregar(){
   let j;try{j=await api('fqDados',{data:S.hoje})}catch(e){$('#eMsg').innerHTML=esc(e.message)+'<br><br><a href="index.html" style="color:var(--gold)">‹ Voltar ao Jarbas</a>';return}
@@ -608,7 +617,8 @@ const soma=(L,p,k)=>L.reduce((s,l)=>s+((l[p]||{})[k]||0),0);
 
 /* ---------- início: reator como o das próprias (franquia não tem parcial: telas de ontem e do acumulado do mês) ---------- */
 const tachoUm=(p,lab)=>`<div class="tacho">${tacho(p,lab)}</div>`;
-const somas=L=>({vm:soma(L,'mes','venda'),mm:soma(L,'mes','meta'),mt:soma(L,'mes','meta_mes'),vd:soma(L,'dia','venda'),md:soma(L,'dia','meta'),aa:soma(L,'mes','venda_aa'),at:soma(L,'mes','atend'),qt:soma(L,'mes','qtde')});
+const somaD=(L,k)=>L.reduce((s,l)=>s+(D_(l)[k]||0),0);
+const somas=L=>({vm:soma(L,'mes','venda'),mm:soma(L,'mes','meta'),mt:soma(L,'mes','meta_mes'),vd:somaD(L,'venda'),md:somaD(L,'meta'),aa:soma(L,'mes','venda_aa'),at:soma(L,'mes','atend'),qt:soma(L,'mes','qtde')});
 function numeros(A){
   const pa=A.at?A.qt/A.at:null,ticket=A.at?A.vm/A.at:null,var_=A.aa?(A.vm/A.aa-1)*100:null;
   return `<div class="fqk"><div><b>${pa?pa.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</b><small>P.A. do mês</small></div><div><b>${ticket?brl(ticket):'—'}</b><small>Ticket médio</small></div>
@@ -617,18 +627,21 @@ function rInicio(){
   const F=!!S.perfil.franquia,C=S.perfil.consultor,L=F?S.L:visiveis(),A=somas(L),R=S.D.rede,ont=S.D.ontem?S.D.ontem.slice(8,10)+'/'+S.D.ontem.slice(5,7):'ontem';
   const nome=F?nomeLoja(L[0]||{nome:S.perfil.nome}):C?'Minha região · '+L.length+' lojas':S.fran?fran({franqueado:S.fran}):S.cons?titulo(S.cons):'Franquias · '+L.length+' lojas';
   const sl=(v,lab,big,sub,cap)=>`<div class="sl"><div class="sock"><div class="core" style="--v:${Math.min(v,100).toFixed(1)}"><div><small>${lab}</small><b>${big}</b><small>${sub}</small></div></div></div><div class="cap">${cap}</div></div>`;
-  rRelogio(L);
+  rRelogio(L);rDiaSel();
+  const od=S.dia?dm_(S.dia):ont,odl=S.dia?od:'ontem';
   const pD=pct(A.vd,A.md),pM=pct(A.vm,A.mm);
-  $('#car').innerHTML=sl(pD,'VENDA DE ONTEM',A.md?Math.round(pD)+'%':'—',brl(A.vd),`${esc(nome)} · dia fechado <b>${ont}</b> · meta ${brl(A.md)}<br>${A.vd>=A.md?'Acima em':'Faltaram'} <b>${brl(Math.abs(A.md-A.vd))}</b>`)
+  $('#car').innerHTML=sl(pD,S.dia?'VENDA DE '+od:'VENDA DE ONTEM',A.md?Math.round(pD)+'%':'—',brl(A.vd),`${esc(nome)} · dia fechado <b>${od}</b> · meta ${brl(A.md)}<br>${A.vd>=A.md?'Acima em':'Faltaram'} <b>${brl(Math.abs(A.md-A.vd))}</b>`)
     +sl(pM,'VENDA ACUMULADA',A.mm?Math.round(pM)+'%':'—',mil(A.vm),`${esc(nome)} · meta até ${ont} <b>${mil(A.mm)}</b><br>${A.vm>=A.mm?'Acima em':'Faltam'} <b>${mil(Math.abs(A.mm-A.vm))}</b> · meta do mês ${p1(pct(A.vm,A.mt))}`);
   $('#resumo').innerHTML=numeros(A);
   // conta-giros embaixo do reator: na visão geral, um por consultor; com consultor escolhido (ou na tela do consultor), a rede de franquias
+  // consultor com dia escolhido: o servidor só manda o total da rede de ontem, então o conta-giros do dia vira o da região dele
   const cons=[...new Set(S.L.map(l=>l.supervisao))].sort(),RT=C&&R?{vd:R.dia.venda,md:R.dia.meta,vm:R.mes.venda,mm:R.mes.meta}:somas(S.L);
-  const tc=F?null:[0,1].map(i=>{const per=i?'mês':'ontem',pp=X=>i?pct(X.vm,X.mm):pct(X.vd,X.md);
-    return !C&&!S.cons&&!S.fran?`<div class="tachos">${cons.map(c=>tachoUm(pp(somas(S.L.filter(l=>l.supervisao===c))),titulo(c).split(' ')[0]+' · '+per)).join('')}</div>`:tachoUm(pp(RT),'Rede de franquias · '+per)});
+  if(C&&R&&S.dia){const Z=somas(S.L);RT.vd=Z.vd;RT.md=Z.md}
+  const tc=F?null:[0,1].map(i=>{const per=i?'mês':odl,pp=X=>i?pct(X.vm,X.mm):pct(X.vd,X.md);
+    return !C&&!S.cons&&!S.fran?`<div class="tachos">${cons.map(c=>tachoUm(pp(somas(S.L.filter(l=>l.supervisao===c))),titulo(c).split(' ')[0]+' · '+per)).join('')}</div>`:tachoUm(pp(RT),(C&&S.dia&&!i?'Minha região':'Rede de franquias')+' · '+per)});
   $('#tacho').hidden=!tc;
   // ranking acompanha a tela do reator: ontem → ranking do dia; acumulado → ranking do mês
-  const rk=F?['','']:[rankDia(L.map(l=>({cod:l.cod,nome:nomeLoja(l),v:D_(l).venda||0,m:D_(l).meta||0,a:D_(l).atend})),'Ranking de '+ont)||'<div class="panel rankdia"><h3>Ranking de ontem</h3><p class="note" style="margin:0">Sem dia fechado ainda.</p></div>',
+  const rk=F?['','']:[rankDia(L.map(l=>({cod:l.cod,nome:nomeLoja(l),v:D_(l).venda||0,m:D_(l).meta||0,a:D_(l).atend})),'Ranking de '+od)||`<div class="panel rankdia"><h3>Ranking de ${od}</h3><p class="note" style="margin:0">Sem venda neste dia.</p></div>`,
     rankDia(L.map(l=>({cod:l.cod,nome:nomeLoja(l),v:M_(l).venda||0,m:M_(l).meta||0,a:M_(l).atend})),'Ranking acumulado · meta até '+ont)];
   const car=$('#car'),dots=$$('#dots button'),i0=+(car.dataset.i||0);
   car._rk=rk;car._tc=tc;$('#ranking').innerHTML=rk[i0];if(tc)$('#tacho').innerHTML=tc[i0];
@@ -640,6 +653,15 @@ function rInicio(){
   // consultores no mês (visão geral)
   $('#porCons').innerHTML=S.cons||S.fran||C?'':rankDia(cons.map(c=>{const X=S.L.filter(l=>l.supervisao===c);return {cod:c,nome:titulo(c)+` · ${X.length} lojas`,v:soma(X,'mes','venda'),m:soma(X,'mes','meta'),a:null}}),'Consultores no mês');
 }
+
+// calendário: só dias fechados do mês (do dia 1º até ontem); ontem ou vazio volta ao normal
+function rDiaSel(){const i=$('#iDia');i.min=S.D.de||'';i.max=S.D.ontem||'';i.value=S.dia||S.D.ontem||'';
+  $('#diaSel').hidden=!S.D.ontem;$('#bDia').textContent='📅 '+(S.dia?'DIA '+dm_(S.dia):'ESCOLHER DIA');$('#bDia').classList.toggle('on',!!S.dia);$('#bDiaX').hidden=!S.dia}
+$('#bDia').onclick=()=>{const i=$('#iDia');try{i.showPicker()}catch{i.focus();i.click()}};
+$('#bDiaX').onclick=()=>escolheDia(null);
+$('#iDia').onchange=e=>escolheDia(e.target.value);
+function escolheDia(v){if(v&&(v<S.D.de||v>S.D.ontem)){toast('Escolha um dia deste mês, até ontem.');v=null}
+  S.dia=v&&v!==S.D.ontem?v:null;const car=$('#car');car.dataset.i=0;rInicio();car.scrollTo({left:0});piscaReator(car.querySelector('.core'))}
 
 // relógio digital: hora corrente + soma da diária de hoje das lojas na tela (só quando a meta enviada é do dia de hoje)
 function rRelogio(L){
@@ -694,7 +716,7 @@ $('#listaCons').onclick=async e=>{const g=e.target.closest('[data-gp]'),t=e.targ
     box.querySelector('.tag').className='tag ok';box.querySelector('.tag').textContent='TEM PIN';g.textContent='Trocar PIN'}catch(err){toast(err.message)}finally{g.disabled=false}};
 $('#listaLojas').onclick=e=>{const b=e.target.closest('[data-loja]');if(b)rFicha(b.dataset.loja)};
 function rFicha(cod){
-  const l=S.D.lojas[cod];if(!l){$('#ficha').innerHTML='';return}const m=M_(l),d=D_(l),ont=(S.D.ontem||'').slice(8,10)+'/'+(S.D.ontem||'').slice(5,7);
+  const l=S.D.lojas[cod];if(!l){$('#ficha').innerHTML='';return}const m=M_(l),d=D_(l),ont=dm_(S.dia||S.D.ontem||'');
   const lin=(a,b)=>`<div><b>${b}</b><small>${a}</small></div>`;
   $('#ficha').innerHTML=`<div class="panel ficha"><h3>${esc(nomeLoja(l))}</h3><div class="meta">${esc(titulo(l.cidade))} (${esc(l.uf)}) · ${esc(fran(l))} · consultor ${esc(titulo(l.supervisao))} · cód. ${esc(l.cod)}${l.situacao?`<br><b style="color:#ff8b95">⚠ ${esc(l.situacao)}</b>`:''}</div>
     <div class="fqk">${lin('Venda do mês',mil(m.venda||0))}${lin('% da meta',m.meta?p1(pct(m.venda,m.meta)):'—')}${lin('x ano anterior',m.venda_aa?(m.venda>=m.venda_aa?'+':'')+p1((m.venda/m.venda_aa-1)*100):'—')}
