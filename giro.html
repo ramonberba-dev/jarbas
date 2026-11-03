@@ -293,6 +293,7 @@ nav.tabs button[aria-selected="true"]{color:#f4cf7a}
   <section id="v-analise" hidden></section>
   <section id="v-reman" hidden></section>
   <section id="v-ruptura" hidden></section>
+  <section id="v-vendidos" hidden></section>
   <section id="v-parado" hidden></section>
   <section id="v-lojas" hidden></section>
   <section id="v-ident" hidden></section>
@@ -949,6 +950,46 @@ function vRuptura(){
   ${[...L].sort((a,b)=>b.pctFurada-a.pctFurada).map(l=>`<tr><td>${l.num} ${esc(l.nome)}</td><td>${regTag(l.cod)}</td><td class="n">${f0(l.calc)}</td><td class="n">${f0(l.furadas)}</td><td class="n"><span class="chip ${l.pctFurada>45?'ba':l.pctFurada>30?'wa':'ok'}">${f1(l.pctFurada)}%</span></td><td class="n">${f0(l.ultima)}</td></tr>`).join('')}</tbody></table></div></div>`;
 }
 
+/* ---------- Mais vendidos da semana e A receber (pedidos do CD) ---------- */
+let VSUB = 'top';
+const dm = iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';
+function vVendidos(){
+  const V=DATA.vendidos||{itens:[]}, RC=DATA.receber||{}, L=lojasR();
+  const nRec=L.reduce((a,l)=>a+(RC[l.cod]||[]).reduce((b,pd)=>b+pd.cam+pd.falta,0),0);
+  const seg=`<div class="seg" role="tablist" style="display:flex;gap:6px;margin:6px 0 12px">
+    <button class="btn${VSUB==='top'?' p':''}" data-vs="top" aria-pressed="${VSUB==='top'}">Mais vendidos</button>
+    <button class="btn${VSUB==='rec'?' p':''}" data-vs="rec" aria-pressed="${VSUB==='rec'}">A receber${nRec?` (${f0(nRec)})`:''}</button></div>`;
+  let corpo='';
+  if(VSUB==='top'){
+    const per=V.fonte==='baixa'?`Venda de ${V.dias} dia${V.dias>1?'s':''} (${dm(V.de)} a ${dm(V.ate)}), pela baixa de estoque das lojas. Inclui saídas por remanejamento.`
+      :'O histórico diário do estoque começou agora. Até completar 7 dias, aparece o ranking dos últimos 14 dias do sistema, que lista só os campeões de cada loja.';
+    const itens=V.itens.map(x=>{const ls=Object.entries(x.lojas).filter(([c])=>inReg(c)&&LJ[c]).sort((a,b)=>b[1]-a[1]);return {...x,ls,t:ls.reduce((a,[,q])=>a+q,0)}}).filter(x=>x.t>0).sort((a,b)=>b.t-a.t).slice(0,30);
+    corpo=`<p class="lead">${per}</p>`+(itens.length?`<div style="display:grid;gap:10px">
+      ${itens.map((x,i)=>`<div class="card" style="display:flex;gap:12px;align-items:flex-start;min-width:0;margin:0">
+        <b style="min-width:26px;font-size:20px">${i+1}º</b>${foto(x.ref,76)}
+        <div style="min-width:0;flex:1"><b style="display:block">${esc(x.desc)}</b><small>${x.ref}${x.sub?' · '+esc(x.sub):''}</small>
+          <div style="margin:6px 0 4px;font-size:15px">Vendeu <b>${f0(x.t)}</b> ${x.par?'pares':'peças'}${x.ls.length>1?` em ${x.ls.length} lojas`:''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${x.ls.slice(0,5).map(([c,q],k)=>`<span class="chip ${k===0?'ok':'in'}" style="white-space:normal">${esc(nomeL(c))} · ${f0(q)}</span>`).join('')}${x.ls.length>5?`<small style="align-self:center">+${x.ls.length-5} loja${x.ls.length>6?'s':''}</small>`:''}</div></div></div>`).join('')}</div>`
+      :`<div class="card"><p class="note">Ainda sem venda registrada para ${REG==='U'?'as 3 regionais':REGS[REG]}.</p></div>`);
+  }else{
+    const lj=L.map(l=>({l,ps:RC[l.cod]||[]})).filter(x=>x.ps.length).map(x=>({...x,cam:x.ps.reduce((a,p)=>a+p.cam,0),sep:x.ps.reduce((a,p)=>a+p.falta,0)})).sort((a,b)=>(b.cam+b.sep)-(a.cam+a.sep));
+    const tc=lj.reduce((a,x)=>a+x.cam,0),ts=lj.reduce((a,x)=>a+x.sep,0);
+    corpo=`<p class="lead">Pedidos do estoque regulador (CD) que ainda não chegaram nas lojas. <b>A caminho</b> = nota emitida, em trânsito. <b>Separando no CD</b> = pedido feito, ainda não saiu. Só entram pedidos dos últimos 21 dias${DATA.receberAntigos?` (${f0(DATA.receberAntigos)} pedidos mais antigos ainda constam como abertos no sistema e ficaram de fora)`:''}.</p>
+    <div class="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px">
+      <div class="kpi"><span>A caminho</span><b>${f0(tc)}</b><small>itens com nota emitida</small></div>
+      <div class="kpi"><span>Separando no CD</span><b>${f0(ts)}</b><small>itens ainda no CD</small></div>
+      <div class="kpi"><span>Lojas</span><b>${f0(lj.length)}</b><small>com pedido a receber</small></div></div>`+
+    (lj.length?lj.map(({l,ps,cam,sep})=>`<details class="card" style="margin-bottom:10px"><summary style="cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center"><b>${l.num} ${esc(l.nome)}</b><span>${cam?`<span class="chip ok">${f0(cam)} a caminho</span>`:''} ${sep?`<span class="chip wa">${f0(sep)} separando</span>`:''}</span></summary>
+      ${ps.sort((a,b)=>(b.nota||'').localeCompare(a.nota||'')||(b.emissao||'').localeCompare(a.emissao||'')).map(pd=>`<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span><b>Pedido ${esc(pd.pedido)}</b> <small>feito em ${dm(pd.emissao)} · prazo ${dm(pd.limite)}</small></span>${pd.cam?`<span class="chip ok">A caminho · nota de ${dm(pd.nota)}</span>`:`<span class="chip wa">Separando no CD</span>`}</div>
+        <div class="scroll"><table><thead><tr><th>Produto</th><th>Cor</th><th class="n">Quantidade</th></tr></thead><tbody>
+        ${pd.itens.map(i=>`<tr><td class="prod">${comFoto(i.refe,`<b>${esc(i.desc)}</b><small>${i.refe}</small>`)}</td><td>${esc(i.cor||'')}</td><td class="n"><b>${f0(i.cam+i.falta)}</b> <small>${i.par?'pares':'peças'}</small></td></tr>`).join('')}</tbody></table></div></div>`).join('')}</details>`).join('')
+      :`<div class="card"><p class="note">Nenhum pedido do CD a receber em ${REG==='U'?'as 3 regionais':REGS[REG]}.</p></div>`);
+  }
+  $('#v-vendidos').innerHTML=`<div><h2>${VSUB==='top'?'Mais vendidos da semana':'A receber do CD'}</h2></div>`+seg+corpo;
+  document.querySelectorAll('#v-vendidos [data-vs]').forEach(b=>b.onclick=()=>{VSUB=b.dataset.vs;vVendidos()});
+}
+
 /* ---------- Parados e liquidação ---------- */
 function markdown(p){
   const wos = p.venda30? p.saldo/(p.venda30/4.3) : Infinity;
@@ -992,9 +1033,9 @@ function vIdent(){
 }
 
 /* ---------- navegação ---------- */
-const TABS=[['geral','Visão geral',vGeral],['analise','Análise de remanejamentos',vAnalise],['reman','Remanejamentos',vReman],['ruptura','Rupturas e grade',vRuptura],['parado','Parados e liquidação',vParado],['lojas','Lojas',vLojas]];
+const TABS=[['geral','Visão geral',vGeral],['analise','Análise de remanejamentos',vAnalise],['reman','Remanejamentos',vReman],['ruptura','Rupturas e grade',vRuptura],['vendidos','Mais vendidos e a receber',vVendidos],['parado','Parados e liquidação',vParado],['lojas','Lojas',vLojas]];
 // nome curto e ícone de cada aba na barra de baixo do celular
-const TAB_CEL={geral:['Geral','M3 12l9-8 9 8M5 10v10h14V10'],analise:['Análise','M4 20V10M10 20V4M16 20v-7M22 20H2'],reman:['Remanejar','M4 8h13l-4-4M20 16H7l4 4'],ruptura:['Rupturas','M12 3l9 16H3zM12 10v4M12 17v.5'],parado:['Parados','M6 4h4v16H6zM14 4h4v16h-4z'],lojas:['Lojas','M3 9l2-5h14l2 5M4 9v11h16V9M9 20v-6h6v6'],ident:['Layout','M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-1.3 1-1.9 2-1.9H18a3 3 0 003-3c0-6-4-11.5-9-11.5zM7.5 12h.01M10 7.5h.01M15 7.5h.01']};
+const TAB_CEL={geral:['Geral','M3 12l9-8 9 8M5 10v10h14V10'],analise:['Análise','M4 20V10M10 20V4M16 20v-7M22 20H2'],reman:['Remanejar','M4 8h13l-4-4M20 16H7l4 4'],ruptura:['Rupturas','M12 3l9 16H3zM12 10v4M12 17v.5'],vendidos:['Top','M4 20h16M7 16V9M12 16V5M17 16v-4'],parado:['Parados','M6 4h4v16H6zM14 4h4v16h-4z'],lojas:['Lojas','M3 9l2-5h14l2 5M4 9v11h16V9M9 20v-6h6v6'],ident:['Layout','M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-1.3 1-1.9 2-1.9H18a3 3 0 003-3c0-6-4-11.5-9-11.5zM7.5 12h.01M10 7.5h.01M15 7.5h.01']};
 const icTab=k=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${TAB_CEL[k][1]}"/></svg>`;
 // celular: toda tabela de dados vira cartão; cada célula ganha o rótulo da sua coluna
 function rotular(raiz){
