@@ -446,6 +446,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <section class="view" id="tela-lojas">
         <h2 class="t">Lojas franqueadas</h2>
         <div class="sub">Busque a loja para ver os números e gerar o PIN de acesso do franqueado.</div>
+        <details class="panel" id="consBox" hidden><summary><b>🔑 Acesso dos consultores</b> <small class="note" style="margin:0">PIN para entrar sem o Google</small></summary><div class="list" id="listaCons"></div></details>
         <input class="inp" id="busca" placeholder="Buscar por loja, cidade, UF ou franqueado" style="margin-top:10px">
         <div id="ficha"></div>
         <div class="list" id="listaLojas"></div>
@@ -658,6 +659,20 @@ function rLojas(){
     return `<button class="li" data-loja="${l.cod}"><span>${esc(nomeLoja(l))}<small style="display:block;font-family:var(--f-mono);font-size:10px;color:var(--sand)">${esc(titulo(l.cidade))} · ${esc(fran(l))} · ${esc(titulo(l.supervisao))}${l.situacao?` · <b style="color:#ff8b95">${esc(l.situacao)}</b>`:''}</small></span><em class="tag ${p>=100?'ok':p>=85?'':'r'}">${M_(l).meta?p1(p):'—'}</em></button>`}).join('')||'<p class="note">Nenhuma loja encontrada.</p>';
 }
 $('#busca').oninput=rLojas;
+// PIN dos consultores de campo: só o Ramon e o Guto geram; o PIN aparece uma vez e vai pelo WhatsApp
+async function rConsultores(){
+  const box=$('#consBox');box.hidden=!!(S.perfil.consultor||S.perfil.franquia);if(box.hidden)return;
+  try{S.cons_=(await api('fqConsultores',{})).consultores}catch(err){$('#listaCons').innerHTML=`<p class="note">${esc(err.message)}</p>`;return}
+  $('#listaCons').innerHTML=S.cons_.map(c=>`<div class="dm" data-cn="${esc(c.nome)}"><h4>${esc(titulo(c.nome))} <em class="tag ${c.temPin?'ok':'n'}">${c.temPin?'TEM PIN':'SEM PIN'}</em></h4>
+    <div class="meta">${c.emails.map(esc).join(' · ')}</div><div class="pinc"></div>
+    <div class="acts"><button class="btn sm" type="button" data-gp>${c.temPin?'Trocar PIN':'Gerar PIN'}</button>${c.temPin?'<button class="btn ghost sm" type="button" data-tp>Tirar PIN</button>':''}</div></div>`).join('')||'<p class="note">Nenhum consultor cadastrado.</p>'}
+$('#listaCons').onclick=async e=>{const g=e.target.closest('[data-gp]'),t=e.target.closest('[data-tp]');if(!g&&!t)return;const box=e.target.closest('[data-cn]'),nome=box.dataset.cn;
+  if(t){if(!confirm('Tirar o PIN de '+titulo(nome)+'? Ele continua entrando com o Google.'))return;try{await api('fqPinConsultor',{nome,remover:true});toast('PIN retirado.');rConsultores()}catch(err){toast(err.message)}return}
+  if(box.querySelector('.tag.ok')&&!confirm('Trocar o PIN de '+titulo(nome)+'? O atual para de valer.'))return;
+  g.disabled=true;try{const j=await api('fqPinConsultor',{nome});
+    box.querySelector('.pinc').innerHTML=`<div class="pinbox"><b>PIN de ${esc(titulo(nome))}</b><div style="margin:8px 0"><code>${esc(j.pin)}</code></div><div class="note">Anote e mande agora: o PIN não aparece de novo. Ele entra em ramonberba-dev.github.io/jarbas, no campo PIN.</div>
+      <div class="acts"><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent('Seu acesso ao Jarbas (lado Franquias):\nhttps://ramonberba-dev.github.io/jarbas/\nPIN: '+j.pin+'\nTambém dá para entrar com o Google, pelo seu e-mail corporativo.')}">Mandar no WhatsApp</a></div></div>`;
+    box.querySelector('.tag').className='tag ok';box.querySelector('.tag').textContent='TEM PIN';g.textContent='Trocar PIN'}catch(err){toast(err.message)}finally{g.disabled=false}};
 $('#listaLojas').onclick=e=>{const b=e.target.closest('[data-loja]');if(b)rFicha(b.dataset.loja)};
 function rFicha(cod){
   const l=S.D.lojas[cod];if(!l){$('#ficha').innerHTML='';return}const m=M_(l),d=D_(l),ont=(S.D.ontem||'').slice(8,10)+'/'+(S.D.ontem||'').slice(5,7);
@@ -842,7 +857,7 @@ $('#ckSeg').onclick=e=>{const b=e.target.closest('button');if(b)rCheck(b.dataset
 function ir(v){const M=!S.perfil.franquia;if(!['inicio','lojas','demandas','check'].includes(v)||(!M&&v!=='inicio'))v='inicio';
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
-  if(v==='lojas')rLojas();if(v==='demandas')rDemandas();if(v==='check')rCheck()}
+  if(v==='lojas'){rLojas();rConsultores()}if(v==='demandas')rDemandas();if(v==='check')rCheck()}
 $('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();ir(a.dataset.v)});
 $('#irPr').onclick=()=>guarda.set('jarbas_lado',null);
 $('#bSair').onclick=()=>{if(window.google?.accounts)google.accounts.id.disableAutoSelect();guarda.set('jarbas_pin',null);location.replace('index.html')};
