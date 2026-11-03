@@ -953,6 +953,35 @@ function vRuptura(){
 /* ---------- Mais vendidos da semana e A receber (pedidos do CD) ---------- */
 let VSUB = 'top';
 const dm = iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';
+// período dos mais vendidos: venda por dia (DATA.vdia = {dia:[até,{ref:[loja,q,...]}]}) somada entre "de" e "até"
+let VPER = null, VCAL = false, VMES = null, VCLK = 0;
+const isoD = d=>d.toLocaleDateString('sv'), somaD = (iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return isoD(d)};
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function vDias(){const s={};for(const [de,[ate]] of Object.entries(DATA.vdia||{}))for(let d=de;d<=ate;d=somaD(d,1))s[d]=1;return s}
+function vUltimo(){const ks=Object.values(DATA.vdia||{}).map(x=>x[0]).sort();return ks[ks.length-1]||somaD(isoD(new Date()),-1)}
+function vAtalho(n){const ate=vUltimo();VPER={de:somaD(ate,1-n),ate};VMES=ate.slice(0,7);VCLK=0}
+function vItensPer(){
+  const T={};
+  for(const [de,[,dia]] of Object.entries(DATA.vdia||{})){ if(de<VPER.de||de>VPER.ate)continue;
+    for(const r in dia){const a=dia[r],m=(T[r]??={});for(let i=0;i<a.length;i+=2){const c=DATA.lojas[a[i]]?.cod;if(c)m[c]=(m[c]||0)+a[i+1]}} }
+  const M=DATA.vmeta||{};
+  return Object.entries(T).map(([ref,lojas])=>({ref,desc:M[ref]?.[0]||ref,sub:M[ref]?.[1]||'',par:M[ref]?!!M[ref][2]:true,lojas}));
+}
+function vCalendario(){
+  const tem=vDias(),hoje=isoD(new Date()),desde=DATA.vdiaDesde||'2026-11-03';
+  VMES ??= (VPER?.ate||vUltimo()).slice(0,7);
+  const [a,m]=VMES.split('-').map(Number),pri=new Date(a,m-1,1),nd=new Date(a,m,0).getDate(),vaz=(pri.getDay()+6)%7;
+  let cel='';for(let i=0;i<vaz;i++)cel+='<span></span>';
+  for(let d=1;d<=nd;d++){const iso=`${VMES}-${String(d).padStart(2,'0')}`,fut=iso>=hoje,no=VPER&&iso>=VPER.de&&iso<=VPER.ate;
+    cel+=`<button type="button" class="btn${no?' p':''}" data-dia="${iso}" ${fut?'disabled':''} aria-pressed="${!!no}" aria-label="${d} de ${MESES[m-1]}${tem[iso]?'':' (sem dado)'}" style="padding:8px 0;min-width:0;justify-content:center;${tem[iso]?'':'opacity:.4;border-style:dashed'}">${d}</button>`}
+  const sem=VPER?(()=>{let n=0,t=0;for(let d=VPER.de;d<=VPER.ate;d=somaD(d,1)){t++;if(!tem[d])n++}return {n,t}})():null;
+  return `<div class="card" style="margin-bottom:12px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${[7,14,30].map(n=>`<button type="button" class="btn" data-vat="${n}">Últimos ${n} dias</button>`).join('')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><button type="button" class="btn" data-vm="-1" aria-label="Mês anterior">‹</button><b style="text-transform:capitalize">${MESES[m-1]} ${a}</b><button type="button" class="btn" data-vm="1" aria-label="Próximo mês">›</button></div>
+    <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;font-size:12px;margin-bottom:4px">${['seg','ter','qua','qui','sex','sáb','dom'].map(x=>`<small>${x}</small>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px">${cel}</div>
+    <p class="note" style="margin:10px 0 0">${VCLK?'Agora toque no último dia do período.':'Toque no primeiro e depois no último dia.'} Dias apagados ainda não têm dado: a venda por dia existe a partir de ${dm(desde)}/${desde.slice(0,4)}.${sem&&sem.n?` <b>${sem.n} de ${sem.t} dia${sem.t>1?'s':''} do período escolhido ${sem.n>1?'estão':'está'} sem dado.</b>`:''}</p></div>`;
+}
 function vVendidos(){
   const V=DATA.vendidos||{itens:[]}, RC=DATA.receber||{}, L=lojasR();
   const nRec=L.reduce((a,l)=>a+(RC[l.cod]||[]).reduce((b,pd)=>b+pd.cam+pd.falta,0),0);
@@ -961,10 +990,15 @@ function vVendidos(){
     <button class="btn${VSUB==='rec'?' p':''}" data-vs="rec" aria-pressed="${VSUB==='rec'}">A receber${nRec?` (${f0(nRec)})`:''}</button></div>`;
   let corpo='';
   if(VSUB==='top'){
-    const per=V.fonte==='baixa'?`Venda de ${V.dias} dia${V.dias>1?'s':''} (${dm(V.de)} a ${dm(V.ate)}), pela baixa de estoque das lojas. Inclui saídas por remanejamento.`
-      :'O histórico diário do estoque começou agora. Até completar 7 dias, aparece o ranking dos últimos 14 dias do sistema, que lista só os campeões de cada loja.';
-    const itens=V.itens.map(x=>{const ls=Object.entries(x.lojas).filter(([c])=>inReg(c)&&LJ[c]).sort((a,b)=>b[1]-a[1]);return {...x,ls,t:ls.reduce((a,[,q])=>a+q,0)}}).filter(x=>x.t>0).sort((a,b)=>b.t-a.t).slice(0,30);
-    corpo=`<p class="lead">${per}</p>`+(itens.length?`<div style="display:grid;gap:10px">
+    const temDia=Object.keys(DATA.vdia||{}).length>0;
+    if(!VPER&&temDia)vAtalho(7);
+    const desde=DATA.vdiaDesde||'2026-11-03', base=VPER&&temDia?vItensPer():V.itens;
+    const nDias=VPER?Object.keys(vDias()).filter(d=>d>=VPER.de&&d<=VPER.ate).length:0;
+    const per=VPER&&temDia?(nDias?`Venda de ${dm(VPER.de)} a ${dm(VPER.ate)} (${nDias} dia${nDias>1?'s':''} com dado), pela baixa de estoque das lojas. Inclui saídas por remanejamento.`:`Nenhum dia com dado entre ${dm(VPER.de)} e ${dm(VPER.ate)}. A venda por dia existe a partir de ${dm(desde)}.`)
+      :`A venda por dia começou a ser guardada em ${dm(desde)}/${desde.slice(0,4)}: o período só vale a partir dessa data. Por enquanto aparece o ranking dos últimos 14 dias do sistema, que lista só os campeões de cada loja.`;
+    const bPer=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><button type="button" class="btn${VCAL?' p':''}" data-vcal aria-expanded="${VCAL}">📅 Período${VPER?`: ${dm(VPER.de)} a ${dm(VPER.ate)}`:''}</button></div>`;
+    const itens=base.map(x=>{const ls=Object.entries(x.lojas).filter(([c])=>inReg(c)&&LJ[c]).sort((a,b)=>b[1]-a[1]);return {...x,ls,t:ls.reduce((a,[,q])=>a+q,0)}}).filter(x=>x.t>0).sort((a,b)=>b.t-a.t).slice(0,30);
+    corpo=bPer+(VCAL?vCalendario():'')+`<p class="lead">${per}</p>`+(itens.length?`<div style="display:grid;gap:10px">
       ${itens.map((x,i)=>`<div class="card" style="display:flex;gap:12px;align-items:flex-start;min-width:0;margin:0">
         <b style="min-width:26px;font-size:20px">${i+1}º</b>${foto(x.ref,76)}
         <div style="min-width:0;flex:1"><b style="display:block">${esc(x.desc)}</b><small>${x.ref}${x.sub?' · '+esc(x.sub):''}</small>
@@ -986,8 +1020,13 @@ function vVendidos(){
         ${pd.itens.map(i=>`<tr><td class="prod">${comFoto(i.refe,`<b>${esc(i.desc)}</b><small>${i.refe}</small>`)}</td><td>${esc(i.cor||'')}</td><td class="n"><b>${f0(i.cam+i.falta)}</b> <small>${i.par?'pares':'peças'}</small></td></tr>`).join('')}</tbody></table></div></div>`).join('')}</details>`).join('')
       :`<div class="card"><p class="note">Nenhum pedido do CD a receber em ${REG==='U'?'as 3 regionais':REGS[REG]}.</p></div>`);
   }
-  $('#v-vendidos').innerHTML=`<div><h2>${VSUB==='top'?'Mais vendidos da semana':'A receber do CD'}</h2></div>`+seg+corpo;
+  $('#v-vendidos').innerHTML=`<div><h2>${VSUB==='top'?'Mais vendidos':'A receber do CD'}</h2></div>`+seg+corpo;
   document.querySelectorAll('#v-vendidos [data-vs]').forEach(b=>b.onclick=()=>{VSUB=b.dataset.vs;vVendidos()});
+  const on=(s,f)=>document.querySelectorAll('#v-vendidos '+s).forEach(b=>b.onclick=()=>{f(b);vVendidos()});
+  on('[data-vcal]',()=>{VCAL=!VCAL});
+  on('[data-vat]',b=>{vAtalho(+b.dataset.vat);VCAL=false});
+  on('[data-vm]',b=>{const [a,m]=VMES.split('-').map(Number),d=new Date(a,m-1+ +b.dataset.vm,1);VMES=isoD(d).slice(0,7)});
+  on('[data-dia]',b=>{const d=b.dataset.dia;if(!VCLK||!VPER){VPER={de:d,ate:d};VCLK=1}else{VPER=d<VPER.de?{de:d,ate:VPER.de}:{de:VPER.de,ate:d};VCLK=0;VCAL=false}});
 }
 
 /* ---------- Parados e liquidação ---------- */
