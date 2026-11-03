@@ -257,6 +257,12 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .alerta .ana{text-align:left;display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none;color:var(--cream);font-size:14.5px;line-height:1.4}
 .alerta .ana li{background:#ffffff0d;border-radius:6px;padding:7px 9px}
 .alerta .ana b{color:#ffd25a}
+/* calendário: escolhe um dia fechado do mês e a tela "ontem" do reator + o ranking passam a ser daquele dia */
+.diaSel{display:flex;justify-content:center;align-items:center;gap:6px;margin:8px auto 0;max-width:520px;position:relative}
+.diaSel button{border:1px solid var(--gold);background:#00000066;color:var(--cream);font-family:var(--f-num);font-size:18px;letter-spacing:.08em;padding:7px 14px 4px;border-radius:4px;cursor:pointer}
+.diaSel button.on{background:linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));color:var(--ink)}
+.diaSel .x{font-size:14px;padding:6px 10px 5px;border-color:#ffffff40;color:var(--sand)}
+.diaSel input{position:absolute;left:50%;top:0;width:1px;height:1px;opacity:0;pointer-events:none}
 /* contagiros digital da rede, pequeno, embaixo do reator (só nas visões de regional) */
 .tacho{display:flex;flex-direction:column;align-items:center;margin:-6px auto 4px;width:168px}
 .tacho svg{width:168px;height:96px;overflow:visible}

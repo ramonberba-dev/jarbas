@@ -256,6 +256,12 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .alerta .ana{text-align:left;display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none;color:var(--cream);font-size:14.5px;line-height:1.4}
 .alerta .ana li{background:#ffffff0d;border-radius:6px;padding:7px 9px}
 .alerta .ana b{color:#ffd25a}
+/* calendário: escolhe um dia fechado do mês e a tela "ontem" do reator + o ranking passam a ser daquele dia */
+.diaSel{display:flex;justify-content:center;align-items:center;gap:6px;margin:8px auto 0;max-width:520px;position:relative}
+.diaSel button{border:1px solid var(--gold);background:#00000066;color:var(--cream);font-family:var(--f-num);font-size:18px;letter-spacing:.08em;padding:7px 14px 4px;border-radius:4px;cursor:pointer}
+.diaSel button.on{background:linear-gradient(160deg,var(--gold-l),#c99332 60%,var(--gold-d));color:var(--ink)}
+.diaSel .x{font-size:14px;padding:6px 10px 5px;border-color:#ffffff40;color:var(--sand)}
+.diaSel input{position:absolute;left:50%;top:0;width:1px;height:1px;opacity:0;pointer-events:none}
 /* contagiros digital da rede, pequeno, embaixo do reator (só nas visões de regional) */
 .tacho{display:flex;flex-direction:column;align-items:center;margin:-6px auto 4px;width:168px}
 .tacho svg{width:168px;height:96px;overflow:visible}
@@ -413,6 +419,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <!-- INÍCIO -->
       <section class="view on" id="tela-inicio">
         <div id="selLojaBox" class="panel" hidden><label class="f">Ver a rede, a regional ou a loja<select class="inp" id="selLoja"></select></label></div>
+        <div class="diaSel" id="diaSel" hidden><button type="button" id="bDia">📅 ESCOLHER DIA</button><button type="button" class="x" id="bDiaX" hidden aria-label="Voltar para ontem">✕ ONTEM</button><input type="date" id="iDia" tabindex="-1" aria-hidden="true"></div>
         <div class="car" id="car" aria-label="Reator: deslize para trocar entre meta proporcional e dia"></div>
         <div id="tacho" hidden></div>
         <div class="dots" id="dots"><button class="on" aria-label="Venda de hoje"></button><button aria-label="Venda de ontem"></button><button aria-label="Venda acumulada"></button><span>deslize ›</span></div>
@@ -1067,7 +1074,7 @@ async function api(acao,extra={}){
 }
 
 /* ---------- estado ---------- */
-const S={pin:guarda.get('jarbas_pin'),perfil:null,D:null,rotina:[],demandas:[],cod:'',hoje:hojeISO(),pilar:null,resp:{},fotos:{},novas:{},fila:null};
+const S={pin:guarda.get('jarbas_pin'),perfil:null,D:null,dia:null,rotina:[],demandas:[],cod:'',hoje:hojeISO(),pilar:null,resp:{},fotos:{},novas:{},fila:null};
 const PIL={};ROTINA.forEach(p=>PIL[p.id]=p);
 
 /* ---------- login ---------- */
@@ -1236,7 +1243,7 @@ $('#pdSub').textContent=`Ontem ${p1(pOntem)} · mês ${p1(pMes)} · atualizado $
       `<optgroup label="Lojas da Regional Ramon">${L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('')}</optgroup>`;
     $('#selLoja').onchange=async e=>{const v=e.target.value;S.esc=v.startsWith('reg:')?v.slice(4):'R';if(v.startsWith('reg:')&&!S.cod){iniciar();return}S.cod=v.startsWith('reg:')?'':v;try{await carregar()}catch(err){toast(err.message)}}}
   if(S.perfil.master)$('#selLoja').value=S.cod||(E==='R'?'':'reg:'+E); // o seletor sempre mostra a visão atual
-  rReator(V,LS,RA,ESC[E]);rInicio();
+  if(S.dia){const X=vistaDia(V,E);rReator(X.V,X.L,X.R,ESC[E])}else rReator(V,LS,RA,ESC[E]);rDiaSel(V);rInicio();
   $('#atualizado').textContent=`Painel com dias fechados até ${V.ate} · enviado ao app ${S.atualizado?new Date(S.atualizado).toLocaleString('pt-BR').slice(0,16):''}`;
   ir(location.hash.slice(1)||'inicio');
   setTimeout(()=>{try{alVerifica()}catch{}},1500);
@@ -1320,6 +1327,27 @@ function rRitmo(L,l,nomeVisao,rede,TD,P,hora){
   box.innerHTML=`<div class="panel ritmo"><h3>Ritmo de hoje · parcial das ${esc(hora)}</h3><p class="note" style="margin:0">100% = a venda que a loja costuma ter até esta hora para bater a meta do dia (curva de cada loja, por dia da semana).</p><div class="cgs">${cgs.join('')}</div><details class="rv"${S.rvAberto?' open':''}><summary>🌡 Ritmo de venda ${l?'da loja':'por loja'}</summary>${corpo}</details></div>`;
   box.querySelector('.rv').addEventListener('toggle',e=>{S.rvAberto=e.target.open}); // termômetros escondidos até tocar no botão
 }
+// calendário: um dia fechado do mês no lugar de "ontem" (reator do dia, ranking do dia e conta-giros do dia); o acumulado não muda
+const dmISO=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'';
+function vistaDia(V,E){
+  const dd=dmISO(S.dia),troca=x=>{const r=(x.dmes||[]).find(d=>d[0]===dd)||[dd,0,0];return {...x,ontem:r[1]||0,meta_ontem:r[2]||0,pa_ontem:null}};
+  const L=V.lojas.map(troca),TD=(V.todas||V.lojas).map(troca),regs={};
+  for(const k in V.regs){const X=TD.filter(x=>x.reg===k);regs[k]={...V.regs[k],ontem:X.reduce((s,x)=>s+x.ontem,0),meta_ontem:X.reduce((s,x)=>s+x.meta_ontem,0)}}
+  const V2={...V,lojas:L,todas:V.todas?TD:undefined,regs,ateDia:dd};
+  const LS=E==='R'?L:E==='U'?TD:TD.filter(x=>x.reg===E);
+  const RA=E==='R'?regs.R:E==='U'?Object.values(regs).reduce((s,g)=>{for(const k of ['venda','meta_mes','meta_periodo','ontem','meta_ontem','meta_hoje'])s[k]=(s[k]||0)+(g[k]||0);return s},{}):regs[E];
+  return {V:V2,L:LS,R:RA};
+}
+// só dias fechados do mês corrente do painel (1º até o último dia fechado); sem a lista do mês, o botão fica escondido
+function rDiaSel(V){
+  const d=(V.lojas.find(x=>(x.dmes||[]).length)||{}).dmes||[],ano=S.hoje.slice(0,4),iso=s=>ano+'-'+s.slice(3,5)+'-'+s.slice(0,2);
+  $('#diaSel').hidden=!d.length;if(!d.length)return;
+  const i=$('#iDia');i.min=iso(d[0][0]);i.max=iso(d[d.length-1][0]);i.value=S.dia||i.max;
+  $('#bDia').textContent='📅 '+(S.dia?'DIA '+dmISO(S.dia):'ESCOLHER DIA');$('#bDia').classList.toggle('on',!!S.dia);$('#bDiaX').hidden=!S.dia}
+$('#bDia').onclick=()=>{const i=$('#iDia');try{i.showPicker()}catch{i.focus();i.click()}};
+$('#bDiaX').onclick=()=>{S.dia=null;iniciar()};
+$('#iDia').onchange=e=>{const v=e.target.value,i=e.target;if(v&&(v<i.min||v>i.max)){toast('Escolha um dia deste mês, até o último dia fechado.');return}
+  S.dia=v&&v!==i.max?v:null;iniciar();piscaReator($$('#car .core')[S.dia?1:0])};
 function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const l=S.cod?L.find(x=>x.cod===S.cod):null, a=l||R, nome=l?l.nome:nomeVisao;
   const pProp=pct(a.venda,a.meta_periodo), pDia=pct(a.ontem,a.meta_ontem);
@@ -1332,20 +1360,20 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const capAcum=`${esc(nome)} · meta até ${esc(V.ate)} <b>${mil(a.meta_periodo)}</b><br>${a.venda>=a.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(a.meta_periodo-a.venda))}</b> · meta do mês ${p1(pct(a.venda,a.meta_mes))}`;
   const sHoje=hj&&hj.m?sl(pct(hj.v,hj.m),'VENDA DE HOJE',Math.round(pct(hj.v,hj.m))+'%',brl(hj.v),`Até a carga das <b>${esc(hora)}</b> · meta do dia ${brl(hj.m)}<br>Faltam <b>${brl(Math.max(hj.m-hj.v,0))}</b>${hj.a?` · P.A. ${hj.p?num(hj.p/hj.a):'—'} · ${hj.a} atend.`:''}`)
     :sl(0,'VENDA DE HOJE','—','aguardando',`A venda de hoje aparece com a primeira carga da parcial<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`);
-  const sOntem=sl(pDia,'VENDA DE ONTEM',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>${a.ontem>=a.meta_ontem?'Acima em':'Faltaram'} <b>${brl(Math.abs(a.meta_ontem-a.ontem))}</b>`);
+  const sOntem=sl(pDia,V.ateDia?'VENDA DE '+V.ateDia:'VENDA DE ONTEM',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ateDia||V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>${a.ontem>=a.meta_ontem?'Acima em':'Faltaram'} <b>${brl(Math.abs(a.meta_ontem-a.ontem))}</b>`);
   const sAcum=sl(pProp,'VENDA ACUMULADA',Math.round(pProp)+'%',mil(a.venda),capAcum);
   $('#car').innerHTML=sHoje+sOntem+sAcum;
   const rks=[
     P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome+(P.lojas[x.cod].fonte==='gerente'?' ✍':''),v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
       +(L.some(x=>P.lojas[x.cod]?.fonte==='gerente')?`<p class="note" style="margin:-6px 0 10px">✍ venda enviada pelo gerente na parcial, maior que a do flash.</p>`:'')
       :`<div class="panel rankdia"><h3>Ranking de hoje</h3><p class="note" style="margin:0">Aparece quando chegar a primeira carga da parcial do dia.</p></div>`,
-    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),`Ranking de ontem · ${esc(V.ate)}`,S.cod)||`<div class="panel rankdia"><h3>Ranking de ontem</h3><p class="note" style="margin:0">Ainda sem dia fechado neste mês: aparece com o painel de amanhã.</p></div>`,
+    rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),V.ateDia?`Ranking de ${esc(V.ateDia)}`:`Ranking de ontem · ${esc(V.ate)}`,S.cod)||`<div class="panel rankdia"><h3>Ranking ${V.ateDia?'de '+esc(V.ateDia):'de ontem'}</h3><p class="note" style="margin:0">Ainda sem dia fechado neste mês: aparece com o painel de amanhã.</p></div>`,
     rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.venda,m:x.meta_periodo,a:x.atend})),`Ranking acumulado · meta até ${esc(V.ate)}`,S.cod)||`<div class="panel rankdia"><h3>Ranking acumulado</h3><p class="note" style="margin:0">Ainda sem dia fechado neste mês: aparece com o painel de amanhã.</p></div>`];
   // rede para o contagiros: hoje (parcial de todas as lojas), ontem e acumulado
   const RD=Object.values(V.regs||{}).reduce((s,g)=>{for(const k of ['venda','meta_periodo','ontem','meta_ontem','meta_hoje'])s[k]=(s[k]||0)+(g[k]||0);return s},{});
   const vHoje=P?Object.values(P.lojas).reduce((s,x)=>s+(+x.venda||0),0):0;
   // regionais: um contagiros com a rede · rede: três contagiros, um por regional (Ramon, Tuanne, Mandu)
-  const PER=['hoje','ontem','acumulado'],NREG={R:'Ramon',T:'Tuanne',M:'Mandu'},TD=V.todas||[];
+  const PER=['hoje',V.ateDia||'ontem','acumulado'],NREG={R:'Ramon',T:'Tuanne',M:'Mandu'},TD=V.todas||[];
   const hojeReg=k=>P?TD.filter(x=>x.reg===k).reduce((s,x)=>s+(+P.lojas[x.cod]?.venda||0),0):0;
   const pReg=(g,k,i)=>!g?NaN:i===0?(P?pct(hojeReg(k),g.meta_hoje):NaN):i===1?pct(g.ontem,g.meta_ontem):pct(g.venda,g.meta_periodo);
   const pRede=[P?pct(vHoje,RD.meta_hoje):NaN,pct(RD.ontem,RD.meta_ontem),pct(RD.venda,RD.meta_periodo)];
@@ -1358,6 +1386,8 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   rks[0]=avisoTI(semHoje)+rks[0];rks[1]=avisoTI(semOntem)+rks[1];
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   car.dataset.i=0;car._rk=rks;car._tc=mostraT?tc:null;$('#rankDia').innerHTML=rks[0];
+  // dia escolhido no calendário: abre direto na tela do dia, com o ranking daquele dia
+  if(V.ateDia){car.dataset.i=1;requestAnimationFrame(()=>{car.scrollLeft=car.clientWidth});dots.forEach((d,k)=>d.classList.toggle('on',k===1));$('#rankDia').innerHTML=rks[1];$('#ritmo').hidden=true;if(mostraT)$('#tacho').innerHTML=tc[1]}
   if(!car.dataset.ok){car.dataset.ok=1;car.addEventListener('scroll',()=>requestAnimationFrame(()=>{const i=Math.round(car.scrollLeft/car.clientWidth);dots.forEach((d,k)=>d.classList.toggle('on',k===i));
       if(i!=car.dataset.i){car.dataset.i=i;piscaReator(car.querySelectorAll('.core')[i]);if(car._rk?.[i])$('#rankDia').innerHTML=car._rk[i];$('#ritmo').hidden=i!==0;if(car._tc?.[i])$('#tacho').innerHTML=car._tc[i]}}));
     dots.forEach((d,k)=>d.addEventListener('click',()=>car.scrollTo({left:k*car.clientWidth,behavior:'smooth'})))}
