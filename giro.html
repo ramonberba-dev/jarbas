@@ -1068,13 +1068,15 @@ aplicaId('jarbas'); render();
   const api=o=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({pin},o)),redirect:'follow'}).then(r=>r.json());
   api({acao:'giro'}).then(r=>{
     if(!r.ok){$('#eMsg').innerHTML=(r.msg||'Não deu certo.')+'<br><br><a class="voltaJ" href="index.html">‹ VOLTAR AO JARBAS</a>';return}
-    window.PLAT={DATA:r.dados,nome:'Supervisão',emails:r.emails||{},regs:r.regs||undefined,
-      salvaEmails:e=>api({acao:'salvarEmailsGiro',emails:e}).catch(()=>{}),
-      enviar:async m=>{try{return await api(Object.assign({acao:'enviarGiro'},m))}catch(e){return {ok:false,msg:'Sem conexão com o servidor. Confira se o e-mail saiu antes de tentar de novo.'}}},
+    const so=!!r.somenteVer; // acesso do planejamento: só consulta, sem envio de e-mail às lojas
+    window.PLAT={DATA:r.dados,nome:so?'Planejamento':'Supervisão',emails:r.emails||{},regs:r.regs||undefined,
+      salvaEmails:so?undefined:e=>api({acao:'salvarEmailsGiro',emails:e}).catch(()=>{}),
+      enviar:so?undefined:async m=>{try{return await api(Object.assign({acao:'enviarGiro'},m))}catch(e){return {ok:false,msg:'Sem conexão com o servidor. Confira se o e-mail saiu antes de tentar de novo.'}}},
       pedir:(texto,ctx)=>api({acao:'pedidoGiro',texto,ctx}).catch(()=>({ok:false,msg:'Sem conexão com o servidor.'}))};
     $('#espera').remove();
     new Function(document.getElementById('appjs').textContent)();
     const v=document.createElement('a');v.className='voltaJ';v.href='index.html#inicio';v.textContent='‹ VOLTAR';v.setAttribute('aria-label','Voltar ao início do Jarbas');
+    if(so){v.textContent='SAIR';v.setAttribute('aria-label','Sair do Jarbas');v.onclick=e=>{e.preventDefault();try{localStorage.removeItem('jarbas_pin')}catch(x){}location.replace('index.html')}}
     const br=document.getElementById('brand');br.parentNode.insertBefore(v,br);
     // data e hora da última atualização do estoque, sempre visível no topo
     const D=r.dados,g=String(D.geradoEm||'').split(', '),at=document.createElement('div');at.className='atuJ';

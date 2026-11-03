@@ -1124,6 +1124,7 @@ async function carregar(){
   S.perfil=j.perfil;S.D=j.painel;S.parcial=j.parcial;S.rotina=j.rotina||[];S.demandas=j.demandas||[];S.atualizado=j.atualizado;S.checkHab=j.checkHab;
   // franquia e consultor de campo só têm o lado Franquias; o Ramon e o Guto voltam para o último lado que usaram
   if(S.perfil.franquia||S.perfil.consultor||(S.perfil.franq&&guarda.get('jarbas_lado')==='fq'&&!carregar.ficou)){guarda.set('jarbas_pin',S.pin);location.replace('franquias.html');await new Promise(()=>{})}
+  if(S.perfil.estoque){guarda.set('jarbas_pin',S.pin);location.replace('giro.html');await new Promise(()=>{})} // planejamento: só o ESTOQUE
   carregar.ficou=true;
   if(!S.perfil.master)S.cod=S.perfil.cod;
   if(!S.D){$('#erroLogin').textContent='O painel ainda não chegou ao servidor. Ele é enviado todo dia de manhã.';throw new Error('Sem dados do painel ainda.')}
