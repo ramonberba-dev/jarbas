@@ -2230,7 +2230,7 @@ async function eqEquipe(){
     <label class="f" style="max-width:150px">Situação<select class="inp" id="eqSit">${[['ativos','Ativos'],['inativos','Inativos'],['todos','Todos']].map(([v,t])=>`<option value="${v}"${EQ.sit===v?' selected':''}>${t}</option>`).join('')}</select></label></div>
     <div class="acts" style="justify-content:space-between"><button class="btn ghost sm" type="button" id="eqIncluir">+ Incluir vendedor</button><button class="btn sm" type="button" id="eqProcurar">Atualizar lista</button></div></div>
     <div class="eqv" id="eqLista"><p class="empty">Carregando os vendedores…</p></div>`;
-  $('#eqIncluir').onclick=()=>eqPergunta('Incluir vendedor','Hoje só o acesso do TI tem a inclusão no Sistema Corporativo (o cadastro vem do PEC feito pelo DP). Quando o botão aparecer para a supervisão, ele entra aqui no Jarbas.','Entendi');
+  $('#eqIncluir').onclick=()=>eqNovo();
   const ler=async()=>{EQ.busca=$('#eqBusca').value.trim();EQ.sit=$('#eqSit').value;const q=EQ.busca,dig=q.replace(/\D/g,'');
     const filtro=!q?{filial:l.filial}:/^\d{11}$/.test(dig)?{cpf:dig}:/^\d{1,6}$/.test(q)?{vendedor:q}:{nome:q};
     $('#eqLista').innerHTML='<p class="empty">Carregando os vendedores…</p>';
@@ -2254,6 +2254,38 @@ $('#eqBox').addEventListener('click',async e=>{
     if(!await eqPergunta(inat?'Inativar vendedor':'Ativar vendedor',`${inat?'Inativar':'Ativar'} <b>${esc(nome)}</b> (código ${esc(x.cel.Vendedor)}) na loja ${esc(x.cel.Loja)}?${inat?' Ele(a) deixa de poder vender no Linx.':''}`,inat?'Inativar':'Ativar',inat))return;
     if(await eqFaz(inat?'Inativando…':'Ativando…',()=>eqApi('scSituacao',{handler:f.handler,vendedor:f.campos.vendedor,nome})))$('#eqProcurar')?.click()}
 });
+/* novo vendedor: 1) CPF (o sistema procura no Linx e o código no Alterdata), 2) nome, loja, cargo e admissão -> cria no Linx */
+function eqNovo(cpf=''){
+  const d=eqDlg(`<h3>Incluir vendedor</h3><p class="note">Comece pelo CPF: o Sistema Corporativo procura no Linx e o código no Alterdata (criado pelo Pack a partir do cadastro do DP).</p>
+    <label class="f">CPF<input class="inp" id="nCpf" inputmode="numeric" placeholder="000.000.000-00" value="${esc(cpf)}" autocomplete="off"></label>
+    <div class="acts"><button class="btn ghost" data-r="0">Cancelar</button><button class="btn" data-r="1">Consultar</button></div>`);
+  const ir=async()=>{const c=d.querySelector('#nCpf').value.replace(/\D/g,'');if(c.length!==11){toast('O CPF tem 11 números.');return}
+    d.remove();const f=eqEspera('Consultando o CPF no Linx e no Alterdata…');let j;
+    try{j=await eqApi('scNovoConsultar',{cpf:c})}catch(err){f();await eqPergunta('Não consultou',esc(err.message),'Entendi');return eqNovo(c)}f();eqNovoForm(j)};
+  d.querySelector('#nCpf').focus();d.querySelector('#nCpf').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ir()}});
+  d.addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b&&e.target!==d)return;if(!b||b.dataset.r==='0'){d.remove();return}ir()});
+}
+function eqNovoForm(j){
+  const cpfF=j.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'),avisos=(j.avisos||[]).map(a=>`<p class="note">${esc(a)}</p>`).join('');
+  if(!j.pode)return eqPergunta('Incluir vendedor',`CPF <b>${esc(cpfF)}</b>${j.badge?` · ${esc(j.badge)}`:''}${avisos||'<p>O sistema não abriu o cadastro para este CPF.</p>'}`,'Entendi');
+  const lj=eqLoja().filial,op=(a,v)=>a.map(o=>`<option value="${esc(o.v)}"${o.v===v?' selected':''}>${esc(o.t)}</option>`).join('');
+  const d=eqDlg(`<h3>Incluir vendedor</h3><p><b>CPF ${esc(cpfF)}</b>${j.badge?` <span class="eqbadge">${esc(j.badge)}</span>`:''}</p>
+    <label class="f">Nome completo<input class="inp" id="nNome" maxlength="60" style="text-transform:uppercase" value="${esc(j.nome)}" autocomplete="off"></label><small class="note">Até 40 letras no Linx (sem acento).</small>
+    <label class="f" style="margin-top:8px">Loja<select class="inp" id="nLoja"><option value="">(escolha a loja)</option>${op(j.filiais||[],(j.filiais||[]).some(o=>o.v===lj)?lj:'')}</select></label>
+    <label class="f" style="margin-top:8px">Cargo<select class="inp" id="nCargo">${op(j.cargos||[],'VENDEDOR')}</select></label><small class="note">Sub-gerente = VENDEDOR.</small>
+    <label class="f" style="margin-top:8px">Admissão<input class="inp" type="date" id="nAdm" value="${esc(j.admissao)}"></label>
+    ${(j.extras||[]).map((x,i)=>`<label class="f" style="margin-top:8px">${esc(x.nome)}<select class="inp" data-x="${esc(x.nome)}">${op(x.opcoes,'')}</select></label>`).join('')}
+    <p class="note" style="margin-top:10px">Código do Alterdata: <b>${esc(j.alterdata||'—')}</b></p>${avisos}
+    <div class="acts"><button class="btn ghost" data-r="0">Cancelar</button><button class="btn ghost" data-r="2">Consultar de novo</button><button class="btn" data-r="1">Criar vendedor</button></div>`);
+  d.addEventListener('click',async e=>{const b=e.target.closest('[data-r]');if(!b&&e.target!==d)return;if(!b||b.dataset.r==='0'){d.remove();return}
+    if(b.dataset.r==='2'){d.remove();return eqNovo(cpfF)}
+    const nome=d.querySelector('#nNome').value.trim().toUpperCase(),filial=d.querySelector('#nLoja').value,cargo=d.querySelector('#nCargo').value,admissao=d.querySelector('#nAdm').value;
+    if(!nome||!filial||!cargo||!admissao){toast('Preencha nome, loja, cargo e admissão.');return}
+    const extras={};d.querySelectorAll('[data-x]').forEach(s=>extras[s.dataset.x]=s.value);
+    const tl=d.querySelector('#nLoja').selectedOptions[0].text;d.remove();
+    if(!await eqPergunta('Confirmar inclusão',`Criar <b>${esc(nome)}</b> (CPF ${esc(cpfF)}) na loja <b>${esc(tl)}</b> como <b>${esc(cargo)}</b>, admissão ${esc(admissao.split('-').reverse().join('/'))}? Grava no Linx e fica no histórico do sistema com o seu login.`,'Criar vendedor'))return;
+    if(await eqFaz('Criando no Sistema Corporativo…',()=>eqApi('scNovoCriar',{cpf:j.cpf,campos:j.campos,extras,nome,filial,cargo,admissao}))){$('#eqBusca').value=j.cpf;$('#eqProcurar')?.click()}});
+}
 async function eqMudar(x){
   const f=eqEspera('Abrindo o cadastro…');let j;try{j=await eqApi('scEditar',{editar:x.editar})}catch(err){f();return eqPergunta('Não abriu',esc(err.message),'Entendi')}f();
   const op=(a,v)=>a.map(o=>`<option value="${esc(o.v)}"${o.v===v?' selected':''}>${esc(o.t)}</option>`).join('');
