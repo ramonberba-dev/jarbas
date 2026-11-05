@@ -2170,6 +2170,7 @@ $('#bMic').onclick=()=>{
 const nomeSetor=k=>k==='guto'?'Relatório completo · Guto (Augusto Bandeira)':SETORES[k]?.nome||k;
 const itensV=()=>{const a=[];CHECK.forEach(s=>s.itens.forEach(i=>{const r=V2.resp[i.id];if(r?.v)a.push({secao:s.t,item:i.t,status:ST[r.v],v:r.v,obs:r.o||'',setor:i.setor})}));return a};
 const fotosDeV=pred=>CHECK.flatMap(sc=>sc.itens.filter(pred).flatMap(i=>(V2.resp[i.id]?.fotos||[]).map(f=>f.id)));
+const fotosEnvio=e=>e.setor==='guto'||e.setor==='loja'?fotosDeV(()=>true):fotosDeV(i=>i.setor===e.setor); // sempre a lista atual: inclui foto tirada depois de gerar o relatório
 function montaEnvios(l){
   V2.envios=[{setor:'guto',para:'augustobandeira@somossonho.com.br',cc:'',assunto:`[${l.nome}] Relatório de supervisão · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,corpo:textoRelatorio(l),fotos:fotosDeV(()=>true),ok:true}]
     .concat((V2.rel.emails||[]).map(e=>{const cfg=SETORES[e.setor]||{};return {setor:e.setor,para:(cfg.para||[]).filter(x=>!x.startsWith('<')).join(', '),cc:(cfg.cc||[]).join(', '),assunto:`[${l.nome}] ${e.assunto||'Visita de supervisão'}`,corpo:e.corpo||'',
@@ -2242,7 +2243,7 @@ function rRel(){
       <label class="f">Para<input class="inp" data-f="para" value="${esc(e.para)}" placeholder="e-mails separados por vírgula"></label>
       <label class="f">Cópia<input class="inp" data-f="cc" value="${esc(e.cc)}"></label>
       <label class="f">Assunto<input class="inp" data-f="assunto" value="${esc(e.assunto)}"></label>
-      <label class="f">Texto<textarea class="inp" rows="6" data-f="corpo">${esc(e.corpo)}</textarea></label>${(e.fotos||[]).length?`<small class="selo">${e.fotos.length} foto(s) anexada(s)</small>`:''}</div>`).join('')+
+      <label class="f">Texto<textarea class="inp" rows="6" data-f="corpo">${esc(e.corpo)}</textarea></label>${fotosEnvio(e).length?`<small class="selo">${fotosEnvio(e).length} foto(s) anexada(s)</small>`:''}</div>`).join('')+
     `<div class="acts"><button class="btn" type="button" id="bEnviarEmails">Enviar e-mails marcados</button></div><p class="note">Os e-mails saem da conta ramonberba@somossonho.com.br. Só seguem endereços da empresa e da Credsystem. O relatório também fica registrado em Revisão › Relatórios.</p>`);
   if(S.perfil.master)$('#bEnviarEmails').onclick=enviarEmails;else $('#bEnviarSup').onclick=enviarSup;
 }
@@ -2272,8 +2273,8 @@ async function enviarEmails(){
   if(!b.dataset.c){b.dataset.c=1;b.textContent=`Confirmar envio de ${sel.length} e-mail(s)`;return}
   b.disabled=true;b.textContent='Enviando…';const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
   const sp=s=>s.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
-  try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo,fotos:e.fotos||[]})),registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel},texto:textoRelatorio(l),resumo:V2.rel?.resumo||'',fotosRel:fotosVisita()});
-    toast(`${j.enviados} e-mail(s) enviados`+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
+  try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo,fotos:fotosEnvio(e)})),registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel},texto:textoRelatorio(l),resumo:V2.rel?.resumo||'',fotosRel:fotosVisita()});
+    toast(`${j.enviados} e-mail(s) enviados`+(j.fotos!=null?` · ${j.fotos} foto(s) em anexo`:'')+(j.fotosFalhas?` · ATENÇÃO: ${j.fotosFalhas} foto(s) não foram`:'')+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
   }catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;b.textContent='Enviar e-mails marcados'}}
 
 /* ---------- EQUIPE: Sistema Corporativo pelo Jarbas (só supervisão/comercial) ---------- */
