@@ -1512,14 +1512,14 @@ $('#bEnviar').onclick=async()=>{
 async function carregarFila(){try{S.fila=await api('fila',{})}catch(err){toast(err.message);S.fila={rotina:[],demandas:[]}}}
 async function rGradeHoje(){
   if(!S.fila)await carregarFila();const L=window.__V.lojas,hoje=S.hoje,fixos=ROTINA.filter(p=>!p.semanal).length;
-  $('#gradeHoje').innerHTML='<b>LOJA</b><b>BASTÃO</b><b>ENVIADOS</b><b>APROV.</b><b>REFAZER</b>'+L.map(l=>{const rs=S.fila.rotina.filter(r=>r.cod===l.cod&&r.data===hoje&&!r.pilar.startsWith('dem:')&&r.pilar!=='semana');
+  $('#gradeHoje').innerHTML='<b>LOJA</b><b>BASTÃO</b><b>ENVIADOS</b><b>APROV.</b><b>REFAZER</b>'+L.map(l=>{const rs=S.fila.rotina.filter(r=>r.cod===l.cod&&r.data===hoje&&!r.pilar.startsWith('dem:')&&!r.pilar.startsWith('perdi:')&&r.pilar!=='semana');
     const env=rs.length,rb=rs.find(r=>r.pilar==='bastao'),bb=rb&&bastao(l,valBR(rb.respostas?.bastao1),hoje);
     return `<span>${esc(l.nome)}</span><span style="color:${!bb?'var(--sand)':bb.ok?'var(--ok)':'#ff8b95'}">${!rb?'—':!bb||!isFinite(bb.p)?'enviado':(bb.ok?'✓ ':'✗ ')+Math.round(bb.p)+'%'}</span><span style="color:${env>=fixos?'var(--ok)':env?'var(--gold)':'#ff8b95'}">${env}/${fixos}</span><span>${rs.filter(r=>r.status==='aprovado').length}</span><span>${rs.filter(r=>r.status==='reprovado').length}</span>`}).join('');
 }
 let rk='enviado';
 $('#rseg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rk=b.dataset.k;$$('#rseg button').forEach(x=>x.classList.toggle('on',x===b));rRevisao()});
 const nomeLoja=c=>(window.__V.lojas.find(l=>l.cod===c)||{}).nome||c;
-const tituloPil=pid=>pid.startsWith('dem:')?'Demanda: '+((S.fila?.demandas||[]).find(d=>'dem:'+d.id===pid)?.titulo||''):(PIL[pid]?.titulo||pid);
+const tituloPil=pid=>pid.startsWith('perdi:')?'Perdeu o horário: '+(PIL[pid.slice(6)]?.titulo||pid.slice(6)):pid.startsWith('dem:')?'Demanda: '+((S.fila?.demandas||[]).find(d=>'dem:'+d.id===pid)?.titulo||''):(PIL[pid]?.titulo||pid);
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const nomeMes=ym=>MESES[+ym.slice(5,7)-1]+' de '+ym.slice(0,4);
 const ehLoja=r=>String(r.autor||'').startsWith('Gerente');
@@ -1527,14 +1527,14 @@ const ehLoja=r=>String(r.autor||'').startsWith('Gerente');
 function entregasHoje(){
   const dia=S.hoje,TD=window.__V.todas||window.__V.lojas,rot=(S.fila?.rotina||[]).filter(r=>r.data===dia),agora=new Date().toTimeString().slice(0,5);
   const med=(l,pid,campo,hm)=>{const r=rot.find(x=>x.cod===l.cod&&x.pilar===pid),venceu=agora>=(hm||(l.tipo==='SH'?'21:50':'19:50'));
-    if(!r)return {hora:hm||'fechamento',enviou:false,venceu};const v=valBR(r.respostas?.[campo]),f=hm?fracDia(l.cod,l.tipo,dia,hm):1,pede=Math.round(l.meta_hoje*(f??1));
+    if(!r){const pj=rot.find(x=>x.cod===l.cod&&x.pilar==='perdi:'+pid);return pj?{hora:hm||'fechamento',enviou:false,venceu,justificou:pj.respostas?.justificativa||''}:{hora:hm||'fechamento',enviou:false,venceu}}const v=valBR(r.respostas?.[campo]),f=hm?fracDia(l.cod,l.tipo,dia,hm):1,pede=Math.round(l.meta_hoje*(f??1));
     return {hora:hm||'fechamento',enviou:true,venda:v,ritmo_pede:pede,pct:pede>0?Math.round(v/pede*100):null}};
   const tb=temBastao(dia);
   return TD.filter(l=>l.meta_hoje>0).map(l=>({l,b:tb?med(l,'bastao','bastao1',horaBastao(l)):{folga:true},p14:med(l,'p14','p181','14:00'),p18:med(l,'p18','p181','18:00'),fe:med(l,'fecha','fecha1',null)}));
 }
 function rEntregas(){
   const E=entregasHoje(),NREG={R:'Ramon',T:'Tuanne',M:'Mandu'};
-  const cel=m=>m.folga?'<span style="color:var(--sand)">—</span>':!m.enviou?`<span style="color:${m.venceu?'#ff8b95':'var(--sand)'}">${m.venceu?'não enviou':'·'}</span>`:m.pct==null?'enviado':`<span style="color:${m.pct>=100?'var(--ok)':m.pct>=90?'var(--gold)':'#ff8b95'}">${m.pct>=100?'✓':'✗'} ${m.pct}%</span>`;
+  const cel=m=>m.folga?'<span style="color:var(--sand)">—</span>':!m.enviou&&m.justificou!=null?`<span style="color:var(--gold)" title="${esc(m.justificou)}">📝 perdeu · justificou</span>`:!m.enviou?`<span style="color:${m.venceu?'#ff8b95':'var(--sand)'}">${m.venceu?'não enviou':'·'}</span>`:m.pct==null?'enviado':`<span style="color:${m.pct>=100?'var(--ok)':m.pct>=90?'var(--gold)':'#ff8b95'}">${m.pct>=100?'✓':'✗'} ${m.pct}%</span>`;
   const kb=m=>m.folga?1e9:!m.enviou?(m.venceu?-1:1e9):m.pct??1e8,ord=[...E].sort((a,b)=>kb(a.b)-kb(b.b));
   return `<div class="panel" id="entregas"><h3>Entregas de hoje · ritmo e passagem de bastão</h3><p class="note" style="margin:0 0 8px">% = venda enviada pela loja ÷ venda que o ritmo da loja pede até aquele horário (fechamento: ÷ meta do dia). Bastão às 12h na rua e às 14h no shopping (não tem no domingo e no feriado).</p>
    <div style="overflow-x:auto"><div class="grade" style="grid-template-columns:minmax(110px,1fr) repeat(4,auto);min-width:330px"><b>LOJA</b><b>BASTÃO</b><b>14H</b><b>18H</b><b>FECH.</b>${ord.map(x=>`<span>${esc(x.l.nome)}${x.l.reg?` <small class="note">${NREG[x.l.reg]||''}</small>`:''}</span><span>${cel(x.b)}</span><span>${cel(x.p14)}</span><span>${cel(x.p18)}</span><span>${cel(x.fe)}</span>`).join('')}</div></div>
@@ -1570,7 +1570,7 @@ async function rRevisao(){
   $('#listaRev').innerHTML=lista.length?lista.map(r=>`<button class="li" data-rev="${esc(r.id)}"><span>${esc(nomeLoja(r.cod))} · ${esc(tituloPil(r.pilar))}<small>${dataBR(r.data)}${r.parecer?' · '+esc(r.parecer):''}</small></span>${tagSt(r)}</button>`).join(''):'<p class="empty">Nada aqui.</p>';
 }
 $('#listaRev').addEventListener('click',async e=>{const b=e.target.closest('[data-rev]');if(!b)return;const r=S.fila.rotina.find(x=>x.id===b.dataset.rev);
-  const p=r.pilar.startsWith('dem:')?{itens:[{id:'r',l:'Resposta'},{id:'f',l:'Foto'}]}:PIL[r.pilar];
+  const p=r.pilar.startsWith('dem:')?{itens:[{id:'r',l:'Resposta'},{id:'f',l:'Foto'}]}:r.pilar.startsWith('perdi:')?{itens:[{id:'horario',l:'Horário perdido'},{id:'hora_relato',l:'Relatou às'},{id:'justificativa',l:'Justificativa'}]}:PIL[r.pilar];
   const linhas=(p?.itens||[]).map(it=>{const v=r.respostas[it.id],o=r.respostas[it.id+'_obs'],f=(r.fotos[it.id]||[]);if(v==null&&!f.length)return '';
     return `<div class="it"><span class="l">${esc(it.l)}</span><b>${esc(v==='sim'?'Sim':v==='nao'?'Não':v??'')}</b>${o?`<span class="note">${esc(o)}</span>`:''}${f.map(id=>`<img data-fid="${esc(id)}" alt="Foto">`).join('')}</div>`}).join('');
   $('#verRev').hidden=false;$('#verRev').innerHTML=`<h3>${esc(nomeLoja(r.cod))} · ${esc(tituloPil(r.pilar))} · ${dataBR(r.data)}</h3>${linhas}
@@ -2402,25 +2402,46 @@ function alMostra(a,dia){
   const d=document.createElement('div');d.className='alerta'+(a.bastao?' calmo':'');d.setAttribute('role','alertdialog');
   if(a.bastao){ // passagem de bastão: sem alarme, mas a tela fica travada até o envio
     d.innerHTML=`<div><div class="sir">🏃</div><h2>PASSAGEM DE BASTÃO</h2><p>São ${hora}. Registre o que o responsável do horário entregou até agora: <b>venda, P.A. e cartões</b>. O Jarbas compara com o ritmo da loja.</p>
-      <button class="btn" type="button" data-a="ir">FAZER A PASSAGEM DE BASTÃO ›</button><small class="note" style="display:block;margin-top:10px">A tela só libera depois do envio para a supervisão.</small></div>`;
+      <button class="btn" type="button" data-a="ir">FAZER A PASSAGEM DE BASTÃO ›</button>${BTN_PERDI}<small class="note" style="display:block;margin-top:10px">A tela só libera depois do envio para a supervisão.</small></div>`;
     document.body.append(d);alAberto=d;
-    d.addEventListener('click',e=>{if(!e.target.closest('[data-a]'))return;d.remove();alAberto=null;abrirPilar(a.pid)});return}
+    d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='perdi'){alPerdi(d,a);return}d.remove();alAberto=null;abrirPilar(a.pid)});return}
   d.innerHTML=`<div><div class="sir">🚨</div><h2>${parcial?'HORA DA PARCIAL':'HORA DO FECHAMENTO'}</h2>
     <p>${sup?`São ${hora}. <b>Cobre os gerentes</b>: todas as lojas precisam mandar a <b>parcial das ${hora}</b>.`:parcial?`São ${hora}. Envie agora a <b>parcial das ${hora}</b> da loja.`:`São ${hora}. Envie agora o <b>fechamento do dia</b> da loja.`}</p>
     ${sup?'<button class="btn" type="button" data-a="ok">✓ OK, VOU COBRAR</button><button class="depois" type="button" data-a="adia">Lembrar em 5 minutos</button>'
-      :`<button class="btn" type="button" data-a="ir">ENVIAR ${parcial?'A PARCIAL':'O FECHAMENTO'} AGORA ›</button><small class="note" style="display:block;margin-top:10px">O aviso só sai depois que ${parcial?'a parcial for enviada':'o fechamento for enviado'} aqui no app.</small>`}</div>`;
+      :`<button class="btn" type="button" data-a="ir">ENVIAR ${parcial?'A PARCIAL':'O FECHAMENTO'} AGORA ›</button>${parcial?BTN_PERDI:''}<small class="note" style="display:block;margin-top:10px">O aviso só sai depois que ${parcial?'a parcial for enviada':'o fechamento for enviado'} aqui no app.</small>`}</div>`;
   // dois toques agora e mais dois depois de 10 segundos; depois disso só o popup fica na tela
   document.body.append(d);alAberto=d;alPee();alSom=setTimeout(()=>{if(alAberto===d)alPee()},10000);
-  d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;clearTimeout(alSom);alSom=null;d.remove();alAberto=null;try{navigator.vibrate?.(0)}catch{}
+  d.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;clearTimeout(alSom);alSom=null;try{navigator.vibrate?.(0)}catch{}
+    if(b.dataset.a==='perdi'){alPerdi(d,a);return}d.remove();alAberto=null;
     if(b.dataset.a==='ir'){abrirPilar(a.pid);return} // gerente: vai direto para a demanda; o alerta volta se sair sem enviar
     if(b.dataset.a==='ok')guarda.set(alChave(dia,a),'ok');else guarda.set(alChave(dia,a),'adia:'+(agoraSP().min+5))});
+}
+// gerente perdeu o horário (bastão, parcial 14h ou 18h): justifica por escrito e a tela destrava; a justificativa vai para a supervisão como "perdi:<pid>"
+const BTN_PERDI='<button class="depois" type="button" data-a="perdi">Relatar que perdi o horário da parcial</button>';
+function alPerdi(d,a){
+  d.classList.add('calmo');const nome=a.pid==='bastao'?'da passagem de bastão':'da parcial das '+a.h.replace(':00','h');
+  d.firstElementChild.innerHTML=`<div class="sir">📝</div><h2>PERDI O HORÁRIO</h2><p>Conte por que a loja não enviou a tempo ${nome}. A justificativa vai para a supervisão.</p>
+    <textarea class="inp" id="perdiTxt" rows="4" maxlength="500" placeholder="Ex.: loja cheia, sistema fora do ar, estava sozinha no salão…" style="width:100%;margin:0 0 6px;font-size:16px"></textarea>
+    <p class="note" id="perdiAviso" style="margin:0 0 10px;color:#ff8b95;min-height:1em;font-size:13px"></p>
+    <button class="btn" type="button" id="perdiEnv">ENVIAR JUSTIFICATIVA</button><button class="depois" type="button" id="perdiVolta">Voltar</button>`;
+  const t=d.querySelector('#perdiTxt');setTimeout(()=>t.focus(),50);
+  d.querySelector('#perdiVolta').onclick=e=>{e.stopPropagation();d.remove();alAberto=null;alVerifica()};
+  d.querySelector('#perdiEnv').onclick=async e=>{e.stopPropagation();const txt=t.value.trim(),av=d.querySelector('#perdiAviso');
+    if(txt.length<10){av.textContent='Escreva a justificativa (pelo menos 10 letras).';return}
+    const b=e.currentTarget;b.disabled=true;b.textContent='Enviando…';
+    try{const pid='perdi:'+a.pid,data=S.hoje,respostas={justificativa:txt,horario:a.h,demanda:a.pid,hora_relato:new Date().toTimeString().slice(0,5)};
+      const j=await api('salvar',{pilar:pid,data,respostas,fotos:{},fotosNovas:{},auto:false});
+      const ix=S.rotina.findIndex(r=>r.pilar===pid&&r.data===data),novo={id:[data,S.cod,pid].join('|'),data,pilar:pid,status:j.status,respostas,fotos:{}};
+      if(ix>=0)S.rotina[ix]=novo;else S.rotina.push(novo);
+      d.remove();alAberto=null;toast('Justificativa enviada. Tela liberada.');try{rInicio()}catch{}
+    }catch(err){av.textContent=err.message;b.disabled=false;b.textContent='ENVIAR JUSTIFICATIVA'}};
 }
 function alVerifica(){
   if(!S.perfil||!S.D)return;const sup=!!S.perfil.master;
   const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.perfil.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
   for(const a of ALERTAS){if(sup?(a.fech||a.bastao):(a.tipo&&a.tipo!==tipo))continue;if(a.bastao&&!temBastao(dia))continue; // sem bastão no domingo e no feriado // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
     const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||(sup&&min>m+90))continue;
-    if(!sup){if(reg(a.pid))continue; // gerente: o alerta só sai quando a demanda do horário foi enviada
+    if(!sup){if(reg(a.pid)||(!a.fech&&reg('perdi:'+a.pid)))continue; // enviou, ou justificou que perdeu o horário // gerente: o alerta só sai quando a demanda do horário foi enviada
       if(location.hash==='#pilar'&&S.pilar?.id===a.pid)break; // está preenchendo agora
       alMostra(a,dia);break}
     const k=guarda.get(alChave(dia,a));if(k==='ok')continue;if(k&&k.startsWith('adia:')&&min<+k.slice(5))continue;alMostra(a,dia);break}
