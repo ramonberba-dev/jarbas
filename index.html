@@ -365,6 +365,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .sn button.on.ruim{background:var(--red);border-color:var(--red);color:#fff}
 .fotos{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .fotos img{width:64px;height:64px;object-fit:cover;border-radius:3px;border:1px solid #ffffff2a}
+.fotos .th{position:relative;display:inline-block}.fotos .th .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#ff2a3a;color:#fff;font-size:14px;line-height:22px;padding:0;cursor:pointer}
 .addfoto{font-family:var(--f-mono);font-size:12px;color:var(--cream);padding:9px 12px;border:1px dashed var(--gold);border-radius:3px;cursor:pointer}
 .req{color:#ff8b95;font-family:var(--f-mono);font-size:10.5px}
 .autoinfo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
@@ -438,6 +439,8 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
           <div class="list" id="listaPar"></div>
           <div class="sec">Demandas da supervisão</div>
           <div class="list" id="listaDem"></div>
+          <div class="sec" style="margin-top:22px">Equipe da loja</div>
+          <div class="list"><button class="li" type="button" data-go="feedback"><span>📝 Feedback semanal<small id="fbSub">um feedback por colaborador, toda semana</small></span><em class="tag">ABRIR ›</em></button></div>
         </div>
         <div id="inicioMaster" hidden>
           <div class="sec">Rotina das lojas hoje</div>
@@ -467,6 +470,16 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div class="panel" id="pilItens" style="padding:0"></div>
         <div class="acts"><button class="btn" type="button" id="bEnviar">Enviar</button></div>
         <p class="note" id="pilAviso"></p>
+      </section>
+
+      <!-- FEEDBACK SEMANAL (gerente): colaboradores da loja, foto do feedback escrito e fala transcrita; o Gemini organiza para a supervisão -->
+      <section class="view" id="tela-feedback">
+        <div class="vhead"><button class="btn ghost sm" type="button" data-go="inicio">‹ Voltar</button><span class="selo" id="fbSemana"></span></div>
+        <h2 class="t">Feedback semanal</h2>
+        <div class="sub">Faça o feedback por escrito com cada colaborador. Tire a foto da folha e conte por áudio como foi: o Jarbas transcreve, organiza e manda para a supervisão no relatório semanal da loja.</div>
+        <div class="acts"><button class="btn ghost" type="button" id="fbAdd">＋ Adicionar colaborador</button></div>
+        <div class="panel" id="fbForm" hidden></div>
+        <div class="list" id="fbLista"></div>
       </section>
 
       <!-- CHECKLIST DA SUPERVISÃO (visita) -->
@@ -1554,12 +1567,33 @@ async function rRelatorios(){
   // mês corrente aberto; cada mês que já virou vira uma pasta
   const mesAtual=S.hoje.slice(0,7),grupos={};S.rels.forEach(r=>{const ym=String(r.data).slice(0,7);(grupos[ym]||=[]).push(r)});
   const atual=grupos[mesAtual]||[],antigos=Object.keys(grupos).filter(k=>k!==mesAtual).sort().reverse();
-  $('#listaRev').innerHTML=rEntregas()+`<div class="sec">Relatórios de visita · ${nomeMes(mesAtual)}</div>`+(atual.length?atual.map(item).join(''):'<p class="empty">Nenhum relatório neste mês ainda.</p>')+
+  try{S.fbRel=await api('fbRelatorios',{})}catch{S.fbRel=null}
+  $('#listaRev').innerHTML=rEntregas()+rFbSemanal()+`<div class="sec">Relatórios de visita · ${nomeMes(mesAtual)}</div>`+(atual.length?atual.map(item).join(''):'<p class="empty">Nenhum relatório neste mês ainda.</p>')+
     antigos.map(k=>`<details class="secao pasta"><summary><span>📁 ${nomeMes(k)}</span><em class="tag n">${grupos[k].length}</em></summary>${grupos[k].map(item).join('')}</details>`).join('');
 }
 $('#listaRev').addEventListener('click',async e=>{const b=e.target.closest('[data-relid]');if(!b)return;const r=(S.rels||[]).find(x=>x.id===b.dataset.relid);if(!r)return;
   $('#verRev').hidden=false;$('#verRev').dataset.id='';
   $('#verRev').innerHTML=`<h3>${esc(r.loja||nomeLoja(r.cod))} · ${dataBR(r.data)}/${String(r.data).slice(0,4)} · ${esc(r.autor||'')}</h3><div class="note" style="white-space:pre-wrap;color:var(--cream)">${esc(r.texto||'')}</div>${(r.fotos||[]).map(id=>`<img data-fid="${esc(id)}" alt="Foto" style="max-width:100%;border-radius:8px;margin-top:8px">`).join('')}`;
+  $('#verRev').scrollIntoView({behavior:'smooth'});
+  for(const im of $$('#verRev img[data-fid]')){try{const j=await api('foto',{id:im.dataset.fid});im.src='data:image/jpeg;base64,'+j.b64}catch{im.alt='Foto indisponível'}}});
+// feedback semanal das lojas: uma linha por loja e semana (semana atual aberta; as anteriores em pastas)
+function rFbSemanal(){
+  const R=S.fbRel;if(!R)return '';const F=R.feedbacks||[],C=R.colabs||[],sem=segundaISO(S.hoje);
+  const nCol=cod=>C.filter(c=>c.cod===cod).length,grupos={};F.forEach(f=>{((grupos[f.semana]||={})[f.cod]||=[]).push(f)});
+  const linha=(s,cod)=>{const fs=grupos[s]?.[cod]||[],n=nCol(cod),at=fs.some(f=>f.organizado?.atencao_supervisao);
+    return `<button class="li" data-fbrel="${esc(s+'|'+cod)}"><span>${esc(nomeLoja(cod))}<small>${fs.length} de ${Math.max(n,fs.length)} colaboradores com feedback${at?' · ⚠ tem ponto de atenção':''}</small></span><em class="tag ${fs.length&&fs.length>=n?'ok':''}">${fs.length?'VER':'—'}</em></button>`};
+  const lojasSem=[...new Set([...C.map(c=>c.cod),...Object.keys(grupos[sem]||{})])].sort((a,b)=>(grupos[sem]?.[b]?.length||0)-(grupos[sem]?.[a]?.length||0));
+  const antigas=Object.keys(grupos).filter(s=>s!==sem).sort().reverse();
+  return `<div class="sec">📝 Feedback semanal · semana de ${dataBR(sem)}</div>`+(lojasSem.length?lojasSem.map(c=>linha(sem,c)).join(''):'<p class="empty">Nenhuma loja cadastrou a equipe ainda.</p>')+
+    antigas.map(s=>`<details class="secao pasta"><summary><span>📁 Feedback · semana de ${dataBR(s)}</span><em class="tag n">${Object.keys(grupos[s]).length}</em></summary>${Object.keys(grupos[s]).map(c=>linha(s,c)).join('')}</details>`).join('');
+}
+$('#listaRev').addEventListener('click',async e=>{const b=e.target.closest('[data-fbrel]');if(!b||!S.fbRel)return;const [s,cod]=b.dataset.fbrel.split('|');
+  const fs=(S.fbRel.feedbacks||[]).filter(f=>f.semana===s&&f.cod===cod),sem=(S.fbRel.colabs||[]).filter(c=>c.cod===cod&&!fs.some(f=>f.colab_id===c.id));
+  $('#verRev').hidden=false;$('#verRev').dataset.id='';
+  $('#verRev').innerHTML=`<h3>${esc(nomeLoja(cod))} · feedback semanal · semana de ${dataBR(s)}</h3>`+
+    fs.map(f=>`<div class="panel" style="margin:10px 0"><b>${esc(f.colab?.nome||'')}</b><small class="note" style="display:block">${esc(fbInfo(f.colab||{}))}${f.enviado_em?' · enviado em '+dataBR(String(f.enviado_em).slice(0,10)):''}</small>
+      <div style="margin-top:8px">${fbOrg(f.organizado)}</div>${(f.fotos||[]).map(id=>`<img data-fid="${esc(id)}" alt="Foto do feedback" style="max-width:100%;border-radius:8px;margin-top:8px">`).join('')}</div>`).join('')+
+    (sem.length?`<div class="sec">Sem feedback nesta semana</div><ul style="margin:4px 0;padding-left:18px">${sem.map(c=>`<li>${esc(c.nome)} <small class="note">${esc(fbInfo(c))}</small></li>`).join('')}</ul>`:'');
   $('#verRev').scrollIntoView({behavior:'smooth'});
   for(const im of $$('#verRev img[data-fid]')){try{const j=await api('foto',{id:im.dataset.fid});im.src='data:image/jpeg;base64,'+j.b64}catch{im.alt='Foto indisponível'}}});
 async function rRevisao(){
@@ -2468,12 +2502,107 @@ $('#bPush').onclick=async()=>{const b=$('#bPush');b.disabled=true;try{if(await p
 const HASH0=location.hash; // guardado antes da navegação trocar o endereço
 function alDaNotificacao(){const m=HASH0.match(/^#alerta-(\d{2})(\d{2})$/);if(!m||alDaNotificacao.feito)return;alDaNotificacao.feito=1;const a=ALERTAS.find(x=>x.h===m[1]+':'+m[2]);if(a)setTimeout(()=>alMostra(a,agoraSP().dia),600)}
 
+/* ---------- feedback semanal (gerente) ----------
+   colaboradores da loja + um feedback por colaborador por semana (segunda a domingo): foto da folha escrita e a fala transcrita pelo celular.
+   O servidor manda as fotos e a fala ao Gemini, que organiza; a supervisão vê em Revisão > Relatórios. */
+const FB={colabs:[],fbs:[],semana:'',novas:[],fotos:[],c:null,pararMic:null};
+const CARGOS=['Vendedor(a)','Caixa','Estoquista','Responsável do horário','Subgerente','Gerente','Outro'];
+const juntarFala=lista=>{let acc='';for(const t0 of lista){const t=t0.trim();if(!t)continue;const a=acc.trim().toLowerCase(),n=t.toLowerCase();
+  if(!a||n.startsWith(a))acc=t;else if(!a.endsWith(n)&&!a.includes(n))acc=acc.trim()+' '+t}return acc};
+const fbInfo=c=>[c.cargo,c.horario,c.tempo_casa&&c.tempo_casa+' de casa'].filter(Boolean).join(' · ');
+async function rFeedback(){
+  FB.semana=segundaISO(S.hoje);$('#fbSemana').textContent='Semana de '+dataBR(FB.semana);fbFecha();
+  $('#fbLista').innerHTML='<p class="empty">Carregando a equipe…</p>';
+  try{const j=await api('fbDados',{semana:FB.semana});FB.colabs=j.colabs||[];FB.fbs=j.feedbacks||[]}catch(err){$('#fbLista').innerHTML=`<p class="empty">${esc(err.message)}</p>`;return}
+  fbLista();
+}
+function fbLista(){
+  const feitos=FB.colabs.filter(c=>FB.fbs.some(f=>f.colab_id===c.id)).length;
+  $('#fbLista').innerHTML=FB.colabs.length?`<div class="sec">${feitos} de ${FB.colabs.length} com feedback nesta semana</div>`+FB.colabs.map(c=>`<button class="li" type="button" data-fbc="${esc(c.id)}"><span>${esc(c.nome)}<small>${esc(fbInfo(c))}</small></span>${FB.fbs.some(f=>f.colab_id===c.id)?'<em class="tag ok">FEITO</em>':'<em class="tag n">A FAZER</em>'}</button>`).join('')
+    :'<p class="empty">Nenhum colaborador cadastrado ainda. Toque em ＋ Adicionar colaborador.</p>';
+}
+function fbFecha(){if(FB.pararMic){FB.pararMic();FB.pararMic=null}$('#fbForm').hidden=true;$('#fbForm').innerHTML=''}
+function fbAbre(html){fbFecha();const d=$('#fbForm');d.innerHTML=html;d.hidden=false;d.scrollIntoView({behavior:'smooth',block:'start'});return d}
+$('#fbAdd').onclick=()=>fbColabForm();
+$('#fbLista').addEventListener('click',e=>{const b=e.target.closest('[data-fbc]');if(!b)return;const c=FB.colabs.find(x=>x.id===b.dataset.fbc);if(c)fbFeedback(c)});
+function fbColabForm(c={}){
+  const opts=[...CARGOS,...(c.cargo&&!CARGOS.includes(c.cargo)?[c.cargo]:[])].map(o=>`<option${o===(c.cargo||'Vendedor(a)')?' selected':''}>${esc(o)}</option>`).join('');
+  const d=fbAbre(`<h3 style="margin:0 0 8px">${c.id?'Editar colaborador':'＋ Adicionar colaborador'}</h3>
+    <label class="f">Nome<input class="inp" id="fcNome" maxlength="80" autocomplete="off" value="${esc(c.nome||'')}"></label>
+    <label class="f" style="margin-top:8px">Cargo<select class="inp" id="fcCargo">${opts}</select></label>
+    <div class="grid2" style="margin-top:8px"><label class="f">Horário<input class="inp" id="fcHora" maxlength="40" placeholder="Ex.: 10h às 18h" value="${esc(c.horario||'')}"></label>
+    <label class="f">Tempo de casa<input class="inp" id="fcTempo" maxlength="40" placeholder="Ex.: 1 ano e 3 meses" value="${esc(c.tempo_casa||'')}"></label></div>
+    <p class="note" id="fcAviso" style="color:#ff8b95;min-height:1em"></p>
+    <div class="acts"><button class="btn" type="button" id="fcSalvar">Salvar</button><button class="btn ghost" type="button" id="fcCancel">Cancelar</button>${c.id?'<button class="btn red" type="button" id="fcRem">Remover da equipe</button>':''}</div>`);
+  d.querySelector('#fcCancel').onclick=()=>c.id?fbFeedback(c):fbFecha();
+  d.querySelector('#fcSalvar').onclick=async e=>{const b=e.currentTarget,nome=d.querySelector('#fcNome').value.trim();if(nome.length<2){d.querySelector('#fcAviso').textContent='Escreva o nome.';return}
+    const novo={id:c.id,nome,cargo:d.querySelector('#fcCargo').value,horario:d.querySelector('#fcHora').value.trim(),tempo_casa:d.querySelector('#fcTempo').value.trim()};
+    b.disabled=true;b.textContent='Salvando…';
+    try{const j=await api('fbColab',{colab:novo});novo.id=j.id||c.id;const i=FB.colabs.findIndex(x=>x.id===novo.id);if(i>=0)FB.colabs[i]=novo;else FB.colabs.push(novo);
+      fbLista();toast(c.id?'Colaborador atualizado':'Colaborador adicionado');fbFecha()}
+    catch(err){d.querySelector('#fcAviso').textContent=err.message;b.disabled=false;b.textContent='Salvar'}};
+  const rem=d.querySelector('#fcRem');if(rem)rem.onclick=async()=>{if(!rem.dataset.c){rem.dataset.c=1;rem.textContent='Toque de novo para remover';return}
+    try{await api('fbColab',{colab:{id:c.id,remover:true}});FB.colabs=FB.colabs.filter(x=>x.id!==c.id);fbLista();fbFecha();toast('Removido da equipe')}catch(err){toast(err.message)}};
+  setTimeout(()=>d.querySelector('#fcNome').focus(),300);
+}
+const fbLi=(t,arr)=>arr&&arr.length?`<div class="sec">${t}</div><ul style="margin:4px 0 8px;padding-left:18px">${arr.map(x=>`<li>${esc(typeof x==='string'?x:x.acao+(x.prazo?' · até '+x.prazo:''))}</li>`).join('')}</ul>`:'';
+function fbOrg(o){if(!o||o.erro)return `<p class="note" style="color:#ff8b95">${esc(o?.erro?'A IA ainda não organizou este feedback ('+o.erro+').':'Sem organização.')}</p>`;
+  return `<div class="note" style="color:var(--cream);white-space:pre-wrap">${esc(o.resumo||'')}</div>${o.leitura_folha?`<div class="sec">O que está na folha</div><div class="note" style="white-space:pre-wrap">${esc(o.leitura_folha)}</div>`:''}
+    ${fbLi('✓ Pontos fortes',o.pontos_fortes)}${fbLi('↗ A desenvolver',o.a_desenvolver)}${fbLi('🤝 Combinados',o.combinados)}${o.fala_organizada?`<div class="sec">Relato do gerente</div><div class="note" style="white-space:pre-wrap">${esc(o.fala_organizada)}</div>`:''}${o.atencao_supervisao?`<div class="sec">⚠ Atenção da supervisão</div><div class="note" style="color:#ffd25a">${esc(o.atencao_supervisao)}</div>`:''}`}
+function fbFeedback(c,refazer=false){
+  FB.c=c;const f=FB.fbs.find(x=>x.colab_id===c.id);
+  if(f&&!refazer){const d=fbAbre(`<h3 style="margin:0 0 2px">${esc(c.nome)} <button class="depois" type="button" id="fbEd" style="margin:0 0 0 6px">editar</button></h3><small class="note">${esc(fbInfo(c))} · feedback da semana enviado</small>
+      <div style="margin-top:10px">${fbOrg(f.organizado)}</div>
+      <div class="acts"><button class="btn ghost" type="button" id="fbRef">Refazer este feedback</button><button class="btn ghost" type="button" id="fbOk">Fechar</button></div>`);
+    d.querySelector('#fbEd').onclick=()=>fbColabForm(c);d.querySelector('#fbRef').onclick=()=>fbFeedback(c,true);d.querySelector('#fbOk').onclick=fbFecha;return}
+  FB.novas=[];FB.fotos=f?[...(f.fotos||[])]:[];
+  const d=fbAbre(`<h3 style="margin:0 0 2px">${esc(c.nome)} <button class="depois" type="button" id="fbEd" style="margin:0 0 0 6px">editar</button></h3><small class="note">${esc(fbInfo(c))}</small>
+    <div class="sec" style="margin-top:12px">1. Foto do feedback escrito</div>
+    <div class="fotos" id="fbFotos"></div>
+    <label class="addfoto" style="display:inline-block;margin-top:6px"><input type="file" accept="image/*" multiple hidden id="fbArq">📷 Adicionar foto da folha</label>
+    <div class="sec" style="margin-top:14px">2. Conte como foi (áudio)</div>
+    <div class="mic-box" style="display:flex;gap:12px;align-items:center"><button type="button" class="mic" id="fbMic" aria-pressed="false" aria-label="Gravar como foi o feedback"><svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg></button>
+      <div class="mic-txt"><b id="fbMicSt">Toque para gravar</b><small>Fale o que conversaram, o que a pessoa faz bem, o que precisa melhorar e o que vocês combinaram. A fala vira texto.</small></div></div>
+    <textarea class="inp" id="fbFala" rows="5" placeholder="A transcrição aparece aqui. Você também pode digitar." style="width:100%;margin-top:8px">${esc(f?.fala||'')}</textarea>
+    <p class="note" id="fbAviso" style="color:#ff8b95;min-height:1em"></p>
+    <div class="acts"><button class="btn" type="button" id="fbEnv">Enviar para a supervisão</button><button class="btn ghost" type="button" id="fbCan">Cancelar</button></div>`);
+  const desenha=()=>{d.querySelector('#fbFotos').innerHTML=FB.fotos.map((id,k)=>`<span class="th"><img data-fbid="${esc(id)}" alt="Foto"><button type="button" class="x" data-rmv="${k}" aria-label="Remover foto">×</button></span>`).join('')+FB.novas.map((b,k)=>`<span class="th"><img src="data:image/jpeg;base64,${b}" alt="Foto"><button type="button" class="x" data-rmn="${k}" aria-label="Remover foto">×</button></span>`).join('');
+    d.querySelectorAll('img[data-fbid]').forEach(async im=>{try{const j=await api('foto',{id:im.dataset.fbid});im.src='data:image/jpeg;base64,'+j.b64}catch{im.alt='Foto'}})};
+  desenha();
+  d.querySelector('#fbFotos').onclick=e=>{const v=e.target.closest('[data-rmv]'),n=e.target.closest('[data-rmn]');if(v)FB.fotos.splice(+v.dataset.rmv,1);else if(n)FB.novas.splice(+n.dataset.rmn,1);else return;desenha()};
+  d.querySelector('#fbArq').onchange=async e=>{const arq=[...e.target.files];e.target.value='';for(const a of arq){if(FB.fotos.length+FB.novas.length>=6){toast('Até 6 fotos por feedback.');break}try{FB.novas.push(await reduzir(a))}catch{toast('Não consegui ler a foto.')}}desenha()};
+  d.querySelector('#fbEd').onclick=()=>fbColabForm(c);d.querySelector('#fbCan').onclick=fbFecha;
+  FB.pararMic=fbMic(d.querySelector('#fbMic'),d.querySelector('#fbFala'),d.querySelector('#fbMicSt'));
+  d.querySelector('#fbEnv').onclick=async e=>{const b=e.currentTarget,av=d.querySelector('#fbAviso');
+    if(!FB.fotos.length&&!FB.novas.length){av.textContent='Tire a foto do feedback escrito.';return}
+    if(FB.pararMic)FB.pararMic();const fala=d.querySelector('#fbFala').value.trim();
+    b.disabled=true;b.textContent='Enviando e organizando com o Jarbas…';av.textContent='';
+    try{const j=await api('fbSalvar',{semana:FB.semana,colab_id:c.id,fotos:FB.fotos,fotosB64:FB.novas,fala});
+      const reg={id:j.id,semana:FB.semana,colab_id:c.id,fotos:j.fotos,fala,organizado:j.organizado};const i=FB.fbs.findIndex(x=>x.colab_id===c.id);if(i>=0)FB.fbs[i]=reg;else FB.fbs.push(reg);
+      fbLista();if(j.aviso)toast(j.aviso);else toast('Feedback enviado ✓');fbFeedback(c)}
+    catch(err){av.textContent=err.message;b.disabled=false;b.textContent='Enviar para a supervisão'}};
+}
+// microfone do feedback (mesmo reconhecimento de voz do checklist)
+function fbMic(btn,ta,st){let r=null,on=false,base='',ses='';
+  const ui=v=>{on=v;btn.classList.toggle('on',v);btn.setAttribute('aria-pressed',v);st.textContent=v?'Gravando… toque para parar':'Toque para gravar'};
+  btn.onclick=()=>{
+    if(!Rec){st.textContent='Este celular não transcreve voz aqui: use o microfone do teclado para ditar no campo abaixo.';return}
+    if(on){r.__m=false;r.stop();return}
+    r=new Rec();r.lang='pt-BR';r.continuous=true;r.interimResults=true;r.maxAlternatives=1;base=ta.value?ta.value.replace(/\s*$/,' '):'';ses='';
+    r.onresult=ev=>{const fin=[],tmp=[];for(let i=0;i<ev.results.length;i++)(ev.results[i].isFinal?fin:tmp).push(ev.results[i][0].transcript);
+      const f=juntarFala(fin),t=juntarFala(tmp.length?[f,...tmp]:[f]);ses=f;ta.value=(base+t).trim()};
+    r.onerror=ev=>{if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){r.__m=false;st.textContent='Permita o microfone para o app nas configurações do navegador.'}};
+    r.onend=()=>{if(ses){base=(base+ses).replace(/\s*$/,' ');ses=''}ta.value=base.trim();if(on&&r.__m){try{r.start();return}catch{}}ui(false)};
+    r.__m=true;try{r.start();ui(true)}catch{toast('Não consegui ligar o microfone.')}};
+  return ()=>{if(on&&r){r.__m=false;try{r.stop()}catch{}}};
+}
+
 /* ---------- navegação ---------- */
-const VIEWS=['inicio','painel','pilar','check','revisao','demandas','equipe'];
-function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas'].includes(v))||(v==='equipe'&&!S.perfil?.equipe)||(!S.perfil?.master&&v==='check'&&S.checkHab!==true))v='inicio';
+const VIEWS=['inicio','painel','pilar','check','revisao','demandas','equipe','feedback'];
+function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas'].includes(v))||(v==='feedback'&&(S.perfil?.master||!S.cod))||(v==='equipe'&&!S.perfil?.equipe)||(!S.perfil?.master&&v==='check'&&S.checkHab!==true))v='inicio';
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
-  if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}if(v==='equipe')eqAbrir()}
+  if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}if(v==='equipe')eqAbrir();if(v==='feedback')rFeedback()}
 // ESTOQUE abre o app da Central de Giro (página própria, mesmo PIN)
 $('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v==='giro'){location.href='giro.html';return}ir(a.dataset.v)});
 try{history.scrollRestoration='manual'}catch{}
