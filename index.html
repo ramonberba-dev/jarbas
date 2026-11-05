@@ -510,7 +510,8 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div class="acts" style="margin-top:8px"><button class="btn ghost sm" type="button" id="bApagarTxt">Apagar texto</button></div>
         <div class="sec">Checklist da loja</div>
         <div id="cSecoes"></div>
-        <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button></div>
+        <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button><button class="btn ghost" type="button" id="bCopia">Salvar cópia de segurança</button></div>
+        <div id="cFalha"></div>
         <div id="cRel"></div>
       </section>
 
@@ -1080,10 +1081,13 @@ const dataBR=iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7):'';
 function segundaISO(iso){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().slice(0,10)}
 function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2800)}
 const guarda={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch{}}};
-async function api(acao,extra={}){
+async function api(acao,extra={},ms=0){
   if(!API||API.startsWith('__'))throw new Error('O servidor do app ainda não foi ligado.');
-  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao,pin:S.pin,...extra}),redirect:'follow'});
-  const j=await r.json();if(!j.ok)throw new Error(j.msg||'Falha no servidor');return j;
+  const ct=ms?new AbortController():null,tm=ct&&setTimeout(()=>ct.abort(),ms);let j;
+  try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao,pin:S.pin,...extra}),redirect:'follow',signal:ct?.signal});j=await r.json()}
+  catch(e){if(e.name==='AbortError')throw new Error('O servidor demorou demais para responder.');throw e}
+  finally{clearTimeout(tm)}
+  if(!j.ok)throw new Error(j.msg||'Falha no servidor');return j;
 }
 
 /* ---------- estado ---------- */
@@ -2154,7 +2158,8 @@ $('#bMic').onclick=()=>{
   const juntar=lista=>{let acc='';for(const t0 of lista){const t=t0.trim();if(!t)continue;const a=acc.trim().toLowerCase(),n=t.toLowerCase();
       if(!a||n.startsWith(a))acc=t;else if(!a.endsWith(n)&&!a.includes(n))acc=acc.trim()+' '+t}return acc};
   rec.onresult=ev=>{const fin=[],tmp=[];for(let i=0;i<ev.results.length;i++)(ev.results[i].isFinal?fin:tmp).push(ev.results[i][0].transcript);
-    const f=juntar(fin),t=juntar(tmp.length?[f,...tmp]:[f]);sessao=f;$('#cTrans').value=(base+t).trim()};
+    const f=juntar(fin),t=juntar(tmp.length?[f,...tmp]:[f]);sessao=f;$('#cTrans').value=(base+t).trim();
+    if(f){V2.trans=(base+f).trim();salvaV()}}; // guarda a fala enquanto grava: não se perde se o app fechar
   rec.onerror=ev=>{if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){rec.__manter=false;$('#micDica').textContent='Permita o uso do microfone para o app nas configurações do navegador.'}};
   rec.onend=()=>{if(sessao){base=(base+sessao).replace(/\s*$/,' ');sessao=''}V2.trans=base.trim();salvaV();$('#cTrans').value=V2.trans;
     if(gravando&&rec.__manter){try{rec.start();return}catch{}}micUI(false)};
@@ -2163,21 +2168,52 @@ $('#bMic').onclick=()=>{
 
 // relatório
 const nomeSetor=k=>k==='guto'?'Relatório completo · Guto (Augusto Bandeira)':SETORES[k]?.nome||k;
+const itensV=()=>{const a=[];CHECK.forEach(s=>s.itens.forEach(i=>{const r=V2.resp[i.id];if(r?.v)a.push({secao:s.t,item:i.t,status:ST[r.v],v:r.v,obs:r.o||'',setor:i.setor})}));return a};
+const fotosDeV=pred=>CHECK.flatMap(sc=>sc.itens.filter(pred).flatMap(i=>(V2.resp[i.id]?.fotos||[]).map(f=>f.id)));
+function montaEnvios(l){
+  V2.envios=[{setor:'guto',para:'augustobandeira@somossonho.com.br',cc:'',assunto:`[${l.nome}] Relatório de supervisão · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,corpo:textoRelatorio(l),fotos:fotosDeV(()=>true),ok:true}]
+    .concat((V2.rel.emails||[]).map(e=>{const cfg=SETORES[e.setor]||{};return {setor:e.setor,para:(cfg.para||[]).filter(x=>!x.startsWith('<')).join(', '),cc:(cfg.cc||[]).join(', '),assunto:`[${l.nome}] ${e.assunto||'Visita de supervisão'}`,corpo:e.corpo||'',
+      fotos:fotosDeV(i=>e.setor==='loja'||i.setor===e.setor),ok:true}}));
+}
+// sem a IA: o relatório sai só com o que foi marcado e falado, sem inventar análise
+function relSemIA(l){
+  const it=itensV(),aj=it.filter(i=>['at','no'].includes(i.v)),linha=i=>`${i.status}: ${i.item}${i.obs?' · '+i.obs:''}`;
+  const qtd=it.filter(i=>i.v==='ok').length,dia=`${dataBR(V2.data)}/${V2.data.slice(0,4)}`,emails=[];
+  if(aj.length)emails.push({setor:'loja',assunto:'Visita de supervisão',corpo:`Na visita de ${dia} à loja ${l.nome}, estes itens precisam de ação:\n\n${aj.map(i=>'- '+linha(i)).join('\n')}`});
+  [...new Set(aj.map(i=>i.setor).filter(s=>s&&s!=='loja'))].forEach(s=>emails.push({setor:s,assunto:'Visita de supervisão',corpo:`Na visita de ${dia} à loja ${l.nome}, estes itens precisam da ajuda do setor:\n\n${aj.filter(i=>i.setor===s).map(i=>'- '+linha(i)).join('\n')}`}));
+  return {semIA:true,resumo:`Relatório gerado sem a IA. Foram avaliados ${it.length} itens: ${qtd} OK e ${aj.length} para ajustar.`,pontos_fortes:[],pontos_atencao:aj.map(linha),topicos:[],planos:[],emails};
+}
+function falhaRel(msg){
+  $('#cFalha').innerHTML=`<div class="panel"><h3>O relatório não saiu</h3><p class="note" style="margin-top:0">${esc(msg)}</p><p class="note"><b style="color:var(--gold)">O que você marcou continua salvo neste aparelho.</b> Tente de novo ou gere sem a IA: sai com os itens marcados, as observações, a fala e as fotos.</p><div class="acts"><button class="btn" type="button" id="bRelDeNovo">Tentar de novo</button><button class="btn ghost" type="button" id="bRelSem">Gerar sem a IA</button></div></div>`;
+  $('#bRelDeNovo').onclick=()=>$('#bRel').click();
+  $('#bRelSem').onclick=()=>{const l=window.__V.lojas.find(x=>x.cod===V2.cod)||{};V2.rel=relSemIA(l);montaEnvios(l);salvaV();$('#cFalha').innerHTML='';rRel();$('#cRel').scrollIntoView({behavior:'smooth'})};
+  $('#cFalha').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+// cópia de segurança: tudo o que foi coletado (também os itens OK), sem depender da IA
+function textoCopia(l){
+  const L=[`CÓPIA DE SEGURANÇA · ${l.nome||V2.cod} · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,`Pessoa presente: ${V2.gerente||'não informado'}`,''];
+  CHECK.forEach(sc=>{const it=sc.itens.filter(i=>{const r=V2.resp[i.id];return r&&(r.v||r.o||r.fotos?.length)});if(!it.length)return;L.push(sc.t);
+    it.forEach(i=>{const r=V2.resp[i.id];L.push(`- ${ST[r.v]||'Sem marcação'}: ${i.t}${r.o?' · '+r.o:''}${r.fotos?.length?` · ${r.fotos.length} foto(s)`:''}`)});L.push('')});
+  if(V2.trans)L.push('FALA DA VISITA (transcrição)',V2.trans,'');
+  return L.join(String.fromCharCode(10));
+}
+$('#bCopia').onclick=async()=>{
+  const b=$('#bCopia'),l=window.__V.lojas.find(x=>x.cod===V2.cod)||{},txt=textoCopia(l);b.disabled=true;b.textContent='Salvando…';
+  try{await api('salvarChecklist',{cod:V2.cod,data:V2.data,quem:V2.gerente,resumo:'Cópia de segurança da visita',texto:txt,fotos:fotosVisita()},60000);b.textContent='Cópia salva ✓';toast('Cópia salva em Revisão › Relatórios');setTimeout(()=>{b.textContent='Salvar cópia de segurança'},5000)}
+  catch(err){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'}));a.download=`checklist_${V2.cod}_${V2.data}.txt`;document.body.append(a);a.click();a.remove();
+    toast('Sem resposta do servidor: baixei a cópia neste aparelho');b.textContent='Salvar cópia de segurança'}
+  finally{b.disabled=false}};
 $('#bRel').onclick=async()=>{
   const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
-  const itens=[];CHECK.forEach(s=>s.itens.forEach(i=>{const r=V2.resp[i.id];if(r?.v)itens.push({secao:s.t,item:i.t,status:ST[r.v],obs:r.o||'',setor:i.setor})}));
-  if(!itens.length&&!V2.trans.trim()){toast('Marque itens do checklist ou grave a conversa antes.');return}
-  const b=$('#bRel');b.disabled=true;b.textContent='Gerando relatório…';
+  const itens=itensV().map(({v,...i})=>i);
+  if(!itens.length&&!(V2.trans||'').trim()){toast('Marque itens do checklist ou grave a conversa antes.');return}
+  const b=$('#bRel');b.disabled=true;b.textContent='Gerando relatório…';$('#cFalha').innerHTML='';
   const ind=`ritmo ${p1(pct(l.venda,l.meta_periodo))}, meta do mês ${p1(pct(l.venda,l.meta_mes))}, P.A. ${num(l.pa)}, atendimentos ${l.atend}, bolsas ${l.bolsas??'?'}, associação ${l.assoc!=null?p1(l.assoc*100):'?'}`;
   try{const s={};Object.keys(SETORES).filter(k=>!k.startsWith('_')&&k!=='sempre_cc').forEach(k=>s[k]=SETORES[k].nome);
-    const j=await api('relatorio',{loja:l.nome,data:V2.data,gerente:V2.gerente,indicadores:V2.preTexto||ind,itens,transcricao:V2.trans,setores:s});
-    V2.rel=j.relatorio;
-    const fotosDe=pred=>CHECK.flatMap(sc=>sc.itens.filter(pred).flatMap(i=>(V2.resp[i.id]?.fotos||[]).map(f=>f.id)));
-    V2.envios=[{setor:'guto',para:'augustobandeira@somossonho.com.br',cc:'',assunto:`[${l.nome}] Relatório de supervisão · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,corpo:textoRelatorio(l),fotos:fotosDe(()=>true),ok:true}]
-      .concat((V2.rel.emails||[]).map(e=>{const cfg=SETORES[e.setor]||{};return {setor:e.setor,para:(cfg.para||[]).filter(x=>!x.startsWith('<')).join(', '),cc:(cfg.cc||[]).join(', '),assunto:`[${l.nome}] ${e.assunto||'Visita de supervisão'}`,corpo:e.corpo||'',
-        fotos:fotosDe(i=>e.setor==='loja'||i.setor===e.setor),ok:true}}));
+    const j=await api('relatorio',{loja:l.nome,data:V2.data,gerente:V2.gerente,indicadores:V2.preTexto||ind,itens,transcricao:V2.trans,setores:s},90000);
+    V2.rel=j.relatorio;montaEnvios(l);
     salvaV();rRel();$('#cRel').scrollIntoView({behavior:'smooth'});
-  }catch(err){toast(err.message)}finally{b.disabled=false;b.textContent='Gerar relatório'}};
+  }catch(err){falhaRel(err.message==='Failed to fetch'||err.message==='Load failed'?'Sem resposta do servidor. Confira a internet.':err.message)}finally{b.disabled=false;b.textContent='Gerar relatório'}};
 function textoRelatorio(l){
   const R=V2.rel||{},A=analisePre(l),L=[];
   if(S.perfil.master)L.push(`RELATÓRIO DE SUPERVISÃO · ${l.nome} · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,`Supervisor: Ramon Berba · Gerente presente: ${V2.gerente||'não informado'}`,'');
@@ -2200,7 +2236,7 @@ function rRel(){
   $('#cRel').innerHTML=`<div class="panel"><h3>Relatório da visita</h3>${A?`<div class="kv" style="margin-bottom:10px">${A.M.map(([k,v,s])=>`<div><small>${k}</small><b>${v}</b><span style="display:block;font-size:10.5px;color:var(--sand)">${esc(s)}</span></div>`).join('')}</div><p class="note" style="margin-top:0">${esc(A.leitura)}</p>`:''}<div class="md"><p>${esc(R.resumo||'')}</p>
     ${R.pontos_fortes?.length?`<h4>Pontos fortes</h4>${li(R.pontos_fortes)}`:''}${R.pontos_atencao?.length?`<h4>Pontos de atenção</h4>${li(R.pontos_atencao)}`:''}
     ${(R.topicos||[]).map(t=>`<h4>${esc(t.titulo)}</h4>${li(t.pontos)}`).join('')}
-    <h4>Plano de ação</h4>${(R.planos||[]).map(p=>`<li><b>${esc(p.acao)}</b> · ${esc(p.responsavel||'')} · ${esc(p.prazo||'')} · ${esc(p.prioridade||'')}</li>`).join('')}</div></div>
+    ${R.planos?.length?'<h4>Plano de ação</h4>':''}${(R.planos||[]).map(p=>`<li><b>${esc(p.acao)}</b> · ${esc(p.responsavel||'')} · ${esc(p.prazo||'')} · ${esc(p.prioridade||'')}</li>`).join('')}</div></div>
     `+(!S.perfil.master?`<div class="acts"><button class="btn" type="button" id="bEnviarSup">Enviar para a supervisão</button></div><p class="note">O relatório fica registrado com a data em Revisão › Relatórios da supervisão.</p>`:`<div class="sec">E-mails para os setores · confira antes de enviar</div>`+
     (V2.envios||[]).map((e,k)=>`<div class="email" data-k="${k}"><h4><label><input type="checkbox" data-f="ok" ${e.ok?'checked':''}> ${esc(nomeSetor(e.setor))}</label></h4>
       <label class="f">Para<input class="inp" data-f="para" value="${esc(e.para)}" placeholder="e-mails separados por vírgula"></label>
