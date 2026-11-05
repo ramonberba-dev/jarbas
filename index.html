@@ -2187,7 +2187,7 @@ function relSemIA(l){
 function falhaRel(msg){
   $('#cFalha').innerHTML=`<div class="panel"><h3>O relatório não saiu</h3><p class="note" style="margin-top:0">${esc(msg)}</p><p class="note"><b style="color:var(--gold)">O que você marcou continua salvo neste aparelho.</b> Tente de novo ou gere sem a IA: sai com os itens marcados, as observações, a fala e as fotos.</p><div class="acts"><button class="btn" type="button" id="bRelDeNovo">Tentar de novo</button><button class="btn ghost" type="button" id="bRelSem">Gerar sem a IA</button></div></div>`;
   $('#bRelDeNovo').onclick=()=>$('#bRel').click();
-  $('#bRelSem').onclick=()=>{const l=window.__V.lojas.find(x=>x.cod===V2.cod)||{};V2.rel=relSemIA(l);montaEnvios(l);salvaV();$('#cFalha').innerHTML='';rRel();$('#cRel').scrollIntoView({behavior:'smooth'})};
+  $('#bRelSem').onclick=()=>{const l=window.__V.lojas.find(x=>x.cod===V2.cod)||{};V2.rel=relSemIA(l);montaEnvios(l);salvaV();$('#cFalha').innerHTML='';rRel();$('#cRel').scrollIntoView({behavior:'smooth'});pedirPdf()};
   $('#cFalha').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 // cópia de segurança: tudo o que foi coletado (também os itens OK), sem depender da IA
@@ -2213,7 +2213,7 @@ $('#bRel').onclick=async()=>{
   try{const s={};Object.keys(SETORES).filter(k=>!k.startsWith('_')&&k!=='sempre_cc').forEach(k=>s[k]=SETORES[k].nome);
     const j=await api('relatorio',{loja:l.nome,data:V2.data,gerente:V2.gerente,indicadores:V2.preTexto||ind,itens,transcricao:V2.trans,setores:s},90000);
     V2.rel=j.relatorio;montaEnvios(l);
-    salvaV();rRel();$('#cRel').scrollIntoView({behavior:'smooth'});
+    salvaV();rRel();$('#cRel').scrollIntoView({behavior:'smooth'});pedirPdf();
   }catch(err){falhaRel(err.message==='Failed to fetch'||err.message==='Load failed'?'Sem resposta do servidor. Confira a internet.':err.message)}finally{b.disabled=false;b.textContent='Gerar relatório'}};
 function textoRelatorio(l){
   const R=V2.rel||{},A=analisePre(l),L=[];
@@ -2238,15 +2238,30 @@ function rRel(){
     ${R.pontos_fortes?.length?`<h4>Pontos fortes</h4>${li(R.pontos_fortes)}`:''}${R.pontos_atencao?.length?`<h4>Pontos de atenção</h4>${li(R.pontos_atencao)}`:''}
     ${(R.topicos||[]).map(t=>`<h4>${esc(t.titulo)}</h4>${li(t.pontos)}`).join('')}
     ${R.planos?.length?'<h4>Plano de ação</h4>':''}${(R.planos||[]).map(p=>`<li><b>${esc(p.acao)}</b> · ${esc(p.responsavel||'')} · ${esc(p.prazo||'')} · ${esc(p.prioridade||'')}</li>`).join('')}</div></div>
-    `+(!S.perfil.master?`<div class="acts"><button class="btn" type="button" id="bEnviarSup">Enviar para a supervisão</button></div><p class="note">O relatório fica registrado com a data em Revisão › Relatórios da supervisão.</p>`:`<div class="sec">E-mails para os setores · confira antes de enviar</div>`+
+    `+(!S.perfil.master?`<div class="acts"><button class="btn" type="button" id="bEnviarSup">Enviar para a supervisão</button></div><p class="note">O relatório fica registrado com a data em Revisão › Relatórios da supervisão.</p>`:`<div id="cPdf"></div><div class="sec">E-mails para os setores · confira antes de enviar</div>`+
     (V2.envios||[]).map((e,k)=>`<div class="email" data-k="${k}"><h4><label><input type="checkbox" data-f="ok" ${e.ok?'checked':''}> ${esc(nomeSetor(e.setor))}</label></h4>
       <label class="f">Para<input class="inp" data-f="para" value="${esc(e.para)}" placeholder="e-mails separados por vírgula"></label>
       <label class="f">Cópia<input class="inp" data-f="cc" value="${esc(e.cc)}"></label>
       <label class="f">Assunto<input class="inp" data-f="assunto" value="${esc(e.assunto)}"></label>
       <label class="f">Texto<textarea class="inp" rows="6" data-f="corpo">${esc(e.corpo)}</textarea></label>${fotosEnvio(e).length?`<small class="selo">${fotosEnvio(e).length} foto(s) anexada(s)</small>`:''}</div>`).join('')+
     `<div class="acts"><button class="btn" type="button" id="bEnviarEmails">Enviar e-mails marcados</button></div><p class="note">Os e-mails saem da conta ramonberba@somossonho.com.br. Só seguem endereços da empresa e da Credsystem. O relatório também fica registrado em Revisão › Relatórios.</p>`);
-  if(S.perfil.master)$('#bEnviarEmails').onclick=enviarEmails;else $('#bEnviarSup').onclick=enviarSup;
+  if(S.perfil.master){$('#bEnviarEmails').onclick=enviarEmails;rPdf();if(V2.pdf?.status==='pendente')pdfAtualiza()}else $('#bEnviarSup').onclick=enviarSup;
 }
+/* PDF do relatório: o app pede, o computador do Ramon monta com o Claude (layout da Sonho) e devolve; vai em anexo nos e-mails do Guto e da loja */
+function pedidoPdf(l){const A=analisePre(l),R=V2.rel||{};return {cod:V2.cod,loja:l.nome,data:V2.data,gerente:V2.gerente||'',ate:window.__V.ate,ind:A.M.map(([k,v,s])=>({k,v,s})),leitura:A.leitura,trans:V2.trans||'',
+  iaRascunho:R.semIA?null:{resumo:R.resumo,pontos_fortes:R.pontos_fortes,pontos_atencao:R.pontos_atencao,topicos:R.topicos,planos:R.planos},
+  secoes:CHECK.map(sc=>({t:sc.t,itens:sc.itens.filter(i=>{const r=V2.resp[i.id];return r&&(r.v||r.o||r.fotos?.length)}).map(i=>{const r=V2.resp[i.id];return {t:i.t,ref:i.ref||'',setor:i.setor||'',status:ST[r.v]||'Sem marcação',obs:r.o||'',fotos:(r.fotos||[]).map(f=>f.id)}})})).filter(s=>s.itens.length)}}
+async function pedirPdf(){const l=window.__V.lojas.find(x=>x.cod===V2.cod);if(!l||!S.perfil.master)return;const ant=V2.pdf?.id||'';V2.pdf={id:'',status:'enviando'};rPdf();
+  try{const j=await api('pdfPedir',{pedido:pedidoPdf(l),substitui:ant},60000);V2.pdf={id:j.id,status:'pendente'}}catch(err){V2.pdf={id:ant,status:'falhou',erro:err.message}}salvaV();rPdf()}
+async function pdfAtualiza(){if(!V2.pdf?.id)return;try{const j=await api('pdfStatus',{id:V2.pdf.id},30000);V2.pdf.status=j.status;V2.pdf.erro=j.erro;salvaV();rPdf()}catch{}}
+function rPdf(){const c=$('#cPdf');if(!c)return;const P=V2.pdf,st=P?.status;
+  const txt=st==='pronto'?'PDF pronto ✓ Vai em anexo nos e-mails do Guto e da loja.':st==='pendente'?'Pedido enviado. O PDF é montado quando o computador do Ramon estiver ligado e volta para cá.':st==='enviando'?'Enviando o pedido do PDF…':st==='erro'?'O PDF não saiu: '+esc(P.erro||'erro ao montar')+'.':st==='falhou'?'O pedido do PDF não foi: '+esc(P.erro||'sem resposta')+'.':'Peça o PDF completo, com as fotos, no layout da Sonho.';
+  const bts=st==='pronto'?'<button class="btn sm" type="button" data-pdf="ver">Ver o PDF</button><button class="btn ghost sm" type="button" data-pdf="pedir">Refazer</button>':st==='pendente'?'<button class="btn sm" type="button" data-pdf="atualizar">Atualizar</button><button class="btn ghost sm" type="button" data-pdf="pedir">Pedir de novo</button>':st==='enviando'?'':'<button class="btn sm" type="button" data-pdf="pedir">Pedir o PDF</button>';
+  c.innerHTML='<div class="panel"><h3>📄 PDF do relatório</h3><p class="note" style="margin-top:0">'+txt+'</p>'+(bts?'<div class="acts">'+bts+'</div>':'')+'</div>'}
+$('#cRel').addEventListener('click',async e=>{const b=e.target.closest('[data-pdf]');if(!b)return;const a=b.dataset.pdf;
+  if(a==='pedir')return pedirPdf();if(a==='atualizar'){await pdfAtualiza();if(V2.pdf?.status==='pendente')toast('Ainda não ficou pronto');return}
+  b.disabled=true;b.textContent='Abrindo…';try{const j=await api('pdfBaixar',{id:V2.pdf.id},90000),bin=atob(j.b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    const x=document.createElement('a');x.href=URL.createObjectURL(new Blob([u],{type:'application/pdf'}));x.download=j.nome||'Relatorio.pdf';document.body.append(x);x.click();x.remove()}catch(err){toast(err.message)}finally{b.disabled=false;b.textContent='Ver o PDF'}});
 $('#cRel').addEventListener('input',e=>{const f=e.target.closest('[data-f]');if(!f)return;const k=+f.closest('.email').dataset.k;V2.envios[k][f.dataset.f]=f.type==='checkbox'?f.checked:f.value;salvaV()});
 $('#cRel').addEventListener('change',e=>{const f=e.target.closest('[data-f="ok"]');if(f){V2.envios[+f.closest('.email').dataset.k].ok=f.checked;salvaV()}});
 const fotosVisita=()=>CHECK.flatMap(sc=>sc.itens.flatMap(i=>(V2.resp[i.id]?.fotos||[]).map(f=>f.id)));
@@ -2270,12 +2285,15 @@ $('#bHabSalvar').onclick=async()=>{const b=$('#bHabSalvar');b.disabled=true;
 async function enviarEmails(){
   const b=$('#bEnviarEmails'),sel=(V2.envios||[]).filter(e=>e.ok&&e.para.trim());
   if(!sel.length){toast('Marque ao menos um e-mail com destinatário.');return}
+  if(V2.pdf?.status==='pendente'&&!b.dataset.sp)await pdfAtualiza();
+  const pdfOk=V2.pdf?.status==='pronto';
+  if(!pdfOk&&!b.dataset.sp){b.dataset.sp=1;b.textContent='O PDF não está pronto. Enviar sem o PDF?';return}
   if(!b.dataset.c){b.dataset.c=1;b.textContent=`Confirmar envio de ${sel.length} e-mail(s)`;return}
   b.disabled=true;b.textContent='Enviando…';const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
   const sp=s=>s.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
-  try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo,fotos:fotosEnvio(e)})),registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel},texto:textoRelatorio(l),resumo:V2.rel?.resumo||'',fotosRel:fotosVisita()});
-    toast(`${j.enviados} e-mail(s) enviados`+(j.fotos!=null?` · ${j.fotos} foto(s) em anexo`:'')+(j.fotosFalhas?` · ATENÇÃO: ${j.fotosFalhas} foto(s) não foram`:'')+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
-  }catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;b.textContent='Enviar e-mails marcados'}}
+  try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo,fotos:fotosEnvio(e),pdf:pdfOk&&(e.setor==='guto'||e.setor==='loja')})),pdfId:pdfOk?V2.pdf.id:'',registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel},texto:textoRelatorio(l),resumo:V2.rel?.resumo||'',fotosRel:fotosVisita()});
+    toast(`${j.enviados} e-mail(s) enviados`+(j.pdfs?` · PDF em ${j.pdfs} e-mail(s)`:'')+(j.fotos!=null?` · ${j.fotos} foto(s) em anexo`:'')+(j.fotosFalhas?` · ATENÇÃO: ${j.fotosFalhas} foto(s) não foram`:'')+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
+  }catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;delete b.dataset.sp;b.textContent='Enviar e-mails marcados'}}
 
 /* ---------- EQUIPE: Sistema Corporativo pelo Jarbas (só supervisão/comercial) ---------- */
 const EQ={ok:null,usuario:'',lojas:null,num:'',aba:'equipe',sit:'ativos',busca:'',lin:null,grade:null,mes:new Date().getMonth()+1,ano:new Date().getFullYear(),conf:null,dias:'30',ver:{}};
