@@ -1143,7 +1143,7 @@ async function carregar(){
   if(!S.D){$('#erroLogin').textContent='O painel ainda não chegou ao servidor. Ele é enviado todo dia de manhã.';throw new Error('Sem dados do painel ainda.')}
   if(ligando){await ligando;ligando=null;paraTurbina=null} // abre o app só com o reator da entrada aceso
   $('#telaLogin').hidden=true;$('#telaApp').hidden=false;$('#dockBox').hidden=false;
-  iniciar();
+  iniciar();carregaVend(); // a venda dos vendedores chega depois, sem segurar a tela
 }
 
 /* ---------- app ---------- */
@@ -1268,6 +1268,28 @@ function rankDia(itens,titulo,destaque){
   const r=itens.filter(x=>x.m).sort((a,b)=>b.v/b.m-a.v/a.m),bat=r.filter(x=>x.v>=x.m).length;
   return r.length?`<div class="panel rankdia"><h3>${titulo} · ${bat} de ${r.length} na meta</h3><div class="rows">`+r.map((x,i)=>{const p=x.v/x.m*100;
     return `<div class="row${x.cod===destaque?' eu':''}" style="--c:${cor(p)}"><span class="nm">${i+1}º ${esc(x.nome)}</span><span class="pc">${p1(p)}</span><span class="det"><span>${brl(x.v)} de ${brl(x.m)}</span>${x.a!=null?`<span>${x.a} atend.</span>`:''}</span></div>`}).join('')+`</div></div>`:''}
+/* venda por vendedor (Sistema Corporativo > Planilha de Metas): o servidor guarda e atualiza a cada 15 min.
+   i = tela do reator: 0 hoje (parcial do sistema), 1 dia fechado (ontem ou o dia escolhido), 2 acumulado até esse dia */
+const nomeVend=n=>String(n).replace(/^\d{2,4}\s+/,'').toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+function rankVend(i,c){
+  const D=S.vend;if(!c||!D?.lojas)return '';
+  const lojas=D.lojas.filter(x=>c.cods.includes(x.loja));if(!lojas.length)return '';
+  const varias=lojas.length>1,nomeL=cod=>(c.L.find(x=>x.cod===cod)||{}).nome||cod;
+  const dm=String(c.V.ateDia||c.V.ate||'').match(/^(\d{1,2})\/(\d{1,2})/),dF=dm&&+dm[2]===D.mes?+dm[1]:null;
+  const hora=new Date(D.ts).toTimeString().slice(0,5),velho=Date.now()-D.ts>3600e3;
+  const soma=(a,n)=>(a||[]).slice(0,n).reduce((s,x)=>s+(+x||0),0);
+  const it=[];for(const lj of lojas){const dH=lj.hoje;for(const v of lj.vendedores){if(v.gerente)continue;
+    const [vv,mm]=i===0?[v.dias[dH-1],v.metas[dH-1]]:i===1?(dF?[v.dias[dF-1],v.metas[dF-1]]:[0,0]):(dF?[soma(v.dias,dF),soma(v.metas,dF)]:[0,0]);
+    it.push({cod:null,nome:nomeVend(v.nome)+(varias?' · '+nomeL(lj.loja):''),v:+vv||0,m:+mm||0})}}
+  const com=it.filter(x=>x.m>0).sort((a,b)=>b.v/b.m-a.v/a.m),MAX=40,mostra=com.slice(0,MAX);
+  const tit=i===0?`Vendedores hoje · sistema às ${hora}`:i===1?`Vendedores · ${String(c.V.ateDia||c.V.ate||'')}`:`Vendedores acumulado · até ${String(c.V.ateDia||c.V.ate||'')}`;
+  const html=rankDia(mostra,tit,null);if(!html)return i===0?`<div class="panel rankdia"><h3>Vendedores hoje</h3><p class="note" style="margin:0">Ainda sem venda de vendedor com meta hoje.</p></div>`:'';
+  return html+`<p class="note" style="margin:-6px 0 10px">${com.length>MAX?`Mostrando os ${MAX} primeiros de ${com.length} vendedores. `:''}Venda física de cada vendedor no Sistema Corporativo (Planilha de Metas)${velho?` · <b style="color:#ff8b95">atualizada às ${hora}: a conexão com o sistema caiu, entre na aba Equipe para renovar</b>`:''}.</p>`;
+}
+async function carregaVend(){
+  try{const j=await api('vendedores',{});S.vend=j.vend;const car=$('#car');
+    if(car?._rkBase&&car._vctx){car._rk=car._rkBase.map((h,i)=>h+rankVend(i,car._vctx));$('#rankDia').innerHTML=car._rk[+car.dataset.i||0]}}catch{}
+}
 // contagiros digital: arco de 0 a 120% da meta, faixas vermelha (<85), dourada (85–99) e verde (100+), agulha e visor LCD
 function tacho(p,lab){
   const ang=v=>Math.PI*(1-Math.min(Math.max(v,0),120)/120),pt=(v,r)=>[84+r*Math.cos(ang(v)),84-r*Math.sin(ang(v))];
@@ -1399,6 +1421,8 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const semHoje=P&&+hora.slice(0,2)>=12?L.filter(x=>x.meta_hoje>0&&!(+P.lojas[x.cod]?.venda>0)).map(x=>x.nome):[],semOntem=L.filter(x=>x.meta_ontem>0&&!(x.ontem>0)).map(x=>x.nome);
   rks[0]=avisoTI(semHoje)+rks[0];rks[1]=avisoTI(semOntem)+rks[1];
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
+  // ranking dos vendedores (Sistema Corporativo) embaixo do ranking das lojas, na mesma tela e na mesma visão (loja, regional ou rede)
+  car._vctx={cods:l?[l.cod]:L.map(x=>x.cod),L:V.todas||L,V};car._rkBase=[...rks];rks.forEach((h,i)=>rks[i]=h+rankVend(i,car._vctx));
   car.dataset.i=0;car._rk=rks;car._tc=mostraT?tc:null;$('#rankDia').innerHTML=rks[0];
   // dia escolhido no calendário: abre direto na tela do dia, com o ranking daquele dia
   if(V.ateDia){car.dataset.i=1;requestAnimationFrame(()=>{car.scrollLeft=car.clientWidth});dots.forEach((d,k)=>d.classList.toggle('on',k===1));$('#rankDia').innerHTML=rks[1];$('#ritmo').hidden=true;if(mostraT)$('#tacho').innerHTML=tc[1]}
@@ -2251,7 +2275,7 @@ function eqRender(){
   if(EQ.aba==='equipe')eqEquipe();else if(EQ.aba==='metas')eqMetas();else eqPend();
 }
 $('#eqLogin').addEventListener('submit',async e=>{e.preventDefault();const b=$('#eqEntrar');b.disabled=true;$('#eqErro').textContent='';
-  try{const j=await eqApi('scEntrar',{usuario:$('#eqUsu').value.trim(),senha:$('#eqSen').value});EQ.ok=true;EQ.usuario=j.usuario;$('#eqSen').value='';await eqCarregaLojas();eqRender()}
+  try{const j=await eqApi('scEntrar',{usuario:$('#eqUsu').value.trim(),senha:$('#eqSen').value});EQ.ok=true;EQ.usuario=j.usuario;$('#eqSen').value='';await eqCarregaLojas();eqRender();carregaVend()}
   catch(err){$('#eqErro').textContent=err.message}finally{b.disabled=false}});
 $('#eqSair').onclick=async()=>{try{await eqApi('scSair')}catch{}EQ.ok=false;EQ.lojas=null;eqRender()};
 $('#eqLoja').onchange=e=>{EQ.num=e.target.value;EQ.lin=null;EQ.grade=null;EQ.conf=null;eqRender()};
