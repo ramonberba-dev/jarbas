@@ -1500,7 +1500,7 @@ function rItens(){
   const p=S.pilar;
   $('#pilItens').innerHTML=p.itens.map(it=>{const v=S.resp[it.id]??'',nf=(S.fotos[it.id]||[]).length+(S.novas[it.id]||[]).length;
     let campo='';
-    if(it.t==='num')campo=`<input class="inp" inputmode="decimal" data-r="${it.id}" value="${esc(v)}" placeholder="${esc(it.ph||'')}">`;
+    if(it.t==='num')campo=`<input class="inp" inputmode="decimal" data-r="${it.id}" value="${esc(v)}" placeholder="Digite aqui">`; // sem número de exemplo: o gerente achava que o 0 apagado já valia
     else if(it.t==='texto')campo=`<textarea class="inp" rows="2" data-r="${it.id}" placeholder="${esc(it.ph||'')}">${esc(v)}</textarea>`;
     else if(it.t==='sn')campo=`<div class="sn">${['sim','nao'].map(o=>`<button type="button" data-sn="${it.id}" data-o="${o}" class="${v===o?'on '+(o===it.bom?'bom':'ruim'):''}">${o==='sim'?'Sim':'Não'}</button>`).join('')}</div>`+
       (it.obs_se&&v===it.obs_se?`<textarea class="inp" rows="2" data-r="${it.id}_obs" placeholder="O que aconteceu?">${esc(S.resp[it.id+'_obs']||'')}</textarea>`:'');
@@ -1540,7 +1540,9 @@ function bastaoPopup(txtWhats){
 $('#bEnviar').onclick=async()=>{
   const p=S.pilar,falta=p.itens.filter(it=>{const v=S.resp[it.id];if(it.t==='foto')return false;return v==null||v===''}),semFoto=p.itens.filter(it=>precisaFoto(it)&&!(S.fotos[it.id]||[]).length&&!(S.novas[it.id]||[]).length);
   if(semFoto.length){$('#pilAviso').textContent='Falta foto em: '+semFoto.map(i=>i.l).join(', ');return}
-  if(falta.length&&!p.itens.every(i=>i.t==='texto')){$('#pilAviso').textContent='Responda: '+falta.map(i=>i.l).join(', ');return}
+  $('#pilItens').querySelectorAll('[data-r]').forEach(c=>c.style.borderColor='');
+  if(falta.length&&!p.itens.every(i=>i.t==='texto')){$('#pilAviso').innerHTML=`<span style="display:block;padding:10px 12px;border:1px solid #ff8b95;border-radius:8px;background:#3a070b;color:#fff"><b style="color:#ff8b95">⚠ Não foi enviado. Preencha todos os campos.</b><br>Falta: ${esc(falta.map(i=>i.l).join(', '))}. Se não houve nenhum, digite 0.</span>`;
+    const cs=falta.map(i=>$('#pilItens').querySelector(`[data-r="${i.id}"]`)).filter(Boolean);cs.forEach(c=>c.style.borderColor='#ff8b95');$('#pilAviso').scrollIntoView({behavior:'smooth',block:'center'});return}
   $('#pilAviso').textContent='';const b=$('#bEnviar');b.disabled=true;b.textContent='Enviando…';
   try{const data=p.semanal?segundaISO(S.hoje):S.hoje;
     const j=await api('salvar',{pilar:p.id,data,respostas:S.resp,fotos:S.fotos,fotosNovas:S.novas,auto:!!p.whats});
