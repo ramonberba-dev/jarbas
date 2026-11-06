@@ -567,8 +567,11 @@ function rankDia(itens,titulo,destaque){
    i = tela do reator: 0 hoje (parcial do sistema), 1 dia fechado (ontem ou o dia escolhido), 2 acumulado até esse dia */
 const nomeVend=n=>String(n).replace(/^\d{2,4}\s+/,'').toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
 function rankVend(i,c){
-  const D=S.vend;if(!c||!D?.lojas)return '';
-  const lojas=D.lojas.filter(x=>c.cods.includes(x.loja));if(!lojas.length)return '';
+  const D=S.vend;if(!c)return '';
+  // sem dados, avisa em vez de sumir: o ranking depende de alguém conectado ao Sistema Corporativo
+  const aviso=()=>S.vendCarregou?`<div class="panel rankdia"><h3>Ranking de vendedores</h3><p class="note" style="margin:0">${S.perfil?.equipe?'Falta conectar o Sistema Corporativo: abra a aba <b>Equipe</b> e entre com o seu login. O ranking aparece em seguida.':'Ainda sem dados. A supervisão precisa conectar o Sistema Corporativo.'}</p></div>`:'';
+  if(!D?.lojas)return aviso();
+  const lojas=D.lojas.filter(x=>c.cods.includes(x.loja));if(!lojas.length)return aviso();
   const varias=lojas.length>1,nomeL=cod=>(c.L.find(x=>x.cod===cod)||{}).nome||cod;
   const dm=String(c.V.ateDia||c.V.ate||'').match(/^(\d{1,2})\/(\d{1,2})/),dF=dm&&+dm[2]===D.mes?+dm[1]:null;
   const hora=new Date(D.ts).toTimeString().slice(0,5),velho=Date.now()-D.ts>3600e3;
@@ -582,7 +585,7 @@ function rankVend(i,c){
   return html+`<p class="note" style="margin:-6px 0 10px">${com.length>MAX?`Mostrando os ${MAX} primeiros de ${com.length} vendedores. `:''}Venda física de cada vendedor no Sistema Corporativo (Planilha de Metas)${velho?` · <b style="color:#ff8b95">atualizada às ${hora}: a conexão com o sistema caiu, entre na aba Equipe para renovar</b>`:''}.</p>`;
 }
 async function carregaVend(){
-  try{const j=await api('vendedores',{});S.vend=j.vend;const car=$('#car');
+  try{const j=await api('vendedores',{});S.vend=j.vend;S.vendCarregou=true;const car=$('#car');
     if(car?._rkBase&&car._vctx){car._rk=car._rkBase.map((h,i)=>h+rankVend(i,car._vctx));$('#rankDia').innerHTML=car._rk[+car.dataset.i||0]}}catch{}
 }
 // contagiros digital: arco de 0 a 120% da meta, faixas vermelha (<85), dourada (85–99) e verde (100+), agulha e visor LCD
