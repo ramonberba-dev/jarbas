@@ -1448,7 +1448,11 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
 const horaBastao=l=>l?.tipo==='RUA'?'12:00':'14:00';
 // domingo e feriado não têm passagem de bastão
 const temBastao=dia=>new Date(dia+'T12:00:00').getDay()!==0&&!(RITMO?.feriados||[]).includes(dia);
-const valBR=x=>{let t=String(x??'').replace(/[^\d.,]/g,'');if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');else if(!/\.\d{1,2}$/.test(t))t=t.replace(/\./g,'');return +t||0};
+// BH Centro fecha às 19h e, no sábado, às 15h: fechamento 10 min antes, como as outras lojas; sábado não tem parcial das 18h
+const sabado=dia=>new Date(dia+'T12:00:00').getDay()===6;
+const horaFecha=(cod,dia)=>cod==='1051'?(sabado(dia)?'14:50':'18:50'):null;
+const semP18=(cod,dia)=>cod==='1051'&&sabado(dia);
+const valBR=x=>{let t=String(x??'').replace(/[^\d.,]/g,'');if(/^\d{1,3},\d{3}$/.test(t))return +t.replace(',',''); /* 6,939 = seis mil: vírgula no lugar do ponto de milhar */if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');else if(!/\.\d{1,2}$/.test(t))t=t.replace(/\./g,'');return +t||0};
 function bastao(l,venda,dia=S.hoje){if(!l||!(l.meta_hoje>0))return null;const f=fracDia(l.cod,l.tipo,dia,horaBastao(l));if(f==null)return null;const pede=l.meta_hoje*f;return {pede,v:venda,p:pede>0?venda/pede*100:NaN,ok:venda>=pede}}
 const tagBastao=b=>b&&isFinite(b.p)?(b.ok?`<em class="tag ok">ENTREGOU · ${Math.round(b.p)}%</em>`:`<em class="tag r">NÃO ENTREGOU · ${Math.round(b.p)}%</em>`):'';
 function atuBastao(){const e=$('#bastaoOk');if(!e)return;const l=window.__V.lojas.find(x=>x.cod===S.cod),b=bastao(l,valBR(S.resp.bastao1));
@@ -1461,11 +1465,11 @@ function rInicio(){
   $('#inicioLoja').hidden=!loja;$('#inicioMaster').hidden=!S.perfil.master;
   if(loja){
     // obrigações do dia primeiro (em destaque); parciais e fechamento num bloco separado, com o horário de cada uma
-    const PAR=['bastao','p14','p18','fecha'],ob=ROTINA.filter(p=>!PAR.includes(p.id)),pa=ROTINA.filter(p=>PAR.includes(p.id)&&(p.id!=='bastao'||temBastao(S.hoje)));
+    const PAR=['bastao','p14','p18','fecha'],ob=ROTINA.filter(p=>!PAR.includes(p.id)),pa=ROTINA.filter(p=>PAR.includes(p.id)&&(p.id!=='bastao'||temBastao(S.hoje))&&(p.id!=='p18'||!semP18(S.cod,S.hoje)));
     const fixos=ob.filter(p=>!p.semanal),feitos=fixos.filter(p=>reg(p.id)).length;
     $('#rotProg').textContent=`${feitos} de ${fixos.length} enviadas`;
     $('#listaRot').innerHTML=ob.map((p,i)=>`<button class="li" data-pil="${p.id}"><span>${i+1}. ${esc(p.titulo)}<small>${esc(p.momento)}${p.semanal?' · vale a semana toda':''}</small></span>${tagSt(reg(p.id))}</button>`).join('');
-    const tipo=((window.__V?.lojas||[]).find(x=>x.cod===S.cod)||{}).tipo,hora={bastao:tipo==='RUA'?'12h':'14h',p14:'14h',p18:'18h',fecha:tipo==='SH'?'21h50':'19h50'};
+    const tipo=((window.__V?.lojas||[]).find(x=>x.cod===S.cod)||{}).tipo,hora={bastao:tipo==='RUA'?'12h':'14h',p14:'14h',p18:'18h',fecha:horaFecha(S.cod,S.hoje)?.replace(':','h')||(tipo==='SH'?'21h50':'19h50')};
     $('#parProg').textContent=`${pa.filter(p=>reg(p.id)).length} de ${pa.length} enviadas`;
     $('#listaPar').innerHTML=pa.map(p=>`<button class="li" data-pil="${p.id}"><span>${esc(p.titulo)}<small>até as ${hora[p.id]} · ${p.id==='bastao'?'o responsável do horário entregou o ritmo?':'o alarme toca no horário'}</small></span>${p.id==='bastao'&&reg(p.id)?tagBastao(bastao((window.__V?.lojas||[]).find(x=>x.cod===S.cod),valBR(reg(p.id).respostas?.bastao1)))||tagSt(reg(p.id)):tagSt(reg(p.id))}</button>`).join('');
     $('#listaDem').innerHTML=S.demandas.length?S.demandas.map(d=>`<button class="li dem" data-pil="dem:${esc(d.id)}"><span>${esc(d.titulo)}<small>${d.ate&&d.ate!==d.data?'até '+dataBR(d.ate):'hoje'}${d.foto||d.tipo==='foto'?' · com foto':''}</small></span>${tagSt(S.rotina.find(r=>r.pilar==='dem:'+d.id))}</button>`).join('')
@@ -1492,7 +1496,7 @@ function abrirPilar(pid){
   const l=window.__V.lojas.find(x=>x.cod===S.cod);
   $('#pilAuto').innerHTML=pid==='bastao'&&l?`<div class="autoinfo"><div class="plate"><small>Meta de hoje</small><b>${mil(l.meta_hoje)}</b></div><div class="plate"><small>Ritmo pede até ${horaBastao(l).slice(0,2)}h</small><b>${(b=>b?brl(b.pede):'—')(bastao(l,0))}</b></div><div class="plate"><small>Responsável do horário entregou?</small><b id="bastaoOk">—</b></div></div>`
     :pid==='abertura'&&l?`<div class="autoinfo"><div class="plate"><small>Meta de hoje</small><b>${mil(l.meta_hoje)}</b></div><div class="plate"><small>Ritmo do mês</small><b>${p1(pct(l.venda,l.meta_periodo))}</b></div><div class="plate"><small>Por vendedor</small><b id="porVend">—</b></div></div>`:'';
-  $('#bEnviar').textContent=p.whats?'Enviar e mandar no WhatsApp':r?'Enviar de novo':'Enviar para a supervisão';
+  $('#bEnviar').textContent=p.id==='bastao'?'Registrar':p.whats?'Enviar e mandar no WhatsApp':r?'Enviar de novo':'Enviar para a supervisão';
   rItens();ir('pilar');
 }
 function precisaFoto(it){const v=S.resp[it.id];return it.t==='foto'||(it.t==='sn'&&it.foto_se&&v===it.foto_se)}
@@ -1518,7 +1522,7 @@ $('#pilItens').addEventListener('change',async e=>{const f=e.target.closest('[da
 function reduzir(file){return new Promise((ok,no)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>{const k=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.72).split(',')[1])};im.onerror=no;im.src=u})}
 // depois de enviar a passagem de bastão: popup com uma análise curta da performance até ali (contas com a curva de ritmo da loja)
 function bastaoPopup(txtWhats){
-  const l=(window.__V?.lojas||[]).find(x=>x.cod===S.cod),v=valBR(S.resp.bastao1),pa=valBR(S.resp.bastao2),ct=valBR(S.resp.bastao3),b=bastao(l,v);
+  const l=(window.__V?.lojas||[]).find(x=>x.cod===S.cod),v=valBR(S.resp.bastao1),pa=parseFloat(String(S.resp.bastao2||'').replace(',','.'))||0,ct=valBR(S.resp.bastao3),b=bastao(l,v);
   const it=[];
   if(b&&isFinite(b.p)){
     const hb=horaBastao(l).slice(0,2)+'h',f=b.pede/l.meta_hoje,falta=Math.max(l.meta_hoje-v,0),proj=f>0?v/f:0;
@@ -1537,19 +1541,32 @@ function bastaoPopup(txtWhats){
   document.body.append(d);
   d.querySelector('button').onclick=()=>{d.remove();if(txtWhats)location.href='https://wa.me/?text='+encodeURIComponent(txtWhats)};
 }
+// venda e P.A. fora do normal pedem confirmação antes de enviar; venda em relação à meta de hoje da loja
+const CAMPO_VENDA=['bastao1','p181','fecha1'],CAMPO_PA=['bastao2','p185','fecha5'];
+function valoresEstranhos(p){const l=window.__V.lojas.find(x=>x.cod===S.cod),m=+l?.meta_hoje||0,out=[];
+  for(const it of p.itens){const t=String(S.resp[it.id]??'').trim();if(!t)continue;
+    if(CAMPO_VENDA.includes(it.id)&&m>0){const v=valBR(t);if(v>m*3||(v>0&&v<m*.01))out.push(`${it.l}: o Jarbas entendeu ${brl(v)}, e a meta de hoje é ${brl(m)}.`)}
+    if(CAMPO_PA.includes(it.id)){const pa=parseFloat(t.replace(',','.'))||0;if(pa>6)out.push(`${it.l}: o Jarbas entendeu ${String(pa).replace('.',',')}.`)}}
+  return out}
+// 6,939 vai para a supervisão e para o WhatsApp como 6.939, sem dúvida de leitura
+function normalizaValores(p){for(const it of p.itens){if(it.t==='num'&&!CAMPO_PA.includes(it.id)&&/^\d{1,3},\d{3}$/.test(String(S.resp[it.id]??'').trim()))S.resp[it.id]=String(S.resp[it.id]).trim().replace(',','.')}}
 $('#bEnviar').onclick=async()=>{
   const p=S.pilar,falta=p.itens.filter(it=>{const v=S.resp[it.id];if(it.t==='foto')return false;return v==null||v===''}),semFoto=p.itens.filter(it=>precisaFoto(it)&&!(S.fotos[it.id]||[]).length&&!(S.novas[it.id]||[]).length);
   if(semFoto.length){$('#pilAviso').textContent='Falta foto em: '+semFoto.map(i=>i.l).join(', ');return}
   $('#pilItens').querySelectorAll('[data-r]').forEach(c=>c.style.borderColor='');
   if(falta.length&&!p.itens.every(i=>i.t==='texto')){$('#pilAviso').innerHTML=`<span style="display:block;padding:10px 12px;border:1px solid #ff8b95;border-radius:8px;background:#3a070b;color:#fff"><b style="color:#ff8b95">⚠ Não foi enviado. Preencha todos os campos.</b><br>Falta: ${esc(falta.map(i=>i.l).join(', '))}. Se não houve nenhum, digite 0.</span>`;
     const cs=falta.map(i=>$('#pilItens').querySelector(`[data-r="${i.id}"]`)).filter(Boolean);cs.forEach(c=>c.style.borderColor='#ff8b95');$('#pilAviso').scrollIntoView({behavior:'smooth',block:'center'});return}
+  const estranhos=valoresEstranhos(p);
+  if(estranhos.length&&S.confirmou!==JSON.stringify(estranhos)){S.confirmou=JSON.stringify(estranhos);
+    $('#pilAviso').innerHTML=`<span style="display:block;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:#3a2607;color:#fff"><b style="color:var(--gold)">⚠ Confira antes de enviar.</b><br>${estranhos.map(esc).join('<br>')}<br>Se estiver errado, corrija. Se estiver certo, toque em enviar de novo.</span>`;$('#pilAviso').scrollIntoView({behavior:'smooth',block:'center'});return}
+  normalizaValores(p);
   $('#pilAviso').textContent='';const b=$('#bEnviar');b.disabled=true;b.textContent='Enviando…';
   try{const data=p.semanal?segundaISO(S.hoje):S.hoje;
-    const j=await api('salvar',{pilar:p.id,data,respostas:S.resp,fotos:S.fotos,fotosNovas:S.novas,auto:!!p.whats});
+    const j=await api('salvar',{pilar:p.id,data,respostas:S.resp,fotos:S.fotos,fotosNovas:S.novas,auto:!!p.whats||p.id==='bastao'});
     const ix=S.rotina.findIndex(r=>r.pilar===p.id&&r.data===data),novo={id:[data,S.cod,p.id].join('|'),data,pilar:p.id,status:j.status,respostas:S.resp,fotos:j.fotos};
     if(ix>=0)S.rotina[ix]=novo;else S.rotina.push(novo);
-    const txt=p.whats?`*${p.titulo} · ${S.perfil.nome}*\n`+p.itens.map(it=>`${it.l}: ${S.resp[it.id]||'-'}${S.resp[it.id+'_obs']?' ('+S.resp[it.id+'_obs']+')':''}`).join('\n'):'';
-    if(p.id==='bastao'){rInicio();ir('inicio');bastaoPopup(txt);return} // primeiro a análise; o WhatsApp abre no OK
+    const txt=p.whats&&p.id!=='bastao'?`*${p.titulo} · ${S.perfil.nome}*\n`+p.itens.map(it=>`${it.l}: ${S.resp[it.id]||'-'}${S.resp[it.id+'_obs']?' ('+S.resp[it.id+'_obs']+')':''}`).join('\n'):'';
+    if(p.id==='bastao'){rInicio();ir('inicio');bastaoPopup('');return} // o bastão só fica registrado: mostra a análise, sem WhatsApp
     if(txt)location.href='https://wa.me/?text='+encodeURIComponent(txt);
     toast('Enviado');rInicio();ir('inicio');
   }catch(err){toast(err.message)}finally{b.disabled=false;b.textContent='Enviar'}};
@@ -1572,11 +1589,11 @@ const ehLoja=r=>String(r.autor||'').startsWith('Gerente');
 // entregas de hoje loja a loja: passagem de bastão, parciais 14h/18h e fechamento contra o ritmo de cada loja
 function entregasHoje(){
   const dia=S.hoje,TD=window.__V.todas||window.__V.lojas,rot=(S.fila?.rotina||[]).filter(r=>r.data===dia),agora=new Date().toTimeString().slice(0,5);
-  const med=(l,pid,campo,hm)=>{const r=rot.find(x=>x.cod===l.cod&&x.pilar===pid),venceu=agora>=(hm||(l.tipo==='SH'?'21:50':'19:50'));
+  const med=(l,pid,campo,hm)=>{const r=rot.find(x=>x.cod===l.cod&&x.pilar===pid),venceu=agora>=(hm||horaFecha(l.cod,dia)||(l.tipo==='SH'?'21:50':'19:50'));
     if(!r){const pj=rot.find(x=>x.cod===l.cod&&x.pilar==='perdi:'+pid);return pj?{hora:hm||'fechamento',enviou:false,venceu,justificou:pj.respostas?.justificativa||''}:{hora:hm||'fechamento',enviou:false,venceu}}const v=valBR(r.respostas?.[campo]),f=hm?fracDia(l.cod,l.tipo,dia,hm):1,pede=Math.round(l.meta_hoje*(f??1));
     return {hora:hm||'fechamento',enviou:true,venda:v,ritmo_pede:pede,pct:pede>0?Math.round(v/pede*100):null}};
   const tb=temBastao(dia);
-  return TD.filter(l=>l.meta_hoje>0).map(l=>({l,b:tb?med(l,'bastao','bastao1',horaBastao(l)):{folga:true},p14:med(l,'p14','p181','14:00'),p18:med(l,'p18','p181','18:00'),fe:med(l,'fecha','fecha1',null)}));
+  return TD.filter(l=>l.meta_hoje>0).map(l=>({l,b:tb?med(l,'bastao','bastao1',horaBastao(l)):{folga:true},p14:med(l,'p14','p181','14:00'),p18:semP18(l.cod,dia)?{folga:true}:med(l,'p18','p181','18:00'),fe:med(l,'fecha','fecha1',null)}));
 }
 function rEntregas(){
   const E=entregasHoje(),NREG={R:'Ramon',T:'Tuanne',M:'Mandu'};
@@ -2506,7 +2523,7 @@ $('#eqBox').addEventListener('click',async e=>{
    14h e 18h: parcial · 19h50: fechamento das lojas de rua · 21h50: fechamento das lojas de shopping.
    Popup que pisca até o gerente tocar em "Já enviei"; o alarme "PÊÊÊ" toca duas vezes e repete depois de 10 s. Vale com o app aberto; se abrir depois, aparece na hora (até 90 min). */
 // pid = demanda da rotina que o gerente precisa enviar para o alerta sair (Parcial das 14h, das 18h, Fechamento do dia)
-const ALERTAS=[{h:'12:00',bastao:true,tipo:'RUA',pid:'bastao'},{h:'14:00',bastao:true,tipo:'SH',pid:'bastao'},{h:'14:00',fech:false,pid:'p14'},{h:'18:00',fech:false,pid:'p18'},{h:'19:50',fech:true,tipo:'RUA',pid:'fecha'},{h:'21:50',fech:true,tipo:'SH',pid:'fecha'}];
+const ALERTAS=[{h:'12:00',bastao:true,tipo:'RUA',pid:'bastao'},{h:'14:00',bastao:true,tipo:'SH',pid:'bastao'},{h:'14:00',fech:false,pid:'p14'},{h:'18:00',fech:false,pid:'p18'},{h:'14:50',fech:true,cod:'1051',pid:'fecha'},{h:'18:50',fech:true,cod:'1051',pid:'fecha'},{h:'19:50',fech:true,tipo:'RUA',pid:'fecha'},{h:'21:50',fech:true,tipo:'SH',pid:'fecha'}];
 let alAudio=null,alSom=null,alAberto=null;
 addEventListener('pointerdown',()=>{try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();if(alAudio.state==='suspended')alAudio.resume()}catch{}},{passive:true});
 function alPee(){try{alAudio=alAudio||new (window.AudioContext||window.webkitAudioContext)();alAudio.resume?.();const a=alAudio,t0=a.currentTime;
@@ -2557,7 +2574,7 @@ function alPerdi(d,a){
 function alVerifica(){
   if(!S.perfil||!S.D)return;const sup=!!S.perfil.master;
   const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.perfil.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
-  for(const a of ALERTAS){if(sup?(a.fech||a.bastao):(a.tipo&&a.tipo!==tipo))continue;if(a.bastao&&!temBastao(dia))continue; // sem bastão no domingo e no feriado // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
+  for(const a of ALERTAS){if(sup?(a.fech||a.bastao):(a.tipo&&a.tipo!==tipo))continue;if(a.cod&&(a.cod!==S.cod||a.h!==horaFecha(S.cod,dia)))continue;if(a.fech&&!a.cod&&horaFecha(S.cod,dia))continue;if(a.pid==='p18'&&semP18(S.cod,dia))continue;if(a.bastao&&!temBastao(dia))continue; // sem bastão no domingo e no feriado // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
     const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||(sup&&min>m+90))continue;
     if(!sup){if(reg(a.pid)||(!a.fech&&reg('perdi:'+a.pid)))continue; // enviou, ou justificou que perdeu o horário // gerente: o alerta só sai quando a demanda do horário foi enviada
       if(location.hash==='#pilar'&&S.pilar?.id===a.pid)break; // está preenchendo agora
