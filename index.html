@@ -1312,6 +1312,8 @@ function tacho(p,lab){
 }
 const tachoUm=(p,lab)=>`<div class="tacho">${tacho(p,lab)}</div>`;
 // loja com diária (meta do dia) e sem venda espelhada: aviso em cima do ranking, até o TI resolver
+// parcial parada: mais de 75 min sem carga no horário do robô (9h às 22h40)
+const parcialVelha=(P,agora=new Date())=>{const t=new Date(String(P?.carga||'').replace(' ','T'));return !isNaN(t)&&agora-t>75*6e4&&agora.getHours()>=9&&agora.getHours()<=22&&t.toDateString()===agora.toDateString()};
 const avisoTI=nomes=>nomes.length?`<div class="panel" style="border-color:#ff8b95;background:#3a070bcc;margin-bottom:10px"><b style="color:#ff8b95">⚠ Falta a venda da ${nomes.map(n=>'loja '+esc(n)).join(', ').replace(/, ([^,]*)$/,' e $1')}</b><small style="display:block;opacity:.85;margin-top:3px">Aguardando atuação do TI.</small></div>`:'';
 /* ---------- ritmo de hoje: a venda da parcial contra o que a loja costuma ter vendido até aquela hora ----------
    curva por hora de cada loja (Desktop/Jarbas/ritmo: parciais do robô de out/2026), por dia útil, sábado, domingo e feriado */
@@ -1410,6 +1412,7 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   $('#car').innerHTML=sHoje+sOntem+sAcum;
   const rks=[
     P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome+(P.lojas[x.cod].fonte==='gerente'?' ✍':''),v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
+      +(parcialVelha(P)?`<p class="note" style="margin:-6px 0 10px;color:#ff8b95">⚠ Venda sem atualizar desde as ${esc(hora)}. A próxima carga entra sozinha.</p>`:'')
       +(L.some(x=>P.lojas[x.cod]?.fonte==='gerente')?`<p class="note" style="margin:-6px 0 10px">✍ venda enviada pelo gerente na parcial, maior que a do flash.</p>`:'')
       :`<div class="panel rankdia"><h3>Ranking de hoje</h3><p class="note" style="margin:0">Aparece quando chegar a primeira carga da parcial do dia.</p></div>`,
     rankDia(L.map(x=>({cod:x.cod,nome:x.nome,v:x.ontem,m:x.meta_ontem})),V.ateDia?`Ranking de ${esc(V.ateDia)}`:`Ranking de ontem · ${esc(V.ate)}`,S.cod)||`<div class="panel rankdia"><h3>Ranking ${V.ateDia?'de '+esc(V.ateDia):'de ontem'}</h3><p class="note" style="margin:0">Ainda sem dia fechado neste mês: aparece com o painel de amanhã.</p></div>`,
