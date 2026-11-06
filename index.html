@@ -510,9 +510,11 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div class="acts" style="margin-top:8px"><button class="btn ghost sm" type="button" id="bApagarTxt">Apagar texto</button></div>
         <div class="sec">Checklist da loja</div>
         <div id="cSecoes"></div>
-        <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button><button class="btn ghost" type="button" id="bCopia">Salvar cópia de segurança</button></div>
+        <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button></div>
         <div id="cFalha"></div>
         <div id="cRel"></div>
+        <div class="acts" id="cSalvarBox"><button class="btn" type="button" id="bSalvarCk">Salvar checklist</button></div>
+        <p class="note" id="cSalvarAviso"></p>
       </section>
 
       <!-- REVISÃO (supervisão) -->
@@ -2093,13 +2095,17 @@ const CHECK=[
 ;
 const ST={ok:'OK',at:'Atenção',no:'Não',na:'N/A'};
 let V2=guarda.get('jarbas_visita');try{V2=V2?JSON.parse(V2):null}catch{V2=null}
-function novaV(){V2={cod:'',data:S.hoje,gerente:'',trans:'',resp:{},rel:null,envios:null};salvaV()}
-function salvaV(){guarda.set('jarbas_visita',JSON.stringify(V2))}
+// cada loja tem o seu checklist em andamento: trocar de loja guarda o atual e abre o da outra (ou um vazio)
+const rascunhos=()=>{try{return JSON.parse(guarda.get('jarbas_visitas')||'{}')||{}}catch{return {}}};
+const guardaRascunho=V=>{if(!V?.cod)return;const R=rascunhos();R[V.cod]=V;guarda.set('jarbas_visitas',JSON.stringify(R))};
+const visitaVazia=cod=>({cod:cod||'',data:S.hoje,gerente:'',trans:'',resp:{},rel:null,envios:null});
+function novaV(cod=V2?.cod){const R=rascunhos();if(cod&&R[cod]){delete R[cod];guarda.set('jarbas_visitas',JSON.stringify(R))}V2=visitaVazia(cod);salvaV()}
+function salvaV(){guarda.set('jarbas_visita',JSON.stringify(V2));guardaRascunho(V2)}
 function rCheck(){
   if(!V2)novaV();const L=window.__V.lojas;
   if(!$('#cLoja').options.length)$('#cLoja').innerHTML=L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
   const M=S.perfil.master;if(!M)V2.cod=S.perfil.cod;else if(!V2.cod)V2.cod=S.cod||L[0].cod;
-  $('#cLoja').disabled=!M;$('#bHab').hidden=!M;$('#cTitulo').textContent=M?'Checklist da supervisão':'Checklist da loja';
+  $('#cLoja').disabled=!M;$('#bHab').hidden=!M;$('#cSalvarBox').hidden=!M;$('#cTitulo').textContent=M?'Checklist da supervisão':'Checklist da loja';
   $('#cSub').textContent=M?'Marque o que viu, grave a conversa e gere o relatório com os e-mails para os setores.':'A supervisão habilitou este checklist para a sua loja. Marque cada item, tire as fotos, grave o que quiser explicar, gere o relatório e envie para a supervisão.';
   $('#cGerenteRot').textContent=M?'Gerente presente':'Quem preencheu';$('#bLimpar').textContent=M?'Nova visita':'Novo checklist';
   rHabBtn();
@@ -2147,17 +2153,19 @@ function rPre(){
   const IDS=new Set(CHECK.flatMap(x=>x.itens.map(i=>i.id)));let mudou=false;for(const k in A.st){if(!IDS.has(k))continue;const r=V2.resp[k]||={};if(!r.v){r.v=A.st[k];r.auto=1;mudou=true}}
   V2.preTexto=A.texto+' '+A.leitura;if(mudou)salvaV();
 }
-$('#cLoja').onchange=e=>{V2.cod=e.target.value;for(const k in V2.resp)if(V2.resp[k].auto)delete V2.resp[k];salvaV();rCheck()};$('#cData').onchange=e=>{V2.data=e.target.value;salvaV()};
+$('#cLoja').onchange=e=>{const novo=e.target.value;
+  if(gravando){e.target.value=V2.cod;toast('Pare a gravação antes de trocar de loja.');return}
+  salvaV();V2=rascunhos()[novo]||visitaVazia(novo);salvaV();$('#cFalha').innerHTML='';$('#cSalvarAviso').textContent='';rCheck()};$('#cData').onchange=e=>{V2.data=e.target.value;salvaV()};
 $('#cGerente').oninput=e=>{V2.gerente=e.target.value;salvaV()};$('#cTrans').oninput=e=>{V2.trans=e.target.value;salvaV()};
 $('#cSecoes').addEventListener('click',e=>{const b=e.target.closest('.op button');if(!b)return;const ck=b.closest('.ck'),id=ck.dataset.id,r=V2.resp[id]||={};
   r.v=r.v===b.dataset.v?'':b.dataset.v;ck.querySelectorAll('.op button').forEach(x=>x.classList.toggle('on',x.dataset.v===r.v));ck.classList.toggle('aj',['at','no'].includes(r.v));salvaV()});
 $('#cSecoes').addEventListener('input',e=>{const o=e.target.closest('[data-obs]');if(o){(V2.resp[o.dataset.obs]||={}).o=o.value;salvaV()}});
 // fotos da visita: sobem na hora para o Drive (pasta "Jarbas - fotos"); no celular fica só uma miniatura
 function miniatura(b64){return new Promise(ok=>{const im=new Image();im.onload=()=>{const k=160/Math.max(im.width,im.height),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.6))};im.src='data:image/jpeg;base64,'+b64})}
-$('#cSecoes').addEventListener('change',async e=>{const f=e.target.closest('[data-cfoto]');if(!f||!f.files.length)return;const id=f.dataset.cfoto,arq=[...f.files];f.value='';
+$('#cSecoes').addEventListener('change',async e=>{const f=e.target.closest('[data-cfoto]');if(!f||!f.files.length)return;const id=f.dataset.cfoto,arq=[...f.files],V=V2;f.value=''; // V: a foto fica na loja em que foi tirada, mesmo se trocar de loja durante o envio
   toast(`Enviando ${arq.length} foto(s)…`);
-  for(const a of arq){try{const b64=await reduzir(a),th=await miniatura(b64),j=await api('fotoVisita',{b64,cod:V2.cod,data:V2.data,item:id});((V2.resp[id]||={}).fotos||=[]).push({id:j.id,th});salvaV()}catch(err){toast('Uma foto não subiu: '+err.message)}}
-  rCheck();toast('Fotos salvas')});
+  for(const a of arq){try{const b64=await reduzir(a),th=await miniatura(b64),j=await api('fotoVisita',{b64,cod:V.cod,data:V.data,item:id});((V.resp[id]||={}).fotos||=[]).push({id:j.id,th});if(V===V2)salvaV();else guardaRascunho(V)}catch(err){toast('Uma foto não subiu: '+err.message)}}
+  if(V===V2)rCheck();toast('Fotos salvas')});
 $('#cSecoes').addEventListener('click',e=>{const x=e.target.closest('[data-rmf]');if(!x)return;V2.resp[x.dataset.rmf]?.fotos?.splice(+x.dataset.k,1);salvaV();rCheck()},true);
 $('#bLimpar').onclick=()=>{if(!$('#bLimpar').dataset.c){$('#bLimpar').dataset.c=1;$('#bLimpar').textContent='Toque de novo para apagar';setTimeout(()=>{delete $('#bLimpar').dataset.c;$('#bLimpar').textContent=S.perfil.master?'Nova visita':'Novo checklist'},4000);return}
   delete $('#bLimpar').dataset.c;$('#bLimpar').textContent=S.perfil.master?'Nova visita':'Novo checklist';novaV();rCheck();toast('Visita nova')};
@@ -2214,18 +2222,28 @@ function falhaRel(msg){
 }
 // cópia de segurança: tudo o que foi coletado (também os itens OK), sem depender da IA
 function textoCopia(l){
-  const L=[`CÓPIA DE SEGURANÇA · ${l.nome||V2.cod} · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,`Pessoa presente: ${V2.gerente||'não informado'}`,''];
+  const L=[`CHECKLIST COMPLETO · ${l.nome||V2.cod} · ${dataBR(V2.data)}/${V2.data.slice(0,4)}`,`Pessoa presente: ${V2.gerente||'não informado'}`,''];
   CHECK.forEach(sc=>{const it=sc.itens.filter(i=>{const r=V2.resp[i.id];return r&&(r.v||r.o||r.fotos?.length)});if(!it.length)return;L.push(sc.t);
     it.forEach(i=>{const r=V2.resp[i.id];L.push(`- ${ST[r.v]||'Sem marcação'}: ${i.t}${r.o?' · '+r.o:''}${r.fotos?.length?` · ${r.fotos.length} foto(s)`:''}`)});L.push('')});
   if(V2.trans)L.push('FALA DA VISITA (transcrição)',V2.trans,'');
   return L.join(String.fromCharCode(10));
 }
-$('#bCopia').onclick=async()=>{
-  const b=$('#bCopia'),l=window.__V.lojas.find(x=>x.cod===V2.cod)||{},txt=textoCopia(l);b.disabled=true;b.textContent='Salvando…';
-  try{await api('salvarChecklist',{cod:V2.cod,data:V2.data,quem:V2.gerente,resumo:'Cópia de segurança da visita',texto:txt,fotos:fotosVisita()},60000);b.textContent='Cópia salva ✓';toast('Cópia salva em Revisão › Relatórios');setTimeout(()=>{b.textContent='Salvar cópia de segurança'},5000)}
+// salvar: registra em Revisão › Relatórios e limpa a loja para começar outro; se falhar, nada é apagado
+$('#bSalvarCk').onclick=async()=>{
+  const b=$('#bSalvarCk'),av=$('#cSalvarAviso'),l=window.__V.lojas.find(x=>x.cod===V2.cod)||{};
+  if(gravando){toast('Pare a gravação antes de salvar.');return}
+  const tem=Object.values(V2.resp).some(r=>r.v||r.o||r.fotos?.length)||(V2.trans||'').trim()||V2.rel;
+  if(!tem){av.textContent='Ainda não há nada marcado neste checklist.';return}
+  if(!b.dataset.c){b.dataset.c=1;b.textContent='Toque de novo para salvar e limpar';
+    av.innerHTML=V2.rel&&!V2.enviado?'<b style="color:#ff8b95">⚠ Os e-mails desta visita ainda não foram enviados.</b> Depois de salvar, o checklist sai da tela e não dá mais para enviá-los por aqui.':`O checklist de ${esc(l.nome||'')} vai para Revisão › Relatórios e sai desta tela.`;
+    setTimeout(()=>{if(b.dataset.c&&!b.disabled){delete b.dataset.c;b.textContent='Salvar checklist';av.textContent=''}},8000);return}
+  delete b.dataset.c;b.disabled=true;b.textContent='Salvando…';av.textContent='';
+  const txt=(V2.rel?textoRelatorio(l)+'\n\n':'')+textoCopia(l);
+  try{if(!V2.enviado)await api('salvarChecklist',{cod:V2.cod,data:V2.data,quem:V2.gerente,resumo:V2.rel?.resumo||'Checklist salvo',texto:txt,fotos:fotosVisita()},60000); // quem já enviou os e-mails já está registrado
+    novaV(V2.cod);$('#cFalha').innerHTML='';rCheck();scrollTo({top:0,behavior:'smooth'});toast('Checklist salvo. Pode começar outro.')}
   catch(err){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'}));a.download=`checklist_${V2.cod}_${V2.data}.txt`;document.body.append(a);a.click();a.remove();
-    toast('Sem resposta do servidor: baixei a cópia neste aparelho');b.textContent='Salvar cópia de segurança'}
-  finally{b.disabled=false}};
+    av.innerHTML='<b style="color:#ff8b95">⚠ Não foi salvo no servidor.</b> O checklist continua aqui, e baixei uma cópia neste aparelho. Tente de novo.'}
+  finally{b.disabled=false;b.textContent='Salvar checklist'}};
 $('#bRel').onclick=async()=>{
   const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
   const itens=itensV().map(({v,...i})=>i);
@@ -2314,6 +2332,7 @@ async function enviarEmails(){
   b.disabled=true;b.textContent='Enviando…';const L=window.__V.lojas,l=L.find(x=>x.cod===V2.cod)||{};
   const sp=s=>s.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
   try{const j=await api('enviarRelatorio',{cod:V2.cod,loja:l.nome,data:V2.data,envios:sel.map(e=>({para:sp(e.para),cc:sp(e.cc),assunto:e.assunto,corpo:e.corpo,fotos:fotosEnvio(e),pdf:pdfOk&&(e.setor==='guto'||e.setor==='loja')})),pdfId:pdfOk?V2.pdf.id:'',registro:{gerente:V2.gerente,resp:V2.resp,trans:V2.trans,rel:V2.rel},texto:textoRelatorio(l),resumo:V2.rel?.resumo||'',fotosRel:fotosVisita()});
+    V2.enviado=true;salvaV();
     toast(`${j.enviados} e-mail(s) enviados`+(j.pdfs?` · PDF em ${j.pdfs} e-mail(s)`:'')+(j.fotos!=null?` · ${j.fotos} foto(s) em anexo`:'')+(j.fotosFalhas?` · ATENÇÃO: ${j.fotosFalhas} foto(s) não foram`:'')+(j.recusados?.length?` · ignorados: ${j.recusados.join(', ')}`:''));b.textContent='Enviado ✓';
   }catch(err){toast(err.message);b.disabled=false;delete b.dataset.c;delete b.dataset.sp;b.textContent='Enviar e-mails marcados'}}
 
