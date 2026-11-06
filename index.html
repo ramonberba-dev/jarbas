@@ -486,7 +486,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
       <section class="view" id="tela-check">
         <h2 class="t" id="cTitulo">Checklist da supervisão</h2>
         <div class="sub" id="cSub">Marque o que viu, grave a conversa e gere o relatório com os e-mails para os setores.</div>
-        <div class="acts" id="cTopo"><button class="btn ghost" type="button" id="bLimpar">Nova visita</button><button class="btn" type="button" id="bHab">Habilitar Checklist Loja</button></div>
+        <div class="acts" id="cTopo"><button class="btn" type="button" id="bHab">Habilitar Checklist Loja</button></div>
         <div class="panel" id="habBox" hidden>
           <h3>Habilitar o checklist para as lojas</h3>
           <p class="note" style="margin-top:0">Os gerentes das lojas marcadas ganham a aba CHECK com este mesmo checklist. O que eles enviarem aparece em Revisão › Relatórios.</p>
@@ -513,7 +513,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div class="acts"><button class="btn" type="button" id="bRel">Gerar relatório</button></div>
         <div id="cFalha"></div>
         <div id="cRel"></div>
-        <div class="acts" id="cSalvarBox"><button class="btn" type="button" id="bSalvarCk">Salvar checklist</button></div>
+        <div class="acts" id="cSalvarBox"><button class="btn" type="button" id="bSalvarCk">Salvar checklist</button><button class="btn ghost" type="button" id="bLimpar">Apagar checklist</button></div>
         <p class="note" id="cSalvarAviso"></p>
       </section>
 
@@ -2105,9 +2105,9 @@ function rCheck(){
   if(!V2)novaV();const L=window.__V.lojas;
   if(!$('#cLoja').options.length)$('#cLoja').innerHTML=L.map(l=>`<option value="${l.cod}">${esc(l.nome)}</option>`).join('');
   const M=S.perfil.master;if(!M)V2.cod=S.perfil.cod;else if(!V2.cod)V2.cod=S.cod||L[0].cod;
-  $('#cLoja').disabled=!M;$('#bHab').hidden=!M;$('#cSalvarBox').hidden=!M;$('#cTitulo').textContent=M?'Checklist da supervisão':'Checklist da loja';
+  $('#cLoja').disabled=!M;$('#bHab').hidden=!M;$('#bSalvarCk').hidden=!M;$('#cTitulo').textContent=M?'Checklist da supervisão':'Checklist da loja';
   $('#cSub').textContent=M?'Marque o que viu, grave a conversa e gere o relatório com os e-mails para os setores.':'A supervisão habilitou este checklist para a sua loja. Marque cada item, tire as fotos, grave o que quiser explicar, gere o relatório e envie para a supervisão.';
-  $('#cGerenteRot').textContent=M?'Gerente presente':'Quem preencheu';$('#bLimpar').textContent=M?'Nova visita':'Novo checklist';
+  $('#cGerenteRot').textContent=M?'Gerente presente':'Quem preencheu';$('#bLimpar').textContent='Apagar checklist';
   rHabBtn();
   $('#cLoja').value=V2.cod;$('#cData').value=V2.data;$('#cGerente').value=V2.gerente;$('#cTrans').value=V2.trans;
   rPre();
@@ -2167,8 +2167,12 @@ $('#cSecoes').addEventListener('change',async e=>{const f=e.target.closest('[dat
   for(const a of arq){try{const b64=await reduzir(a),th=await miniatura(b64),j=await api('fotoVisita',{b64,cod:V.cod,data:V.data,item:id});((V.resp[id]||={}).fotos||=[]).push({id:j.id,th});if(V===V2)salvaV();else guardaRascunho(V)}catch(err){toast('Uma foto não subiu: '+err.message)}}
   if(V===V2)rCheck();toast('Fotos salvas')});
 $('#cSecoes').addEventListener('click',e=>{const x=e.target.closest('[data-rmf]');if(!x)return;V2.resp[x.dataset.rmf]?.fotos?.splice(+x.dataset.k,1);salvaV();rCheck()},true);
-$('#bLimpar').onclick=()=>{if(!$('#bLimpar').dataset.c){$('#bLimpar').dataset.c=1;$('#bLimpar').textContent='Toque de novo para apagar';setTimeout(()=>{delete $('#bLimpar').dataset.c;$('#bLimpar').textContent=S.perfil.master?'Nova visita':'Novo checklist'},4000);return}
-  delete $('#bLimpar').dataset.c;$('#bLimpar').textContent=S.perfil.master?'Nova visita':'Novo checklist';novaV();rCheck();toast('Visita nova')};
+// apaga tudo o que foi marcado nesta loja para começar de novo; as outras lojas não mudam
+$('#bLimpar').onclick=()=>{const b=$('#bLimpar'),av=$('#cSalvarAviso');
+  if(gravando){toast('Pare a gravação antes de apagar.');return}
+  if(!b.dataset.c){b.dataset.c=1;b.textContent='Toque de novo para apagar';av.innerHTML='<b style="color:#ff8b95">⚠ Isso apaga as marcações, observações, fala, fotos e relatório deste checklist.</b> Não dá para desfazer.';
+    setTimeout(()=>{if(b.dataset.c){delete b.dataset.c;b.textContent='Apagar checklist';av.textContent=''}},8000);return}
+  delete b.dataset.c;b.textContent='Apagar checklist';av.textContent='';novaV(V2.cod);$('#cFalha').innerHTML='';rCheck();scrollTo({top:0,behavior:'smooth'});toast('Checklist apagado')};
 
 $('#bApagarTxt').onclick=()=>{const b=$('#bApagarTxt');
   if(!b.dataset.c){b.dataset.c=1;b.textContent='Toque de novo para apagar';setTimeout(()=>{delete b.dataset.c;b.textContent='Apagar texto'},4000);return}
