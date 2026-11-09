@@ -582,10 +582,10 @@ function rankVend(i,c){
   const hora=new Date(D.ts).toTimeString().slice(0,5),velho=Date.now()-D.ts>3600e3;
   const soma=(a,n)=>(a||[]).slice(0,n).reduce((s,x)=>s+(+x||0),0);
   const it=[];for(const lj of lojas){const dH=lj.hoje;for(const v of lj.vendedores){if(v.gerente)continue;
-    const [vv,mm]=i===0?[v.dias[dH-1],v.metas[dH-1]]:i===1?(dF?[v.dias[dF-1],v.metas[dF-1]]:[0,0]):(dF?[soma(v.dias,dF),soma(v.metas,dF)]:[0,0]);
+    const [vv,mm]=i===0?[v.dias[dH-1],v.metas[dH-1]]:i===1?(dF?[v.dias[dF-1],v.metas[dF-1]]:[0,0]):i===3?(dF?[soma(v.dias,dF)-soma(v.dias,Math.max(dF-3,0)),soma(v.metas,dF)-soma(v.metas,Math.max(dF-3,0))]:[0,0]):(dF?[soma(v.dias,dF),soma(v.metas,dF)]:[0,0]);
     it.push({cod:null,nome:nomeVend(v.nome)+(varias?' · '+nomeL(lj.loja):''),v:+vv||0,m:+mm||0})}}
   const com=it.filter(x=>x.m>0).sort((a,b)=>b.v/b.m-a.v/a.m),MAX=40,mostra=com.slice(0,MAX);
-  const tit=i===0?`Vendedores hoje · sistema às ${hora}`:i===1?`Vendedores · ${String(c.V.ateDia||c.V.ate||'')}`:`Vendedores acumulado · até ${String(c.V.ateDia||c.V.ate||'')}`;
+  const tit=i===0?`Vendedores hoje · sistema às ${hora}`:i===1?`Vendedores · ${String(c.V.ateDia||c.V.ate||'')}`:i===3?'Vendedores · fim de semana':`Vendedores acumulado · até ${String(c.V.ateDia||c.V.ate||'')}`;
   const html=rankDia(mostra,tit,null);if(!html)return i===0?`<div class="panel rankdia"><h3>Vendedores hoje</h3><p class="note" style="margin:0">Ainda sem venda de vendedor com meta hoje.</p></div>`:'';
   return html+`<p class="note" style="margin:-6px 0 10px">${com.length>MAX?`Mostrando os ${MAX} primeiros de ${com.length} vendedores. `:''}Venda física de cada vendedor no Sistema Corporativo (Planilha de Metas)${velho?` · <b style="color:#ff8b95">atualizada às ${hora}: a conexão com o sistema caiu, entre na aba Equipe para renovar</b>`:''}.</p>`;
 }

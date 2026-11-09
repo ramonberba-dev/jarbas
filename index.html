@@ -428,7 +428,7 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
         <div class="diaSel" id="diaSel" hidden><button type="button" id="bDia">📅 ESCOLHER DIA</button><button type="button" class="x" id="bDiaX" hidden aria-label="Voltar para ontem">✕ ONTEM</button><input type="date" id="iDia" tabindex="-1" aria-hidden="true"></div>
         <div class="car" id="car" aria-label="Reator: deslize para trocar entre meta proporcional e dia"></div>
         <div id="tacho" hidden></div>
-        <div class="dots" id="dots"><button class="on" aria-label="Venda de hoje"></button><button aria-label="Venda de ontem"></button><button aria-label="Venda acumulada"></button><span>deslize ›</span></div>
+        <div class="dots" id="dots"><button class="on" aria-label="Venda de hoje"></button><button aria-label="Venda de ontem"></button><button aria-label="Venda acumulada"></button><button aria-label="Venda do fim de semana" style="display:none"></button><span>deslize ›</span></div>
         <div id="ritmo"></div>
         <div id="rankDia"></div>
         <div class="tiles" id="tiles"></div>
@@ -451,9 +451,12 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
           <div class="sec">Rotina das lojas hoje</div>
           <div class="panel"><div class="grade" id="gradeHoje"></div></div>
         </div>
+        <div class="list" style="margin-top:14px"><button class="li" type="button" data-go="materiais"><span>📚 Central de materiais e treinamentos<small>treinamentos, reuniões, informativos e manual de VM</small></span><em class="tag">ABRIR ›</em></button></div>
         <p class="note" id="atualizado"></p>
         <div class="acts"><button class="btn ghost sm" id="bSair" type="button">Sair</button></div>
       </section>
+
+      <section class="view" id="tela-materiais"><div class="sec">Central de materiais e treinamentos</div><div class="acts" id="matAbas" style="flex-wrap:wrap"></div><div id="matLista"></div><div class="acts"><button class="btn ghost sm" type="button" data-go="inicio">‹ Voltar ao início</button></div></section>
 
       <!-- PAINEL DIÁRIO (igual ao Jarbas) -->
       <section class="view" id="tela-painel">
@@ -1293,10 +1296,10 @@ function rankVend(i,c){
   const hora=new Date(D.ts).toTimeString().slice(0,5),velho=Date.now()-D.ts>3600e3;
   const soma=(a,n)=>(a||[]).slice(0,n).reduce((s,x)=>s+(+x||0),0);
   const it=[];for(const lj of lojas){const dH=lj.hoje;for(const v of lj.vendedores){if(v.gerente)continue;
-    const [vv,mm]=i===0?[v.dias[dH-1],v.metas[dH-1]]:i===1?(dF?[v.dias[dF-1],v.metas[dF-1]]:[0,0]):(dF?[soma(v.dias,dF),soma(v.metas,dF)]:[0,0]);
+    const [vv,mm]=i===0?[v.dias[dH-1],v.metas[dH-1]]:i===1?(dF?[v.dias[dF-1],v.metas[dF-1]]:[0,0]):i===3?(dF?[soma(v.dias,dF)-soma(v.dias,Math.max(dF-3,0)),soma(v.metas,dF)-soma(v.metas,Math.max(dF-3,0))]:[0,0]):(dF?[soma(v.dias,dF),soma(v.metas,dF)]:[0,0]);
     it.push({cod:null,nome:nomeVend(v.nome)+(varias?' · '+nomeL(lj.loja):''),v:+vv||0,m:+mm||0})}}
   const com=it.filter(x=>x.m>0).sort((a,b)=>b.v/b.m-a.v/a.m),MAX=40,mostra=com.slice(0,MAX);
-  const tit=i===0?`Vendedores hoje · sistema às ${hora}`:i===1?`Vendedores · ${String(c.V.ateDia||c.V.ate||'')}`:`Vendedores acumulado · até ${String(c.V.ateDia||c.V.ate||'')}`;
+  const tit=i===0?`Vendedores hoje · sistema às ${hora}`:i===1?`Vendedores · ${String(c.V.ateDia||c.V.ate||'')}`:i===3?'Vendedores · fim de semana':`Vendedores acumulado · até ${String(c.V.ateDia||c.V.ate||'')}`;
   const html=rankDia(mostra,tit,null);if(!html)return i===0?`<div class="panel rankdia"><h3>Vendedores hoje</h3><p class="note" style="margin:0">Ainda sem venda de vendedor com meta hoje.</p></div>`:'';
   return html+`<p class="note" style="margin:-6px 0 10px">${com.length>MAX?`Mostrando os ${MAX} primeiros de ${com.length} vendedores. `:''}Venda física de cada vendedor no Sistema Corporativo (Planilha de Metas)${velho?` · <b style="color:#ff8b95">atualizada às ${hora}: a conexão com o sistema caiu, entre na aba Equipe para renovar</b>`:''}.</p>`;
 }
@@ -1412,9 +1415,14 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   const capAcum=`${esc(nome)} · meta até ${esc(V.ate)} <b>${mil(a.meta_periodo)}</b><br>${a.venda>=a.meta_periodo?'Acima em':'Faltam'} <b>${mil(Math.abs(a.meta_periodo-a.venda))}</b> · meta do mês ${p1(pct(a.venda,a.meta_mes))}`;
   const sHoje=hj&&hj.m?sl(pct(hj.v,hj.m),'VENDA DE HOJE',Math.round(pct(hj.v,hj.m))+'%',brl(hj.v),`Até a carga das <b>${esc(hora)}</b> · meta do dia ${brl(hj.m)}<br>Faltam <b>${brl(Math.max(hj.m-hj.v,0))}</b>${hj.a?` · P.A. ${hj.p?num(hj.p/hj.a):'—'} · ${hj.a} atend.`:''}`)
     :sl(0,'VENDA DE HOJE','—','aguardando',`A venda de hoje aparece com a primeira carga da parcial<br>Meta de hoje: <b>${brl(a.meta_hoje)}</b>`);
-  const sOntem=sl(pDia,V.ateDia?'VENDA DE '+V.ateDia:'VENDA DE ONTEM',Math.round(pDia)+'%',brl(a.ontem),`Dia fechado <b>${esc(V.ateDia||V.ate)}</b> · meta ${brl(a.meta_ontem)}<br>${a.ontem>=a.meta_ontem?'Acima em':'Faltaram'} <b>${brl(Math.abs(a.meta_ontem-a.ontem))}</b>`);
+  const sOntem=sl(pDia,V.ateDia?'VENDA DE '+V.ateDia:'VENDA DE ONTEM',Math.round(pDia)+'%',brl(a.ontem),`Dia <b>${esc(V.ateDia||V.ate)}</b> · diária <b>${brl(a.meta_ontem)}</b><br>Vendido <b>${brl(a.ontem)}</b> · atingiu <b>${p1(pDia)}</b>`);
   const sAcum=sl(pProp,'VENDA ACUMULADA',Math.round(pProp)+'%',mil(a.venda),capAcum);
-  $('#car').innerHTML=sHoje+sOntem+sAcum;
+  // segunda-feira: quarta tela com sexta + sábado + domingo
+  const fdsDias=!V.ateDia&&new Date(S.hoje+'T12:00:00').getDay()===1?[3,2,1].map(n=>{const d=new Date(S.hoje+'T12:00:00');d.setDate(d.getDate()-n);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}):null;
+  const fdsSoma=li=>{let v=0,m=0;for(const x of li)for(const k of fdsDias){const r=(x.dmes||[]).find(q=>q[0]===k);if(r){v+=+r[1]||0;m+=+r[2]||0}}return {v,m}};
+  const tf=fdsDias?fdsSoma(l?[l]:L):null,temF=!!(tf&&tf.m>0);
+  const sFds=temF?sl(pct(tf.v,tf.m),'FIM DE SEMANA',Math.round(pct(tf.v,tf.m))+'%',brl(tf.v),`Dias <b>${fdsDias[0]} a ${fdsDias[2]}</b> · meta <b>${brl(tf.m)}</b><br>Vendido <b>${brl(tf.v)}</b> · atingiu <b>${p1(pct(tf.v,tf.m))}</b>`):'';
+  $('#car').innerHTML=sHoje+sOntem+sAcum+sFds;$$('#dots button')[3].style.display=temF?'':'none';
   const rks=[
     P?rankDia(L.filter(x=>P.lojas[x.cod]).map(x=>({cod:x.cod,nome:x.nome+(P.lojas[x.cod].fonte==='gerente'?' ✍':''),v:P.lojas[x.cod].venda,m:x.meta_hoje,a:P.lojas[x.cod].atend})),`Ranking de hoje · parcial das ${esc(hora)}`,S.cod)
       +(parcialVelha(P)?`<p class="note" style="margin:-6px 0 10px;color:#ff8b95">⚠ Venda sem atualizar desde as ${esc(hora)}. A próxima carga entra sozinha.</p>`:'')
@@ -1437,6 +1445,8 @@ function rReator(V,L,R,nomeVisao='Regional Ramon'){
   // hoje: só depois das 12h (de manhã a loja pode não ter vendido ainda); ontem: dia fechado com meta e venda zero
   const semHoje=P&&+hora.slice(0,2)>=12?L.filter(x=>x.meta_hoje>0&&!(+P.lojas[x.cod]?.venda>0)).map(x=>x.nome):[],semOntem=L.filter(x=>x.meta_ontem>0&&!(x.ontem>0)).map(x=>x.nome);
   rks[0]=avisoTI(semHoje)+rks[0];rks[1]=avisoTI(semOntem)+rks[1];
+  if(temF){rks.push(rankDia(L.map(x=>{const f=fdsSoma([x]);return {cod:x.cod,nome:x.nome,v:f.v,m:f.m}}),`Ranking do fim de semana · ${fdsDias[0]} a ${fdsDias[2]}`,S.cod)||'');
+    const qF=li=>{const f=fdsSoma(li);return f.m?pct(f.v,f.m):NaN};tc.push(rede?`<div class="tachos">${['R','T','M'].map(k=>tachoUm(qF(TD.filter(x=>x.reg===k)),NREG[k]+' · fim de semana')).join('')}</div>`:tachoUm(qF(TD),'Rede · fim de semana'))}
   const car=$('#car'),dots=$$('#dots button');car.scrollLeft=0;dots.forEach((d,k)=>d.classList.toggle('on',k===0));
   // ranking dos vendedores (Sistema Corporativo) embaixo do ranking das lojas, na mesma tela e na mesma visão (loja, regional ou rede)
   car._vctx={cods:l?[l.cod]:L.map(x=>x.cod),L:V.todas||L,V};car._rkBase=[...rks];rks.forEach((h,i)=>rks[i]=h+rankVend(i,car._vctx));
@@ -2762,11 +2772,15 @@ function fbMic(btn,ta,st){let r=null,on=false,base='',ses='';
 }
 
 /* ---------- navegação ---------- */
-const VIEWS=['inicio','painel','pilar','check','revisao','demandas','equipe','feedback'];
+const VIEWS=['inicio','painel','pilar','check','revisao','demandas','equipe','feedback','materiais'];
+const MATERIAIS={"Treinamentos":[["Vendas e atendimento",[["TAC · Time de Alta Performance",""],["VAP · Vendedor de Alta Performance",""],["Cartilha ACEEC+",""],["Treinamento Alta Performance",""],["Manual do Vendedor Alta Performance",""],["100% de aproveitamento de cada cliente",""],["Só estou olhando",""],["Troca que vira venda",""],["Treinamento de Virada de Chave",""],["Treinamento de bolsas",""],["Mix perfeito (reunião de novembro)",""]]],["Venda digital e canais",[["Treinamento Código do Vendedor",""],["Guia do Vendedor Somos Cria",""],["Treinamento WhatsApp com IA",""],["Grupo VIP",""],["Liveshop completo",""],["Liveshop passo a passo",""],["Venda corporativa",""]]],["Caixa, operação e novos colaboradores",[["Meu Sorriso Muda Tudo (caixas)",""],["Treinamento Operadores de Caixa",""],["Primeiro acesso de colaboradores",""],["Onboarding Extra Natal 2026",""],["Tutorial de lançamento de excesso",""],["Ponto eletrônico para gerentes",""]]],["Liderança",[["Gestão de Alta Performance (FTN Gerencial)",""],["Liderança de Alta Performance, por Vanessa Lobo",""],["Liderança de Alta Performance",""],["Dinâmica do Boneco",""]]]],"Reuniões":[["Ponto de Encontro",[["Novembro de 2026",""],["Outubro de 2026",""],["Extra Natal, Ponto de Encontro de Outubro",""],["Abril de 2026",""]]],["Reuniões gerenciais e comerciais",[["Alinhamento Semanal de 22/10",""],["Alinhamento Semanal de 14/10",""],["Reunião Gerencial de Outubro",""],["Reunião Comercial de Outubro",""],["Reunião Gerencial de Setembro",""],["Reunião Gerencial de Junho",""],["Escalas 5x2 x 12x36",""]]],["Reuniões mensais das lojas",[["Novembro: reunião e treinamento",""],["Novembro: Sonho dos Pés 08",""],["Novembro: Centro 97",""],["Novembro: resultados",""],["Novembro: modelo geral",""],["Outubro: 37 anos Sonho dos Pés",""],["Outubro: BH Centro 51",""],["Outubro: modelo geral",""],["Setembro: reunião e treinamento de postagens",""],["Setembro: modelo geral",""],["Agosto: Niterói Plaza",""]]]],"Informativos":[["Rotina e gestão",[["Instrução Gerencial",""],["Manual do DP Gerencial",""],["Guia da Loja Modelo",""],["Checklist de Loja Padrão",""],["Termo de Apuração de Ocorrência (modelo)",""],["Uniformes 2026",""],["Placas de sinalização do estoque",""]]],["Campanhas e coleção",[["Black: lojas com fotos",""],["Listagem da ação",""],["Cartaz do bazar 50% off",""],["Desafio Quinzenal",""],["Regulamento da Corrida em Grupos",""],["Coleção Verão 27",""],["Catálogo de lançamentos",""]]]],"Manual de VM":[["Guias de VM",[["Guia de VM: Brisa Tropical Verão 27",""],["Guia de VM: Básico que Amamos, fase 2",""],["Informativo VM: sugestões de ação",""],["Reunião Gerencial de VM",""],["Manual da Identidade Visual",""]]]]};let matAba='Treinamentos';
+function rMateriais(){$('#matAbas').innerHTML=Object.keys(MATERIAIS).map(k=>`<button type="button" class="btn sm${k===matAba?'':' ghost'}" data-mat="${k}">${k}</button>`).join('');
+  $('#matLista').innerHTML=MATERIAIS[matAba].map(([g,its])=>`<div class="sec" style="margin-top:18px">${esc(g)}</div><div class="list">${its.map(([t,u])=>u?`<a class="li" href="${esc(u)}" target="_blank" rel="noopener"><span>${esc(t)}</span><em class="tag">ABRIR ›</em></a>`:`<div class="li" style="cursor:default;opacity:.65"><span>${esc(t)}</span><em class="tag">EM BREVE</em></div>`).join('')}</div>`).join('')}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-mat]');if(!b)return;matAba=b.dataset.mat;rMateriais();scrollTo(0,0)});
 function ir(v){if(!VIEWS.includes(v)||(!S.perfil?.master&&['revisao','demandas'].includes(v))||(v==='feedback'&&(S.perfil?.master||!S.cod))||(v==='equipe'&&!S.perfil?.equipe)||(!S.perfil?.master&&v==='check'&&S.checkHab!==true))v='inicio';
   $$('.view').forEach(s=>s.classList.toggle('on',s.id==='tela-'+v));$$('#dock a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
   $('.seams').hidden=v!=='inicio';if(location.hash.slice(1)!==v)history.replaceState(null,'','#'+v);scrollTo(0,0);
-  if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}if(v==='equipe')eqAbrir();if(v==='feedback')rFeedback()}
+  if(v==='revisao')rRevisao();if(v==='check')rCheck();if(v==='demandas'){(S.fila?Promise.resolve():carregarFila()).then(rDemandas)}if(v==='equipe')eqAbrir();if(v==='feedback')rFeedback();if(v==='materiais')rMateriais()}
 // ESTOQUE abre o app da Central de Giro (página própria, mesmo PIN)
 $('#dock').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v==='giro'){location.href='giro.html';return}ir(a.dataset.v)});
 try{history.scrollRestoration='manual'}catch{}
