@@ -256,6 +256,11 @@ details.secao .ck{padding:10px 12px;border-top:1px solid #ffffff14;border-bottom
 .alerta .ana{text-align:left;display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none;color:var(--cream);font-size:14.5px;line-height:1.4}
 .alerta .ana li{background:#ffffff0d;border-radius:6px;padding:7px 9px}
 .alerta .ana b{color:#ffd25a}
+.alerta.dem>div{max-height:90vh;overflow-y:auto;text-align:left;padding:18px 16px}
+.alerta.dem .sir,.alerta.dem h2,.alerta.dem>div>p{text-align:center}
+.alerta.dem h3{font-size:15px;letter-spacing:.04em;color:#ffd25a;margin:14px 0 6px;text-transform:uppercase}
+.alerta.dem .ana{margin:0 0 4px;gap:6px;font-size:14px}
+.alerta.dem .btn{margin-top:14px}
 /* calendário: escolhe um dia fechado do mês e a tela "ontem" do reator + o ranking passam a ser daquele dia */
 .diaSel{display:flex;justify-content:center;align-items:center;gap:6px;margin:8px auto 0;max-width:520px;position:relative}
 .diaSel button{border:1px solid var(--gold);background:#00000066;color:var(--cream);font-family:var(--f-num);font-size:18px;letter-spacing:.08em;padding:7px 14px 4px;border-radius:4px;cursor:pointer}
@@ -2597,9 +2602,40 @@ function alPerdi(d,a){
       d.remove();alAberto=null;toast('Justificativa enviada. Tela liberada.');try{rInicio()}catch{}
     }catch(err){av.textContent=err.message;b.disabled=false;b.textContent='ENVIAR JUSTIFICATIVA'}};
 }
+// demandas do dia (Instrução Gerencial): na primeira hora de trabalho, de segunda a sábado, até o gerente confirmar a leitura
+const DEM_HORA={RUA:540,SH:600}; // 9h nas lojas de rua, 10h nos shoppings
+const DEM_NOME=['','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const DEM_SALAO='<b>Atuação gerencial na área de vendas:</b> relacionamento com as clientes e feedback imediato aos vendedores após os atendimentos';
+const DEM_SEMANA={
+ 1:['<b>Planilha de metas ajustada,</b> com revisão das metas por vendedor','<b>Feedback individual com TODO o time,</b> com foco no alinhamento da semana','<b>Feed estratégico gerente x sub:</b> comunicação, o que a/o sub precisa passar, visão do time, quem será impulsionado e a estratégia dos dois para a semana','<b>VM:</b> fotos no grupo de marketing, revisando antes de postar (vitrines, mostruários, mesas, estantes externas e frente da loja)','<b>Análise dos resultados</b> da loja e dos vendedores e construção do plano de ação','<b>Sellbie:</b> verificar se todos os vendedores estão no aplicativo'],
+ 2:['<b>Remanejamentos:</b> o que foi solicitado, enviado e recebido','Conclusão do feedback semanal','Análise do período de contrato de trabalho','<b>Vendas externas:</b> visitas aos lojistas e vendas no código do vendedor'],
+ 3:['Pesquisa de concorrência','<b>Análises da loja:</b> revisar todas e solicitar laudos ao setor responsável','<b>Defeitos:</b> transferir imediatamente após o laudo autorizando, para não cair no omni','<b>Blitz no estoque:</b> revisão das puxadas e das etiquetas nos produtos','<b>VM:</b> estratégias da vitrine e dos mostruários, analisadas pelos indicadores','<b>Pendências aos setores:</b> enviar e acompanhar'],
+ 4:['<b>VM:</b> fotos no grupo de marketing e análise da vitrine e do interior da loja','<b>Mídias sociais:</b> contas comerciais, postagens e atualização das ações','<b>Meta x realizado:</b> análise dos indicadores e estratégias para recuperação do resultado'],
+ 5:[DEM_SALAO,'Revisão da planilha de metas'],
+ 6:[DEM_SALAO]};
+const DEM_TODO_DIA=[['Antes da primeira venda',['<b>Sefaz zerado:</b> notas de troca transmitidas, nada pendente','<b>Omni faturado</b> e rupturas informadas','<b>VM do ponto de venda:</b> limpeza, estratégias comerciais, vitrine, mostruários e preços','<b>Equipe pronta:</b> uniforme, maquiagem, passos iniciais do atendimento e prospecção (Sellbie, listas de clientes e mídias sociais)']],
+ ['Reunião diária',['Campanhas e ações vigentes, Farol de Vendas e Mapa da Mina','O que fizemos ontem? O que deu certo? O que iremos fazer hoje? O que está impedindo a meta, e como remover?']],
+ ['Durante o dia',['<b>Gerente, a cereja do bolo:</b> no salão de vendas, executando o MOSTRE-ME','<b>Parcial:</b> envio às 14h e às 18h','Comunicar a equipe, ler e responder os e-mails, direcionar as tarefas','<b>Estoque:</b> transferências e notas lançadas no mesmo dia, nada pendente','Acompanhar a meta de faturamento e os indicadores','Verificar e direcionar as correspondências']],
+ ['Antes de encerrar',['Pagamento dos boletos e da arrecadação','<b>Caixa conferido</b> e divergências resolvidas antes de ir para o escritório','Conferência do ponto eletrônico']]];
+const demChave=d=>'jarbas_demandas_'+d;
+const demSem=d=>new Date(d+'T12:00:00').getDay();
+function demPendente(dia,min,tipo){const s=demSem(dia);return s>=1&&s<=6&&min>=(DEM_HORA[tipo]||600)&&guarda.get(demChave(dia))!=='ok'}
+function alDemandas(dia,sem){
+  if(alAberto)return;const s=sem||demSem(dia),ul=a=>`<ul class="ana">${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  const fim=sem?false:(()=>{const d=new Date(dia+'T12:00:00'),u=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();return d.getDate()>u-7})();
+  const d=document.createElement('div');d.className='alerta calmo dem';d.setAttribute('role','alertdialog');
+  d.innerHTML=`<div><div class="sir">📋</div><h2>DEMANDAS DO DIA</h2><p>${DEM_NOME[s]}. Veja o que a loja precisa entregar hoje.</p>
+    ${fim?'<p><b>Última semana do mês:</b> foco nas entregas das metas diárias e dos desafios.</p>':''}
+    <h3>Hoje, ${DEM_NOME[s].toLowerCase()}</h3>${ul(DEM_SEMANA[s])}
+    ${DEM_TODO_DIA.map(([t,a])=>`<h3>${t}</h3>${ul(a)}`).join('')}
+    <button class="btn" type="button" data-a="ok">✓ LI E VOU EXECUTAR</button></div>`;
+  document.body.append(d);alAberto=d;alPee();
+  d.addEventListener('click',e=>{if(!e.target.closest('[data-a]'))return;if(dia!=='teste')guarda.set(demChave(dia),'ok');d.remove();alAberto=null;if(dia!=='teste')alVerifica()});
+}
 function alVerifica(){
   if(!S.perfil||!S.D)return;const sup=!!S.perfil.master;
   const l=(S.D.vendas?.lojas||[]).find(x=>x.cod===S.perfil.cod),tipo=l?.tipo||'',{dia,min}=agoraSP();
+  if(!sup&&demPendente(dia,min,tipo)){if(location.hash!=='#pilar')alDemandas(dia);return}
   for(const a of ALERTAS){if(sup?(a.fech||a.bastao):(a.tipo&&a.tipo!==tipo))continue;if(a.cod&&(a.cod!==S.cod||a.h!==horaFecha(S.cod,dia)))continue;if(a.fech&&!a.cod&&horaFecha(S.cod,dia))continue;if(a.pid==='p18'&&semP18(S.cod,dia))continue;if(a.bastao&&!temBastao(dia))continue; // sem bastão no domingo e no feriado // supervisão: só as parciais (14h e 18h), para cobrar os gerentes
     const m=+a.h.slice(0,2)*60+ +a.h.slice(3);if(min<m||(sup&&min>m+90))continue;
     if(!sup){if(reg(a.pid)||(!a.fech&&reg('perdi:'+a.pid)))continue; // enviou, ou justificou que perdeu o horário // gerente: o alerta só sai quando a demanda do horário foi enviada
@@ -2609,6 +2645,7 @@ function alVerifica(){
 }
 setInterval(alVerifica,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(alVerifica,800)});
 if(location.hash==='#testealerta')setTimeout(()=>alMostra({h:'14:00',fech:false},'teste'),1500);
+const demTeste=location.hash.match(/^#testedemandas-([1-6])$/);if(demTeste)setTimeout(()=>alDemandas('teste',+demTeste[1]),1500);
 
 // inscrição do celular para os alertas com o app fechado (Web Push). No iPhone, só com o app instalado na tela inicial.
 const VAPID='BPHEOsDmewK-Ak2wZYc0SfLtLW4YFICE1-DndBpjUMsrq1_DHt7J-eDTNpLhl4JX0pIBKJHRl-PKX4VbPDLhx1o';
@@ -2627,7 +2664,7 @@ function pushBotao(){const b=$('#pushBox');if(!b)return;const mostra=pushPode()&
 $('#bPush').onclick=async()=>{const b=$('#bPush');b.disabled=true;try{if(await pushInscreve(true)){toast('Alertas ligados neste celular ✓');$('#pushBox').hidden=true}}catch(err){toast('Não deu: '+err.message)}finally{b.disabled=false}};
 // tocou na notificação: abre direto o popup com o alarme daquele horário
 const HASH0=location.hash; // guardado antes da navegação trocar o endereço
-function alDaNotificacao(){const m=HASH0.match(/^#alerta-(\d{2})(\d{2})$/);if(!m||alDaNotificacao.feito)return;alDaNotificacao.feito=1;const a=ALERTAS.find(x=>x.h===m[1]+':'+m[2]);if(a)setTimeout(()=>alMostra(a,agoraSP().dia),600)}
+function alDaNotificacao(){const m=HASH0.match(/^#alerta-(\d{2})(\d{2})$/);if(!m||alDaNotificacao.feito)return;alDaNotificacao.feito=1;if(m[1]==='09'||m[1]==='10'){setTimeout(()=>{const {dia}=agoraSP();if(guarda.get(demChave(dia))!=='ok')alDemandas(dia)},600);return}const a=ALERTAS.find(x=>x.h===m[1]+':'+m[2]);if(a)setTimeout(()=>alMostra(a,agoraSP().dia),600)}
 
 /* ---------- feedback semanal (gerente) ----------
    colaboradores da loja + um feedback por colaborador por semana (segunda a domingo): foto da folha escrita e a fala transcrita pelo celular.
